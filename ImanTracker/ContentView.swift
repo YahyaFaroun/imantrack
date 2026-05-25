@@ -1,61 +1,68 @@
-//
-//  ContentView.swift
-//  ImanTracker
-//
-//  Created by Yahya Faroun on 21.04.26.
-//
-
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Query private var settings: [UserSettings]
+    @State private var selectedTab = 2 // 2 is Heute (0-indexed)
+
+    init() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(Theme.background)
+        
+        let itemAppearance = UITabBarItemAppearance()
+        itemAppearance.selected.iconColor = UIColor(Theme.islamicGreen)
+        itemAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(Theme.islamicGreen)]
+        appearance.stackedLayoutAppearance = itemAppearance
+        
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+        let isDark = settings.first?.isDarkMode ?? true
+        let language = settings.first?.language ?? "de"
+        
+        TabView(selection: $selectedTab) {
+            TasbihView()
+                .tabItem {
+                    Label(L10n.tr("tab_tasbih", language), systemImage: "circle.grid.3x3.fill")
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                .tag(0)
+            
+            AdhkarOverviewView(selectedTab: $selectedTab)
+                .tabItem {
+                    Label(L10n.tr("tab_adhkar", language), systemImage: "doc.plaintext.fill")
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
+                .tag(1)
+            
+            TodayView(selectedTab: $selectedTab)
+                .tabItem {
+                    Label(L10n.tr("tab_today", language), systemImage: "house.fill")
                 }
-            }
-        } detail: {
-            Text("Select an item")
+                .tag(2)
+            
+            QuranView()
+                .tabItem {
+                    Label(L10n.tr("tab_quran", language), systemImage: "book.fill")
+                }
+                .tag(3)
+            
+            StatsView()
+                .tabItem {
+                    Label(L10n.tr("tab_stats", language), systemImage: "chart.bar.fill")
+                }
+                .tag(4)
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
+        .tint(Theme.islamicGreen)
+        .preferredColorScheme(isDark ? .dark : .light)
+        .environment(\.layoutDirection, language == "ar" ? .rightToLeft : .leftToRight)
+        .onAppear {
+            LocationAndSolarManager.shared.requestAuthorization()
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }

@@ -1,18 +1,14 @@
-//
-//  ImanTrackerApp.swift
-//  ImanTracker
-//
-//  Created by Yahya Faroun on 21.04.26.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
 struct ImanTrackerApp: App {
+    @AppStorage("hasSeenOnboarding") var hasSeenOnboarding: Bool = false
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            UserSettings.self,
+            DailyRecord.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -25,7 +21,11 @@ struct ImanTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if hasSeenOnboarding {
+                ContentView()
+            } else {
+                OnboardingView()
+            }
         }
         .modelContainer(sharedModelContainer)
     }
