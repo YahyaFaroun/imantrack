@@ -1,0 +1,16 @@
+{
+  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/TasbihSettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 141
+        }
+      }
+    ]
+  },
+  "version": 1
+}

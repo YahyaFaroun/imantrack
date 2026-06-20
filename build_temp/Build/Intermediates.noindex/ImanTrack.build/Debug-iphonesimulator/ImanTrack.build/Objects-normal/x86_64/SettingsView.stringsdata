@@ -1,0 +1,80 @@
+{
+  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/SettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "المميزات",
+        "location": {
+          "startingColumn": 57,
+          "startingLine": 16
+        }
+      },
+      {
+        "comment": "",
+        "key": "Features",
+        "location": {
+          "startingColumn": 98,
+          "startingLine": 16
+        }
+      },
+      {
+        "comment": "",
+        "key": "Funktionen",
+        "location": {
+          "startingColumn": 111,
+          "startingLine": 16
+        }
+      },
+      {
+        "comment": "",
+        "key": "عام",
+        "location": {
+          "startingColumn": 57,
+          "startingLine": 55
+        }
+      },
+      {
+        "comment": "",
+        "key": "General",
+        "location": {
+          "startingColumn": 88,
+          "startingLine": 55
+        }
+      },
+      {
+        "comment": "",
+        "key": "Allgemein",
+        "location": {
+          "startingColumn": 100,
+          "startingLine": 55
+        }
+      },
+      {
+        "comment": "",
+        "key": "Deutsch",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 64
+        }
+      },
+      {
+        "comment": "",
+        "key": "English",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 65
+        }
+      },
+      {
+        "comment": "",
+        "key": "العربية",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 66
+        }
+      }
+    ]
+  },
+  "version": 1
+}

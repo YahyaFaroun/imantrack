@@ -1,0 +1,56 @@
+{
+  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/AlKahfReaderView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Sure Al-Kahf",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 91
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fehler beim Laden von Sure Al-Kahf",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 34
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erneut versuchen",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 36
+        }
+      },
+      {
+        "comment": "",
+        "key": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "Als gelesen markieren",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 66
+        }
+      },
+      {
+        "comment": "",
+        "key": "Schließen",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 97
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>logFormatVersion</key>
+	<integer>12</integer>
+	<key>logs</key>
+	<dict>
+		<key>08274E53-9663-4B89-A3CB-5EC0F3941C9D</key>
+		<dict>
+			<key>className</key>
+			<string>IDECommandLineBuildLog</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>08274E53-9663-4B89-A3CB-5EC0F3941C9D.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>S</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>0</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>ImanTrack project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>ImanTrack</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Building project ImanTrack with scheme ImanTrack and configuration Debug</string>
+			<key>timeStartedRecording</key>
+			<real>803651580.70784402</real>
+			<key>timeStoppedRecording</key>
+			<real>803651589.10069096</real>
+			<key>title</key>
+			<string>Building project ImanTrack with scheme ImanTrack and configuration Debug</string>
+			<key>uniqueIdentifier</key>
+			<string>08274E53-9663-4B89-A3CB-5EC0F3941C9D</string>
+		</dict>
+		<key>F63BFF5D-EDC5-47D0-9308-DF1BD0C1A0EB</key>
+		<dict>
+			<key>className</key>
+			<string>IDECommandLineBuildLog</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>F63BFF5D-EDC5-47D0-9308-DF1BD0C1A0EB.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>S</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>0</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>ImanTrack project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>ImanTrack</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Building project ImanTrack with scheme ImanTrack and configuration Debug</string>
+			<key>timeStartedRecording</key>
+			<real>803650977.74620295</real>
+			<key>timeStoppedRecording</key>
+			<real>803651003.86164796</real>
+			<key>title</key>
+			<string>Building project ImanTrack with scheme ImanTrack and configuration Debug</string>
+			<key>uniqueIdentifier</key>
+			<string>F63BFF5D-EDC5-47D0-9308-DF1BD0C1A0EB</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

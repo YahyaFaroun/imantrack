@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImanTrack - Your Minimalist Sunnah Companion</title>
+    <meta name="description" content="ImanTrack is a minimalist, ad-free app for daily Adhkar, Tasbih, and Quran reading goals, beautifully aligned with the Sunnah.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f12;
+            --card-bg: #111820;
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --accent: #f59e0b;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: #1f2937;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--primary-hover);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Header */
+        header {
+            padding: 2rem 0;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(11, 15, 18, 0.8);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-area img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+        }
+
+        .brand-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        nav a:hover {
+            color: var(--text-main);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 6rem 0 4rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(11, 15, 18, 0) 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .hero-img {
+            width: 140px;
+            height: 140px;
+            border-radius: 32px;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff 30%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+            font-weight: 300;
+        }
+
+        .badge-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge-appstore {
+            background-color: #000;
+            color: white;
+            padding: 0.75rem 1.75rem;
+            border-radius: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .badge-appstore:hover {
+            background-color: #111;
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 4rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            letter-spacing: -0.02em;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-cols: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.25rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.04);
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .feature-card h3 .icon {
+            color: var(--primary);
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 300;
+        }
+
+        /* Support & Privacy Section */
+        .docs-section {
+            padding: 4rem 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .docs-grid {
+            display: grid;
+            grid-template-cols: 1fr;
+            gap: 4rem;
+        }
+
+        .docs-block {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+        }
+
+        .docs-block h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .docs-block p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+        }
+
+        .contact-btn {
+            background-color: var(--primary);
+            color: #000;
+            padding: 0.8rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+
+        .contact-btn:hover {
+            background-color: var(--primary-hover);
+            color: #000;
+            transform: translateY(-1px);
+        }
+
+        /* Privacy Policy Styles */
+        .privacy-content {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .privacy-content h3 {
+            color: var(--text-main);
+            font-size: 1.1rem;
+            margin: 1.5rem 0 0.5rem;
+            font-weight: 600;
+        }
+
+        .privacy-content ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 300;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .docs-block {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="container header-content">
+            <div class="logo-area">
+                <img src="imantrack_logo.png" alt="ImanTrack Logo">
+                <span class="brand-name">ImanTrack</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#support">Support</a></li>
+                    <li><a href="#privacy">Privacy Policy</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <img class="hero-img" src="imantrack_logo.png" alt="ImanTrack App Logo">
+            <h1>ImanTrack</h1>
+            <p>Your minimalist, distraction-free companion for daily Adhkar, Tasbih, and Quran reading goals – beautifully aligned with the Sunnah.</p>
+            <div class="badge-container">
+                <a href="#" class="badge-appstore">
+                    <svg width="20" height="24" viewBox="0 0 170 204" fill="currentColor">
+                        <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.34.13-9.13-1.84-14.36-5.9-2.73-2.22-6.57-6.84-11.53-13.86-13.2-18.7-19.79-37.51-19.79-56.44 0-15.02 4.17-26.81 12.52-35.37 8.35-8.56 18.09-12.87 29.23-12.87 5.06 0 10.42 1.34 16.07 4.03 5.65 2.68 9.58 4.02 11.78 4.02 2.04 0 5.86-1.34 11.49-4.02 5.63-2.69 11.23-3.95 16.82-3.8 14.54 1.11 25.46 6.33 32.74 15.63-12.52 7.61-18.66 17.65-18.42 30.13.24 9.94 3.86 18.15 10.85 24.63 7 6.47 15.14 9.94 24.45 10.4 1.03-3.23 2.1-6.52 3.22-9.87zm-22.16-95.03c0-10.42-3.56-19.14-10.67-26.17-7.11-7.03-15.53-10.47-25.26-10.32-.13 1.08-.2 2.05-.2 2.94 0 9.87 3.65 18.57 10.95 26.09 7.3 7.52 15.82 11.19 25.55 11.02a33.5 33.5 0 0 0-.37-3.56z"/>
+                    </svg>
+                    <span>Download on the App Store</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="section-title">Key Features</h2>
+            <div class="features-grid">
+                
+                <div class="feature-card">
+                    <h3><span class="icon">🌙</span> Sunnah-Aligned Reset</h3>
+                    <p>Your tracking day does not reset arbitrarily at midnight. Following traditional Islamic practice, it resets automatically at sunset (Maghrib), calculated using your location.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3><span class="icon">✨</span> Daily Adhkar</h3>
+                    <p>Perform your Morning, Evening, and Sleep Adhkar with a fluid interface. Use the auto-advance feature to easily transition through each supplication without distractions.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3><span class="icon">📿</span> Advanced Tasbih & Custom Dhikr</h3>
+                    <p>Choose from authentic preset Tasbihs or easily build your own custom Dhikr. Includes a haptic counter and a customizable Auto-Counter with adjustable BPM tempo controls.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3><span class="icon">📖</span> Quran Reader</h3>
+                    <p>Read the Quran in the beautiful, authentic "KFGQPC Hafs Script" calligraphy. Features a clean layout, pinch-to-zoom for sizing, and automatic progress saving.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3><span class="icon">📅</span> Surah Al-Kahf Reminder</h3>
+                    <p>Track your weekly Friday reading of Surah Al-Kahf with a dedicated progress indicator and integrated reader, active from Thursday sunset to Friday sunset.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3><span class="icon">🔒</span> 100% Private & Ad-Free</h3>
+                    <p>No ads, no accounts, and no data tracking. All your records and stats are stored entirely offline on your device. Quiet, private, and lightweight.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Support Section -->
+    <section class="docs-section" id="support">
+        <div class="container docs-grid">
+            <div class="docs-block">
+                <h2>Support & Feedback</h2>
+                <p>Do you have questions, suggestions, or need help with ImanTrack? We are here for you. Contact us directly via email.</p>
+                <!-- NOTE: Replace the email below with your actual contact address -->
+                <a href="mailto:support@imantrack.com" class="contact-btn">Email Support</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Privacy Policy Section -->
+    <section class="docs-section" id="privacy">
+        <div class="container docs-grid">
+            <div class="docs-block">
+                <h2>Privacy Policy</h2>
+                <div class="privacy-content">
+                    <p><strong>Effective Date:</strong> June 20, 2026</p>
+                    <p>Your privacy is of utmost importance. ImanTrack is designed to be fully private, local, and secure.</p>
+                    
+                    <h3>1. Data Collection</h3>
+                    <p>ImanTrack does not collect, transmit, or store any personal data, usage data, or credentials on external servers. All information generated by the app remains strictly on your device.</p>
+                    
+                    <h3>2. Location Data</h3>
+                    <p>The app requests access to your approximate location to calculate solar times (Maghrib/Fajr) for prayer resets and alarms. This location calculation is performed entirely offline on your device. Your location is never shared, sent, or sold.</p>
+                    
+                    <h3>3. Third-Party Services</h3>
+                    <p>The app does not integrate any third-party SDKs, tracking tools, analytics platforms, or advertisement networks. We do not track your behavior.</p>
+                    
+                    <h3>4. App Permissions</h3>
+                    <ul>
+                        <li><strong>Location:</strong> Used offline to calculate solar times.</li>
+                        <li><strong>Notifications:</strong> Used locally to trigger your Fajr alarm. No push notifications from external servers are sent.</li>
+                    </ul>
+                    
+                    <h3>5. Changes to This Policy</h3>
+                    <p>We may update our Privacy Policy from time to time. Any changes will be posted on this page.</p>
+
+                    <h3>6. Contact Us</h3>
+                    <p>If you have any questions about this Privacy Policy, please contact us at support@imantrack.com.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Yahya Faroun. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Models/LocationAndSolarManager.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/LocationAndSolarManager.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/LocationAndSolarManager.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/LocationAndSolarManager.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/LocationAndSolarManager.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/LocationAndSolarManager.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Models/QuranAPIService.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/QuranAPIService.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/QuranAPIService.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/QuranAPIService.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/QuranAPIService.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/QuranAPIService.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Models/QuranData.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/QuranData.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/QuranData.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/QuranData.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/QuranData.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/QuranData.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Models/TasbihCategory.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TasbihCategory.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TasbihCategory.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TasbihCategory.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TasbihCategory.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TasbihCategory.swiftdeps"
+  }
+}

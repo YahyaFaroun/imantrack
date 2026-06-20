@@ -1,0 +1,23 @@
+{
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/ContentView.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/ContentView.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/ContentView.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/TasbihView.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TasbihView.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TasbihView.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TasbihView.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TasbihView.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TasbihView.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/TodayView.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TodayView.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TodayView.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TodayView.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TodayView.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/TodayView.swiftdeps"
+  }
+}

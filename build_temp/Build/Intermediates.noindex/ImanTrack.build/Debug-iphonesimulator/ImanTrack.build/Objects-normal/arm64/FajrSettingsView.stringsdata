@@ -1,0 +1,72 @@
+{
+  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/FajrSettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "15 Min.",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "30 Min.",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 64
+        }
+      },
+      {
+        "comment": "",
+        "key": "45 Min.",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 65
+        }
+      },
+      {
+        "comment": "",
+        "key": "60 Min.",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 66
+        }
+      },
+      {
+        "comment": "",
+        "key": "15 Min.",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 127
+        }
+      },
+      {
+        "comment": "",
+        "key": "30 Min.",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 128
+        }
+      },
+      {
+        "comment": "",
+        "key": "45 Min.",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 129
+        }
+      },
+      {
+        "comment": "",
+        "key": "60 Min.",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 130
+        }
+      }
+    ]
+  },
+  "version": 1
+}

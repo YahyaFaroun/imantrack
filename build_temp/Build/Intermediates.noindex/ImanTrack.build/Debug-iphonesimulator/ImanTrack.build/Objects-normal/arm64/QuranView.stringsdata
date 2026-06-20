@@ -1,0 +1,40 @@
+{
+  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/QuranView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Fehler beim Laden von Seite %lld",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 186
+        }
+      },
+      {
+        "comment": "",
+        "key": "Erneut versuchen",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 190
+        }
+      },
+      {
+        "comment": "",
+        "key": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 370
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 331
+        }
+      }
+    ]
+  },
+  "version": 1
+}

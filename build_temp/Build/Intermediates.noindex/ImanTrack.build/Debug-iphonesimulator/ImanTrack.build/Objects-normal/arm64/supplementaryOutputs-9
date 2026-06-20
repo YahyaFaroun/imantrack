@@ -1,0 +1,30 @@
+{
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Models/AdhkarData.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarData.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarData.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarData.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarData.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarData.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Models/DailyRecord.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/DailyRecord.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/DailyRecord.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/DailyRecord.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/DailyRecord.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/DailyRecord.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Models/FajrAlarmManager.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/FajrAlarmManager.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/FajrAlarmManager.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/FajrAlarmManager.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/FajrAlarmManager.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/FajrAlarmManager.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Models/IslamicDateHelper.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/IslamicDateHelper.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/IslamicDateHelper.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/IslamicDateHelper.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/IslamicDateHelper.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/IslamicDateHelper.swiftdeps"
+  }
+}

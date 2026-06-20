@@ -1,0 +1,144 @@
+{
+  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/AdhkarSessionView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "ما شاء الله",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 136
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 533
+        }
+      },
+      {
+        "comment": "",
+        "key": "/ %lld",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 538
+        }
+      },
+      {
+        "comment": "",
+        "key": "Adhkar Info",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 705
+        }
+      },
+      {
+        "comment": "",
+        "key": "Geschwindigkeit",
+        "location": {
+          "startingColumn": 57,
+          "startingLine": 629
+        }
+      },
+      {
+        "comment": "",
+        "key": "Speed",
+        "location": {
+          "startingColumn": 77,
+          "startingLine": 629
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sehr langsam",
+        "location": {
+          "startingColumn": 85,
+          "startingLine": 634
+        }
+      },
+      {
+        "comment": "",
+        "key": "Very slow",
+        "location": {
+          "startingColumn": 102,
+          "startingLine": 634
+        }
+      },
+      {
+        "comment": "",
+        "key": "Langsam",
+        "location": {
+          "startingColumn": 85,
+          "startingLine": 635
+        }
+      },
+      {
+        "comment": "",
+        "key": "Slow",
+        "location": {
+          "startingColumn": 97,
+          "startingLine": 635
+        }
+      },
+      {
+        "comment": "",
+        "key": "Normal",
+        "location": {
+          "startingColumn": 85,
+          "startingLine": 636
+        }
+      },
+      {
+        "comment": "",
+        "key": "Normal",
+        "location": {
+          "startingColumn": 96,
+          "startingLine": 636
+        }
+      },
+      {
+        "comment": "",
+        "key": "Schnell",
+        "location": {
+          "startingColumn": 85,
+          "startingLine": 637
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fast",
+        "location": {
+          "startingColumn": 97,
+          "startingLine": 637
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sehr schnell",
+        "location": {
+          "startingColumn": 57,
+          "startingLine": 638
+        }
+      },
+      {
+        "comment": "",
+        "key": "Very fast",
+        "location": {
+          "startingColumn": 74,
+          "startingLine": 638
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fertig",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 709
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,224 @@
+{
+  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/StatsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Period",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 308
+        }
+      },
+      {
+        "comment": "",
+        "key": "Gesamt gelesene Seiten: %lld",
+        "location": {
+          "startingColumn": 54,
+          "startingLine": 356
+        }
+      },
+      {
+        "comment": "",
+        "key": "إجمالي الصفحات المقروءة: %lld",
+        "location": {
+          "startingColumn": 130,
+          "startingLine": 356
+        }
+      },
+      {
+        "comment": "",
+        "key": "Total pages read: %lld",
+        "location": {
+          "startingColumn": 199,
+          "startingLine": 356
+        }
+      },
+      {
+        "comment": "",
+        "key": "Goal",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 380
+        }
+      },
+      {
+        "comment": "",
+        "key": "Day",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 372
+        }
+      },
+      {
+        "comment": "",
+        "key": "Pages",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 373
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ziel",
+        "location": {
+          "startingColumn": 58,
+          "startingLine": 385
+        }
+      },
+      {
+        "comment": "",
+        "key": "الهدف",
+        "location": {
+          "startingColumn": 96,
+          "startingLine": 385
+        }
+      },
+      {
+        "comment": "",
+        "key": "Goal",
+        "location": {
+          "startingColumn": 111,
+          "startingLine": 385
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fajr: %lldx %@ • %lldx %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 469
+        }
+      },
+      {
+        "comment": "",
+        "key": "Gesamt: %lld",
+        "location": {
+          "startingColumn": 58,
+          "startingLine": 494
+        }
+      },
+      {
+        "comment": "",
+        "key": "المجموع: %lld",
+        "location": {
+          "startingColumn": 118,
+          "startingLine": 494
+        }
+      },
+      {
+        "comment": "",
+        "key": "Total: %lld",
+        "location": {
+          "startingColumn": 157,
+          "startingLine": 494
+        }
+      },
+      {
+        "comment": "",
+        "key": "Goal",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 542
+        }
+      },
+      {
+        "comment": "",
+        "key": "Day",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 534
+        }
+      },
+      {
+        "comment": "",
+        "key": "Count",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 535
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ziel",
+        "location": {
+          "startingColumn": 58,
+          "startingLine": 547
+        }
+      },
+      {
+        "comment": "",
+        "key": "الهدف",
+        "location": {
+          "startingColumn": 96,
+          "startingLine": 547
+        }
+      },
+      {
+        "comment": "",
+        "key": "Goal",
+        "location": {
+          "startingColumn": 111,
+          "startingLine": 547
+        }
+      },
+      {
+        "comment": "",
+        "key": "Noch keine Daten für diesen Zeitraum",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 577
+        }
+      },
+      {
+        "comment": "",
+        "key": "لا توجد بيانات لهذه الفترة",
+        "location": {
+          "startingColumn": 117,
+          "startingLine": 577
+        }
+      },
+      {
+        "comment": "",
+        "key": "No data available for this period",
+        "location": {
+          "startingColumn": 170,
+          "startingLine": 577
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 601
+        }
+      },
+      {
+        "comment": "",
+        "key": "من %lld",
+        "location": {
+          "startingColumn": 54,
+          "startingLine": 605
+        }
+      },
+      {
+        "comment": "",
+        "key": "of %lld",
+        "location": {
+          "startingColumn": 101,
+          "startingLine": 605
+        }
+      },
+      {
+        "comment": "",
+        "key": "von %lld",
+        "location": {
+          "startingColumn": 117,
+          "startingLine": 605
+        }
+      }
+    ]
+  },
+  "version": 1
+}

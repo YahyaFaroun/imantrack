@@ -1,0 +1,30 @@
+{
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Models/UserSettings.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/UserSettings.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/UserSettings.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/UserSettings.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/UserSettings.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/UserSettings.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/AdhkarOverviewView.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarOverviewView.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarOverviewView.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarOverviewView.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarOverviewView.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarOverviewView.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/AdhkarSessionView.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarSessionView.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarSessionView.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarSessionView.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarSessionView.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AdhkarSessionView.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/AlKahfReaderView.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AlKahfReaderView.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AlKahfReaderView.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AlKahfReaderView.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AlKahfReaderView.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/arm64/AlKahfReaderView.swiftdeps"
+  }
+}

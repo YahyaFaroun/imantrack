@@ -1,0 +1,64 @@
+{
+  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/TodayView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 47
+        }
+      },
+      {
+        "comment": "",
+        "key": "✓",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 96
+        }
+      },
+      {
+        "comment": "",
+        "key": "○",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 100
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld Verse gelesen",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 121
+        }
+      },
+      {
+        "comment": "",
+        "key": "✓",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 238
+        }
+      },
+      {
+        "comment": "",
+        "key": "○",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 242
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld / %lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 261
+        }
+      }
+    ]
+  },
+  "version": 1
+}
