@@ -1,23 +1,23 @@
 {
-  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/OnboardingView.swift" : {
-    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/OnboardingView.swiftconstvalues",
-    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/OnboardingView.d",
-    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/OnboardingView.dia",
-    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/OnboardingView.o",
-    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/OnboardingView.swiftdeps"
+  "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/ImanTrack/Views/OnboardingView.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/OnboardingView.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/OnboardingView.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/OnboardingView.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/OnboardingView.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/OnboardingView.swiftdeps"
   },
-  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/QuranSettingsView.swift" : {
-    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranSettingsView.swiftconstvalues",
-    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranSettingsView.d",
-    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranSettingsView.dia",
-    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranSettingsView.o",
-    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranSettingsView.swiftdeps"
+  "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/ImanTrack/Views/QuranSettingsView.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranSettingsView.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranSettingsView.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranSettingsView.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranSettingsView.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranSettingsView.swiftdeps"
   },
-  "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/QuranView.swift" : {
-    "const-values" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranView.swiftconstvalues",
-    "dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranView.d",
-    "diagnostics" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranView.dia",
-    "object" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranView.o",
-    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranView.swiftdeps"
+  "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/ImanTrack/Views/QuranView.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranView.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranView.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranView.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranView.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/QuranView.swiftdeps"
   }
 }

@@ -1,0 +1,66 @@
+{
+  "buildCommand" : {
+    "command" : "build",
+    "skipDependencies" : false,
+    "style" : "buildOnly"
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "4fef4f425f4813feb69ec84394f95d54cae7531e13b98f7e9f79873f449e3866"
+    }
+  ],
+  "containerPath" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/ImanTrack.xcodeproj",
+  "continueBuildingAfterErrors" : false,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "activeArchitecture" : "undefined_arch",
+    "activeRunDestination" : {
+      "disableOnlyActiveArch" : true,
+      "hostTargetedPlatform" : null,
+      "platform" : "iphonesimulator",
+      "sdk" : "iphonesimulator26.5",
+      "sdkVariant" : "iphonesimulator",
+      "supportedArchitectures" : [
+        "i386",
+        "x86_64"
+      ],
+      "targetArchitecture" : "undefined_arch"
+    },
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex",
+      "buildProductsPath" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Products",
+      "derivedDataPath" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp",
+      "indexDataStoreFolderPath" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Index.noindex/PrecompiledHeaders",
+      "pchPath" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/PrecompiledHeaders"
+    },
+    "configurationName" : "Debug",
+    "overrides" : {
+      "commandLine" : {
+        "table" : {
+          "SDKROOT" : "iphonesimulator26.5"
+        }
+      },
+      "synthesized" : {
+        "table" : {
+          "ACTION" : "build",
+          "CLANG_COVERAGE_MAPPING" : "YES",
+          "CLANG_PROFILE_DATA_DIRECTORY" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/ProfileData",
+          "ENABLE_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "YES",
+          "ONLY_ACTIVE_ARCH" : "YES"
+        }
+      }
+    }
+  },
+  "schemeCommand" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}

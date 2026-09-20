@@ -3,18 +3,204 @@ import CoreLocation
 import SwiftData
 
 struct OnboardingView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var settings: [UserSettings]
+    @Environment(\.modelContext) var modelContext
+    @Query var settings: [UserSettings]
     @AppStorage("hasSeenOnboarding") var hasSeenOnboarding: Bool = false
     
-    @State private var currentPage = 0
-    @State private var hasLocationPermission: Bool = false
-    @State private var quranGoal: Int = 20
-    @State private var istighfarGoal: Int = 1000
-    @State private var salawatGoal: Int = 1000
+    @State var currentPage = 0
+    @State var hasLocationPermission: Bool = false
     
-    // Timer oder Notification-Observer zur Überprüfung der Berechtigung, wenn der Benutzer aus den Einstellungen zurückkehrt
+    @State private var tempQuranGoal: Int = 5
+    @State private var tempIstighfarGoal: Int = 1000
+    @State private var tempSalawatGoal: Int = 500
+    @State private var tempSubhanAllahGoal: Int = 100
+    @State private var tempSpeedStep: Int = 1
+    
+    private func setupDefaultOnboardingGoals() {
+        let s: UserSettings
+        if let first = settings.first {
+            s = first
+        } else {
+            s = UserSettings()
+            modelContext.insert(s)
+        }
+        
+        if s.quranDailyGoal == 20 { s.quranDailyGoal = 5 }
+        if s.istighfarGoal == 5000 || s.istighfarGoal == 100 { s.istighfarGoal = 1000 }
+        if s.salawatGoal == 2000 || s.salawatGoal == 100 { s.salawatGoal = 500 }
+        if s.subhanAllahGoal == 1000 { s.subhanAllahGoal = 100 }
+        if s.alhamdulillahGoal == 1000 { s.alhamdulillahGoal = 100 }
+        if s.allahuAkbarGoal == 1000 { s.allahuAkbarGoal = 100 }
+        if s.laIlahaIllallahGoal == 500 { s.laIlahaIllallahGoal = 100 }
+        
+        tempQuranGoal = s.quranDailyGoal
+        tempIstighfarGoal = s.istighfarGoal
+        tempSalawatGoal = s.salawatGoal
+        tempSubhanAllahGoal = s.subhanAllahGoal
+        tempSpeedStep = s.defaultAdhkarSpeedStep
+        try? modelContext.save()
+    }
+    
+    private func saveGoals() {
+        let s: UserSettings
+        if let first = settings.first {
+            s = first
+        } else {
+            s = UserSettings()
+            modelContext.insert(s)
+        }
+        s.quranDailyGoal = tempQuranGoal
+        s.istighfarGoal = tempIstighfarGoal
+        s.salawatGoal = tempSalawatGoal
+        s.subhanAllahGoal = tempSubhanAllahGoal
+        s.defaultAdhkarSpeedStep = tempSpeedStep
+        UserDefaults.standard.set(tempSpeedStep, forKey: "defaultAdhkarSpeedStep")
+        try? modelContext.save()
+    }
+    
+    #if os(iOS)
     let pub = NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+    #else
+    let pub = NotificationCenter.default.publisher(for: NSApplication.willBecomeActiveNotification)
+    #endif
+    
+    // SEITE 3b – Quran Zieleingabe
+    @ViewBuilder
+    private func quranGoalOnboardingCard() -> some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            Text(L10n.tr("onboarding_quran_goal_title", language))
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .foregroundColor(.primary)
+                .padding(.horizontal, 24)
+            
+            Text(L10n.tr("onboarding_quran_goal_desc", language))
+                .font(.system(size: 16))
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .lineSpacing(4)
+                .padding(.horizontal, 32)
+            
+            Spacer().frame(height: 20)
+            
+            VStack(spacing: 16) {
+                Text("\(tempQuranGoal) " + L10n.tr("onboarding_quran_goal_unit", language))
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(Theme.islamicGreen)
+                
+                Stepper("", value: $tempQuranGoal, in: 1...20, step: 1)
+                    .labelsHidden()
+                    .onChange(of: tempQuranGoal) { _, _ in
+                        saveGoals()
+                    }
+            }
+            .padding(24)
+            .background(Color(UIColor.secondarySystemBackground))
+            .cornerRadius(16)
+            
+            Spacer()
+            
+            Button(action: {
+                withAnimation {
+                    currentPage += 1
+                }
+            }) {
+                Text(L10n.tr("onboarding_next", language))
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                    .background(Theme.islamicGreen)
+                    .cornerRadius(16)
+            }
+            .padding(.horizontal, 32)
+            .padding(.bottom, 60)
+        }
+    }
+    
+    // SEITE 5b – Tasbih Zieleingabe
+    @ViewBuilder
+    private func tasbihGoalOnboardingCard() -> some View {
+        VStack(spacing: 20) {
+            Spacer()
+            
+            Text(L10n.tr("onboarding_tasbih_goal_title", language))
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .foregroundColor(.primary)
+                .padding(.horizontal, 24)
+            
+            Text(L10n.tr("onboarding_tasbih_goal_desc", language))
+                .font(.system(size: 16))
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .lineSpacing(4)
+                .padding(.horizontal, 32)
+            
+            ScrollView {
+                VStack(spacing: 16) {
+                    tasbihGoalRow(title: "Istighfar", value: $tempIstighfarGoal, range: 100...50000, step: 100)
+                    tasbihGoalRow(title: "Salawat", value: $tempSalawatGoal, range: 100...50000, step: 100)
+                    tasbihGoalRow(title: "Subhanallahi wa bihamdihi", value: $tempSubhanAllahGoal, range: 10...10000, step: 10)
+                }
+                .padding(.horizontal, 32)
+                .padding(.top, 10)
+            }
+            
+            Spacer()
+            
+            Button(action: {
+                withAnimation {
+                    currentPage += 1
+                }
+            }) {
+                Text(L10n.tr("onboarding_next", language))
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                    .background(Theme.islamicGreen)
+                    .cornerRadius(16)
+            }
+            .padding(.horizontal, 32)
+            .padding(.bottom, 60)
+        }
+    }
+    
+    private func formatNumber(_ num: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = "'"
+        return formatter.string(from: NSNumber(value: num)) ?? "\(num)"
+    }
+    
+    @ViewBuilder
+    private func tasbihGoalRow(title: String, value: Binding<Int>, range: ClosedRange<Int> = 10...50000, step: Int = 50) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.primary)
+            HStack {
+                Text("\(formatNumber(value.wrappedValue))")
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundColor(Theme.islamicGreen)
+                    .frame(width: 90, alignment: .leading)
+                
+                Spacer()
+                
+                Stepper("", value: value, in: range, step: step)
+                    .labelsHidden()
+                    .onChange(of: value.wrappedValue) { _, _ in
+                        saveGoals()
+                    }
+            }
+        }
+        .padding()
+        .background(Color(UIColor.secondarySystemBackground))
+        .cornerRadius(12)
+    }
 
     private var language: String {
         if let lang = settings.first?.language {
@@ -33,10 +219,10 @@ struct OnboardingView: View {
                 // Header-Bereich mit Skip-Button oben rechts
                 HStack {
                     Spacer()
-                    if currentPage < 3 {
+                    if currentPage < 7 {
                         Button(action: {
                             withAnimation {
-                                currentPage = 3
+                                currentPage = 7
                             }
                         }) {
                             Text(L10n.tr("onboarding_skip", language))
@@ -50,42 +236,73 @@ struct OnboardingView: View {
                 .frame(height: 44)
                 
                 TabView(selection: $currentPage) {
-                    // Screen 0: Willkommen
+                    // SEITE 1 – Willkommen & Einstieg
                     onboardingCard(
                         icon: "moon.stars.fill",
                         iconColor: Theme.islamicGreen,
-                        title: L10n.tr("onboarding_welcome_title", language),
-                        text: L10n.tr("onboarding_welcome_desc", language),
-                        isFirstScreen: true
+                        title: L10n.tr("onboarding_page1_title", language),
+                        text: L10n.tr("onboarding_page1_desc", language),
+                        buttonText: L10n.tr("onboarding_next", language)
                     )
                     .tag(0)
                     
-                    // Screen 1: Der Islamische Tag & Standort
+                    // SEITE 2 – Der islamische Tagesrhythmus
                     onboardingCard(
                         icon: "sunset.fill",
                         iconColor: .orange,
-                        title: L10n.tr("onboarding_sunnah_title", language),
-                        text: L10n.tr("onboarding_sunnah_desc", language),
+                        title: L10n.tr("onboarding_page2_title", language),
+                        text: L10n.tr("onboarding_page2_desc", language),
                         actionButton: locationActionButton()
                     )
                     .tag(1)
                     
-                    // Screen 2: Tagesziele
-                    goalsOnboardingCard()
-                        .tag(2)
-                    
-                    // Screen 3: Bereit
+                    // SEITE 3 – Quran & automatisches Tracking
                     onboardingCard(
-                        icon: "checkmark.circle.fill",
+                        icon: "book.fill",
                         iconColor: Theme.islamicGreen,
-                        title: L10n.tr("onboarding_ready_title", language),
-                        text: L10n.tr("onboarding_ready_desc", language),
-                        actionButton: startAppActionButton()
+                        title: L10n.tr("onboarding_page3_title", language),
+                        text: L10n.tr("onboarding_page3_desc", language),
+                        buttonText: L10n.tr("onboarding_next", language)
                     )
+                    .tag(2)
+                    
+                    // SEITE 3b – Quran Zieleingabe
+                    quranGoalOnboardingCard()
                     .tag(3)
+                    
+                    // SEITE 4 – Deine täglichen Adhkar
+                    adhkarOnboardingCard()
+                        .tag(4)
+                    
+                    // SEITE 5 – Digitale Tasbih & Ziele
+                    onboardingCard(
+                        icon: "hand.tap.fill",
+                        iconColor: Theme.islamicGreen,
+                        title: L10n.tr("onboarding_page5_title", language),
+                        text: L10n.tr("onboarding_page5_desc", language),
+                        buttonText: L10n.tr("onboarding_next", language)
+                    )
+                    .tag(5)
+                    
+                    // SEITE 5b – Tasbih Zieleingabe
+                    tasbihGoalOnboardingCard()
+                    .tag(6)
+                    
+                    // SEITE 6 – Wöchentliche Sunnah-Highlights
+                    onboardingCard(
+                        icon: "sparkles",
+                        iconColor: .yellow,
+                        title: L10n.tr("onboarding_page6_title", language),
+                        text: L10n.tr("onboarding_page6_desc", language),
+                        buttonText: L10n.tr("onboarding_page6_btn", language),
+                        isLastScreen: true
+                    )
+                    .tag(7)
                 }
+                #if os(iOS)
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
                 .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
+                #endif
                 
                 Spacer()
             }
@@ -93,6 +310,7 @@ struct OnboardingView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             checkLocationPermission()
+            setupDefaultOnboardingGoals()
         }
         .onReceive(pub) { _ in
             checkLocationPermission()
@@ -106,8 +324,9 @@ struct OnboardingView: View {
         iconColor: Color,
         title: String,
         text: String,
-        isFirstScreen: Bool = false,
-        actionButton: AnyView? = nil
+        buttonText: String? = nil,
+        actionButton: AnyView? = nil,
+        isLastScreen: Bool = false
     ) -> some View {
         VStack(spacing: 24) {
             Spacer()
@@ -141,18 +360,21 @@ struct OnboardingView: View {
             
             Spacer()
             
-            // Optionaler Aktionsbutton oder Platzhalter
+            // Aktionsbutton
             if let button = actionButton {
                 button
                     .padding(.bottom, 60)
-            } else if isFirstScreen {
-                // Weiter Button für Screen 1
+            } else if let btnText = buttonText {
                 Button(action: {
-                    withAnimation {
-                        currentPage = 1
+                    if isLastScreen {
+                        finishOnboarding()
+                    } else {
+                        withAnimation {
+                            currentPage += 1
+                        }
                     }
                 }) {
-                    Text(L10n.tr("onboarding_next", language))
+                    Text(btnText)
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -169,226 +391,91 @@ struct OnboardingView: View {
         }
     }
     
-    // Onboarding-Karte für die Tagesziele
+    // Spezielle Onboarding-Karte für die Adhkar (Seite 4)
     @ViewBuilder
-    private func goalsOnboardingCard() -> some View {
-        VStack(spacing: 12) {
+    private func adhkarOnboardingCard() -> some View {
+        VStack(spacing: 20) {
             Spacer()
             
-            // Icon mit edlem Glow/Hintergrund
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.1))
-                    .frame(width: 80, height: 80)
-                
-                Image(systemName: "target")
-                    .font(.system(size: 36))
-                    .foregroundColor(.blue)
-            }
-            .padding(.bottom, 4)
-            
             // Titel
-            Text(L10n.tr("onboarding_goals_title", language))
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+            Text(L10n.tr("onboarding_page4_title", language))
+                .font(.system(size: 28, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .foregroundColor(.primary)
                 .padding(.horizontal, 24)
             
-            // Beschreibungstext
-            Text(L10n.tr("onboarding_goals_desc", language))
-                .font(.system(size: 14))
+            // Beschreibung (Intro)
+            Text(L10n.tr("onboarding_page4_desc", language))
+                .font(.system(size: 16))
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 32)
             
-            // Ziel-Auswahlelemente
-            VStack(spacing: 12) {
-                // Koran-Ziel
-                VStack(spacing: 4) {
-                    Text(L10n.tr("onboarding_quran_goal", language))
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                        .fontWeight(.medium)
-                    
-                    HStack(spacing: 20) {
-                        Button(action: {
-                            if quranGoal > 1 { quranGoal -= 1 }
-                        }) {
-                            Image(systemName: "minus.circle.fill")
-                                .font(.title3)
-                                .foregroundColor(Theme.islamicGreen)
-                        }
-                        
-                        Text("\(quranGoal)")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(.primary)
-                            .frame(width: 60)
-                        
-                        Button(action: {
-                            if quranGoal < 100 { quranGoal += 1 }
-                        }) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title3)
-                                .foregroundColor(Theme.islamicGreen)
-                        }
-                    }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 12)
-                    .background(Theme.cardBackground)
-                    .cornerRadius(10)
-                }
-                
-                // Istighfar-Ziel
-                VStack(spacing: 4) {
-                    Text(L10n.tr("tasbih_type_istighfar", language))
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                        .fontWeight(.medium)
-                    
-                    HStack(spacing: 20) {
-                        Button(action: {
-                            if istighfarGoal > 500 { istighfarGoal -= 500 }
-                        }) {
-                            Image(systemName: "minus.circle.fill")
-                                .font(.title3)
-                                .foregroundColor(Theme.islamicGreen)
-                        }
-                        
-                        Text("\(istighfarGoal)")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(.primary)
-                            .frame(width: 80)
-                        
-                        Button(action: {
-                            if istighfarGoal < 50000 { istighfarGoal += 500 }
-                        }) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title3)
-                                .foregroundColor(Theme.islamicGreen)
-                        }
-                    }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 12)
-                    .background(Theme.cardBackground)
-                    .cornerRadius(10)
-                }
-                
-                // Salawat-Ziel
-                VStack(spacing: 4) {
-                    Text(L10n.tr("tasbih_type_salawat", language))
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                        .fontWeight(.medium)
-                    
-                    HStack(spacing: 20) {
-                        Button(action: {
-                            if salawatGoal > 500 { salawatGoal -= 500 }
-                        }) {
-                            Image(systemName: "minus.circle.fill")
-                                .font(.title3)
-                                .foregroundColor(Theme.islamicGreen)
-                        }
-                        
-                        Text("\(salawatGoal)")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(.primary)
-                            .frame(width: 80)
-                        
-                        Button(action: {
-                            if salawatGoal < 50000 { salawatGoal += 500 }
-                        }) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title3)
-                                .foregroundColor(Theme.islamicGreen)
-                        }
-                    }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 12)
-                    .background(Theme.cardBackground)
-                    .cornerRadius(10)
-                }
+            // Liste
+            VStack(alignment: .leading, spacing: 16) {
+                adhkarRow(icon: "moon.fill", iconColor: .blue, text: L10n.tr("onboarding_page4_sleep", language))
+                adhkarRow(icon: "sun.max.fill", iconColor: .yellow, text: L10n.tr("onboarding_page4_morning", language))
+                adhkarRow(icon: "sunset.fill", iconColor: .orange, text: L10n.tr("onboarding_page4_evening", language))
             }
+            .padding(.horizontal, 32)
             .padding(.vertical, 8)
+            
+            // Abschlusstext
+            Text(L10n.tr("onboarding_page4_footer", language))
+                .font(.system(size: 14))
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 32)
+                .padding(.top, 8)
             
             Spacer()
             
             // Weiter Button
             Button(action: {
                 withAnimation {
-                    currentPage = 3
+                    currentPage += 1
                 }
             }) {
                 Text(L10n.tr("onboarding_next", language))
                     .font(.headline)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 50)
+                    .frame(height: 54)
                     .background(Theme.islamicGreen)
                     .cornerRadius(16)
             }
             .padding(.horizontal, 32)
-            .padding(.bottom, 40)
+            .padding(.bottom, 60)
         }
     }
     
-    // Button für die Standortfreigabe
-    private func locationActionButton() -> AnyView {
-        AnyView(
-            VStack(spacing: 12) {
-                Button(action: {
-                    LocationAndSolarManager.shared.requestAuthorization()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        checkLocationPermission()
-                        if hasLocationPermission {
-                            withAnimation {
-                                currentPage = 2
-                            }
-                        }
-                    }
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: hasLocationPermission ? "location.fill" : "location.circle")
-                        Text(hasLocationPermission ? L10n.tr("onboarding_location_granted", language) : L10n.tr("onboarding_sunnah_btn", language))
-                    }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 54)
-                    .background(hasLocationPermission ? Color.gray : Theme.islamicGreen)
-                    .cornerRadius(16)
-                }
-                .disabled(hasLocationPermission)
-                
-                if hasLocationPermission {
-                    Button(action: {
-                        withAnimation {
-                            currentPage = 2
-                        }
-                    }) {
-                        Text(L10n.tr("onboarding_next", language))
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 54)
-                            .background(Theme.islamicGreen)
-                            .cornerRadius(16)
-                    }
-                }
-            }
-            .padding(.horizontal, 32)
-        )
+    @ViewBuilder
+    private func adhkarRow(icon: String, iconColor: Color, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundColor(iconColor)
+                .font(.system(size: 20))
+                .frame(width: 30)
+            
+            Text(text)
+                .font(.system(size: 16))
+                .foregroundColor(.primary)
+        }
     }
     
-    // Button zum Starten der App
-    private func startAppActionButton() -> AnyView {
+    // Button für die Standortfreigabe (HIG Guideline 5.1.1(iv) konform)
+    private func locationActionButton() -> AnyView {
         AnyView(
             Button(action: {
-                saveOnboardingSettings(quranGoal: quranGoal, istighfarGoal: istighfarGoal, salawatGoal: salawatGoal)
+                let status = CLLocationManager().authorizationStatus
+                if status == .notDetermined {
+                    LocationAndSolarManager.shared.requestAuthorization()
+                }
                 withAnimation {
-                    hasSeenOnboarding = true
+                    currentPage = 2
                 }
             }) {
-                Text(L10n.tr("onboarding_ready_btn", language))
+                Text(L10n.tr("onboarding_next", language))
                     .font(.headline)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -400,30 +487,35 @@ struct OnboardingView: View {
         )
     }
     
-    // Berechtigungsstatus prüfen
     private func checkLocationPermission() {
         let status = CLLocationManager().authorizationStatus
+        #if os(macOS)
+        hasLocationPermission = (status == .authorizedAlways)
+        #else
         hasLocationPermission = (status == .authorizedWhenInUse || status == .authorizedAlways)
+        #endif
     }
     
-    // Speichern der Ziele in den globalen UserSettings
-    private func saveOnboardingSettings(quranGoal: Int, istighfarGoal: Int, salawatGoal: Int) {
+    private func finishOnboarding() {
         let s = settings.first ?? UserSettings()
         if settings.isEmpty {
             modelContext.insert(s)
-        }
-        
-        s.quranDailyGoal = quranGoal
-        s.istighfarGoal = istighfarGoal
-        s.salawatGoal = salawatGoal
-        
-        if settings.isEmpty {
-            s.subhanAllahGoal = 100
             s.alhamdulillahGoal = 100
             s.allahuAkbarGoal = 100
             s.laIlahaIllallahGoal = 100
         }
         
+        s.quranDailyGoal = tempQuranGoal
+        s.istighfarGoal = tempIstighfarGoal
+        s.salawatGoal = tempSalawatGoal
+        s.subhanAllahGoal = tempSubhanAllahGoal
+        s.defaultAdhkarSpeedStep = tempSpeedStep
+        UserDefaults.standard.set(tempSpeedStep, forKey: "defaultAdhkarSpeedStep")
+        
         try? modelContext.save()
+        
+        withAnimation {
+            hasSeenOnboarding = true
+        }
     }
 }

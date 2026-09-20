@@ -1,0 +1,23 @@
+{
+  "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/ImanTrack/ImanTrackApp.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/ImanTrackApp.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/ImanTrackApp.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/ImanTrackApp.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/ImanTrackApp.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/ImanTrackApp.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/ImanTrack/Theme.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/Theme.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/Theme.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/Theme.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/Theme.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/Theme.swiftdeps"
+  },
+  "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/GeneratedAssetSymbols.dia",
+    "object" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/build_temp/Build/Intermediates.noindex/ImanTrack.build/Debug-iphonesimulator/ImanTrack.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftdeps"
+  }
+}

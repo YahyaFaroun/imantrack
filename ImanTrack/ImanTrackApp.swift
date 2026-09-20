@@ -9,6 +9,7 @@ struct ImanTrackApp: App {
 
     init() {
         registerFonts()
+        _ = FajrAlarmManager.shared
         
         // Liste alle registrierten Custom Fonts im Konsolenlog auf
         for family in UIFont.familyNames {
@@ -23,15 +24,32 @@ struct ImanTrackApp: App {
 
     private func registerFonts() {
         let fonts = [
-            "UthmanicHafs_V22.ttf",
             "UthmanicHafs1Ver18.ttf",
             "surah-name-v2.ttf",
             "me_quran.ttf",
             "me_quran_volt_newmet.ttf",
-            "KfgqpcHafsUthmanicScriptRegular-1jGEe.ttf",
-            "KfgqpcHafsUthmanicScriptRegular-nARZ1.ttf"
+            "AmiriQuran-Regular.ttf",
+            "uthmanic-shuba-v20.ttf"
         ]
+        
+        // Helper to map filename to expected PostScript or Family name
+        func expectedFontName(for filename: String) -> String {
+            switch filename {
+            case "UthmanicHafs1Ver18.ttf": return "KFGQPCHAFSUthmanicScript-Regula"
+            case "uthmanic-shuba-v20.ttf": return "KFGQPCShubaUthmanicScript-Regul"
+            case "surah-name-v2.ttf": return "surah-name-v2"
+            case "me_quran.ttf": return "me_quran"
+            case "AmiriQuran-Regular.ttf": return "AmiriQuran-Regular"
+            default: return (filename as NSString).deletingPathExtension
+            }
+        }
+
         for fontName in fonts {
+            let fontBase = expectedFontName(for: fontName)
+            if UIFont(name: fontBase, size: 12) != nil {
+                print("Font \(fontBase) already available – skipping registration.")
+                continue
+            }
             guard let url = Bundle.main.url(forResource: fontName, withExtension: nil) else {
                 print("Font file \(fontName) not found in bundle")
                 continue
@@ -77,6 +95,7 @@ struct ImanTrackApp: App {
             }
             .onChange(of: scenePhase) { _, newPhase in
                 if newPhase == .active {
+                    LocationAndSolarManager.shared.updateTrackingDate()
                     FajrAlarmManager.shared.scheduleFajrAlarm()
                 }
             }

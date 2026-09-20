@@ -1,30 +1,37 @@
 import SwiftUI
 import SwiftData
-import UIKit
+import Combine
+
+class QuranViewModel: ObservableObject {
+    // Load stored font size safely; fallback to 30 pt if no valid value exists or if < 22 pt.
+    private static func storedFontSize() -> CGFloat {
+        let size = UserDefaults.standard.double(forKey: "quranFontSize")
+        return (size >= 22 && size <= 42) ? CGFloat(size) : 30
+    }
+    @Published var fontSize: CGFloat = storedFontSize()
+    @Published var lastFontSize: CGFloat = storedFontSize()
+    @Published var navTitle: String = ""
+    @Published var hasScrolledToLastRead: Bool = false
+}
 
 struct QuranView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var allDailyRecords: [DailyRecord]
-    @Query private var allSettings: [UserSettings]
+    @ObservedObject var viewModel: QuranViewModel
+
+    @Environment(\.modelContext) var modelContext
+    @Query var allDailyRecords: [DailyRecord]
+    @Query var allSettings: [UserSettings]
     @Environment(\.colorScheme) var colorScheme
     
-    @State private var fontSize: CGFloat = CGFloat(UserDefaults.standard.double(forKey: "quranFontSize") > 0
-        ? UserDefaults.standard.double(forKey: "quranFontSize") : 24)
-    @State private var lastFontSize: CGFloat = CGFloat(UserDefaults.standard.double(forKey: "quranFontSize") > 0
-        ? UserDefaults.standard.double(forKey: "quranFontSize") : 24)
-    
-    @State private var navTitle: String = ""
-    
-    @AppStorage("globalReadVerseIds") private var globalReadVerseIdsData: Data = Data()
-    @AppStorage("lastReadVerseId") private var lastReadVerseId: String = ""
-    @AppStorage("quranTheme") private var quranTheme: String = "system"
-    @AppStorage("quranFontType") private var quranFontType: String = "uthmanic"
+    @AppStorage("globalReadVerseIds") var globalReadVerseIdsData: Data = Data()
+    @AppStorage("lastReadVerseId") var lastReadVerseId: String = ""
+    @AppStorage("quranTheme") var quranTheme: String = "system"
+    @AppStorage("quranFontType") var quranFontType: String = "uthmanic"
     
     private var settings: UserSettings {
         allSettings.first ?? UserSettings()
     }
     
-    @StateObject private var solarManager = LocationAndSolarManager.shared
+    @StateObject var solarManager = LocationAndSolarManager.shared
     
     private var todayRecord: DailyRecord {
         DailyRecord.current(in: modelContext, allRecords: allDailyRecords, date: solarManager.currentTrackingDate)
@@ -42,11 +49,36 @@ struct QuranView: View {
         }
     }
     
+    @State private var hasDoneInitialRestore: Bool = false
+    @State private var showKhatmCelebrationAnimation: Bool = false
+    
     private var lastReadPage: Int {
         let saved = UserDefaults.standard.integer(forKey: "quranLastReadPage")
         return saved > 0 ? saved : 1
     }
     
+    private var lastReadTarget: (page: Int, verseId: String?) {
+        let lastPage = lastReadPage
+        let lastVerse = lastReadVerseId
+        if !lastVerse.isEmpty {
+            return (lastPage, lastVerse)
+        }
+        return (lastPage, nil)
+    }
+
+    private var firstUnreadTarget: (page: Int, verseId: String?) {
+        if let unreadVerse = QuranAPIService.shared.findFirstUnreadVerse(globalReadVerseIds: globalReadVerseIds) {
+            return (unreadVerse.pageNumber, unreadVerse.id)
+        }
+        let lastVerse = lastReadVerseId
+        if !lastVerse.isEmpty {
+            if let currentVerse = QuranAPIService.shared.getVerse(id: lastVerse) {
+                return (currentVerse.pageNumber, currentVerse.id)
+            }
+        }
+        return (lastReadPage, nil)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -54,13 +86,17 @@ struct QuranView: View {
                 
                 ScrollViewReader { proxy in
                     ScrollView {
+                        #if os(iOS) && !SKIP
+                        DisableScrollsToTop().frame(width: 0, height: 0)
+                        #endif
                         LazyVStack(spacing: 0) {
                             ForEach(1...604, id: \.self) { pageNum in
                                 QuranPageView(
                                     pageNumber: pageNum,
-                                    fontSize: fontSize,
+                                    fontSize: viewModel.fontSize,
                                     globalReadVerseIds: globalReadVerseIds,
                                     language: settings.language,
+                                    useTajweedHarakat: settings.useTajweedHarakat,
                                     onMarkVersesAsRead: { verses in
                                         markVersesAsRead(verses)
                                     },
@@ -68,9 +104,12 @@ struct QuranView: View {
                                         markPageAsReadToday(pageNum)
                                     },
                                     onTopVisible: { surahName in
-                                        if navTitle != surahName {
-                                            navTitle = surahName
+                                        if viewModel.navTitle != surahName {
+                                            viewModel.navTitle = surahName
                                         }
+                                    },
+                                    onCompleteKhatm: {
+                                        completeKhatm(proxy: proxy)
                                     }
                                 )
                                 .id(pageNum)
@@ -80,48 +119,144 @@ struct QuranView: View {
                     .simultaneousGesture(
                         MagnificationGesture()
                             .onChanged { value in
-                                let newSize = lastFontSize * value
-                                fontSize = min(max(newSize, 16), 40)
+                                let newSize = viewModel.lastFontSize * value
+                                let clamped = min(max(newSize, 22), 42)
+                                viewModel.fontSize = round(clamped / 2.0) * 2.0
                             }
                             .onEnded { _ in
-                                lastFontSize = fontSize
-                                UserDefaults.standard.set(Double(fontSize), forKey: "quranFontSize")
+                                viewModel.lastFontSize = viewModel.fontSize
+                                UserDefaults.standard.set(Double(viewModel.fontSize), forKey: "quranFontSize")
                             }
                     )
                     .onAppear {
-                        let targetPage = lastReadPage
-                        let targetVerse = lastReadVerseId
-                        
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            proxy.scrollTo(targetPage, anchor: .top)
-                            
-                            if !targetVerse.isEmpty {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                    withAnimation {
-                                        proxy.scrollTo(targetVerse, anchor: .top)
-                                    }
-                                }
-                            }
+                        if !hasDoneInitialRestore {
+                            hasDoneInitialRestore = true
+                            restorePosition(proxy: proxy)
+                        } else {
+                            UserDefaults.standard.set(true, forKey: "quranHasRestoredInitialPosition")
                         }
                     }
+                    .onReceive(NotificationCenter.default.publisher(for: Notification.Name("QuranTabRetapped"))) { _ in
+                        scrollToUnreadTarget(proxy: proxy)
+                    }
+                }
+                
+                if showKhatmCelebrationAnimation {
+                    ZStack {
+                        Color.black.opacity(0.65).ignoresSafeArea()
+                        
+                        VStack(spacing: 20) {
+                            Text("🎉")
+                                .font(.system(size: 64))
+                            
+                            Text("ما شاء الله")
+                                .font(Theme.quranFont(type: quranFontType, size: 36))
+                                .foregroundColor(Theme.islamicGreen)
+                            
+                            Text(L10n.tr("khatm_title", settings.language))
+                                .font(.title2.bold())
+                                .foregroundColor(.white)
+                            
+                            Text(L10n.tr("khatm_desc", settings.language))
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.85))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 16)
+                            
+                            Button(action: {
+                                withAnimation(.easeOut(duration: 0.25)) {
+                                    showKhatmCelebrationAnimation = false
+                                }
+                            }) {
+                                Text(L10n.tr("done", settings.language))
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Theme.islamicGreen)
+                                    .cornerRadius(14)
+                            }
+                            .padding(.top, 8)
+                        }
+                        .padding(28)
+                        .background(Theme.cardBackground)
+                        .cornerRadius(28)
+                        .padding(.horizontal, 30)
+                        .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                    }
+                    .transition(.scale(scale: 0.9).combined(with: .opacity))
+                    .zIndex(100)
                 }
             }
-            .navigationTitle(navTitle.isEmpty ? L10n.tr("tab_quran", settings.language) : navTitle)
+            .navigationTitle(viewModel.navTitle.isEmpty ? L10n.tr("tab_quran", settings.language) : viewModel.navTitle)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
+            #if os(iOS)
             .toolbarBackground(Theme.getQuranBackgroundColor(for: quranTheme, systemColorScheme: colorScheme), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            #endif
+        }
+    }
+    
+    private func restorePosition(proxy: ScrollViewProxy) {
+        UserDefaults.standard.set(false, forKey: "quranHasRestoredInitialPosition")
+        let target = lastReadTarget
+        let targetPage = target.page
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            proxy.scrollTo(targetPage, anchor: .top)
+            if let vId = target.verseId {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    proxy.scrollTo(vId, anchor: UnitPoint(x: 0.5, y: 0.15))
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                UserDefaults.standard.set(true, forKey: "quranHasRestoredInitialPosition")
+            }
+        }
+    }
+
+    private func scrollToUnreadTarget(proxy: ScrollViewProxy) {
+        UserDefaults.standard.set(false, forKey: "quranHasRestoredInitialPosition")
+        let target = firstUnreadTarget
+        let targetPage = target.page
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            proxy.scrollTo(targetPage, anchor: .top)
+            if let vId = target.verseId {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    proxy.scrollTo(vId, anchor: UnitPoint(x: 0.5, y: 0.15))
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                UserDefaults.standard.set(true, forKey: "quranHasRestoredInitialPosition")
+            }
         }
     }
     
     private func markVersesAsRead(_ verses: [Verse]) {
         var current = globalReadVerseIds
         var addedCount = 0
+        var maxPageNumber = 0
+        
         for verse in verses {
             if !current.contains(verse.id) {
                 current.insert(verse.id)
                 addedCount += 1
             }
+            if verse.pageNumber > maxPageNumber {
+                maxPageNumber = verse.pageNumber
+            }
         }
+        
+        if maxPageNumber > 0 {
+            let highest = UserDefaults.standard.integer(forKey: "quranHighestReadPage")
+            if maxPageNumber > highest {
+                UserDefaults.standard.set(maxPageNumber, forKey: "quranHighestReadPage")
+            }
+        }
+        
         if addedCount > 0 {
             globalReadVerseIds = current
             
@@ -146,6 +281,23 @@ struct QuranView: View {
             try? modelContext.save()
         }
     }
+    
+    private func completeKhatm(proxy: ScrollViewProxy) {
+        let currentKhatm = UserDefaults.standard.integer(forKey: "quranKhatmCount")
+        UserDefaults.standard.set(currentKhatm + 1, forKey: "quranKhatmCount")
+        
+        globalReadVerseIds = Set<String>()
+        lastReadVerseId = ""
+        UserDefaults.standard.set(1, forKey: "quranLastReadPage")
+        
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            showKhatmCelebrationAnimation = true
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            proxy.scrollTo(1, anchor: .top)
+        }
+    }
 }
 
 // Hilfsstruktur für Suren-Segmente innerhalb einer Seite
@@ -160,19 +312,22 @@ struct QuranPageView: View {
     let fontSize: CGFloat
     let globalReadVerseIds: Set<String>
     let language: String
+    let useTajweedHarakat: Bool
     let onMarkVersesAsRead: ([Verse]) -> Void
     let onPageRead: (Int) -> Void
     var onTopVisible: ((String) -> Void)? = nil
+    var onCompleteKhatm: (() -> Void)? = nil
     
-    @AppStorage("lastReadVerseId") private var lastReadVerseId: String = ""
-    @AppStorage("quranTheme") private var quranTheme: String = "system"
+    @AppStorage("lastReadVerseId") var lastReadVerseId: String = ""
+    @AppStorage("quranTheme") var quranTheme: String = "system"
+    @AppStorage("quranFontType") var quranFontType: String = "uthmanic"
     @Environment(\.colorScheme) var colorScheme: ColorScheme
     
-    @State private var verses: [Verse] = []
-    @State private var isLoading = false
-    @State private var hasError = false
-    @State private var hasTrackedPageRead = false
-    @State private var segmentHeights: [String: CGFloat] = [:]
+    @State var verses: [Verse] = []
+    @State var isLoading = false
+    @State var hasError = false
+    @State var hasTrackedPageRead = false
+    @State var segmentHeights: [String: CGFloat] = [:]
     
     var body: some View {
         VStack(spacing: 0) {
@@ -203,11 +358,21 @@ struct QuranPageView: View {
             
             // Edler Seitenteiler am Ende jeder Seite
             pageDivider
+            
+            if pageNumber == 604 {
+                khatmCompletionCard
+            }
         }
         .onAppear {
             loadPage()
         }
-        .onChange(of: globalReadVerseIds, initial: true) { _, _ in
+        .onChange(of: pageNumber) { _, _ in
+            verses = []
+            hasTrackedPageRead = false
+            segmentHeights = [:]
+            loadPage()
+        }
+        .onChange(of: globalReadVerseIds) { _, _ in
             checkAllVersesRead()
         }
         .onChange(of: verses) { _, _ in
@@ -220,11 +385,18 @@ struct QuranPageView: View {
             GeometryReader { geo in
                 let minY = geo.frame(in: .global).minY
                 Color.clear
-                    .onChange(of: minY, initial: true) { _, newValue in
+                    .onChange(of: minY) { _, newValue in
                         if newValue > -300 && newValue < 400 {
                             if let firstSurah = verses.first?.surah {
                                 DispatchQueue.main.async {
                                     onTopVisible?(QuranSurah.getName(firstSurah))
+                                    if UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
+                                        UserDefaults.standard.set(pageNumber, forKey: "quranLastReadPage")
+                                        let currentHighest = UserDefaults.standard.integer(forKey: "quranHighestReadPage")
+                                        if pageNumber > currentHighest {
+                                            UserDefaults.standard.set(pageNumber, forKey: "quranHighestReadPage")
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -249,22 +421,33 @@ struct QuranPageView: View {
                                     .background(
                                         GeometryReader { verseGeo in
                                             let minY = verseGeo.frame(in: .global).minY
+                                            let maxY = verseGeo.frame(in: .global).maxY
                                             Color.clear
-                                                .onChange(of: minY, initial: true) { _, newValue in
+                                                .onChange(of: minY) { _, newValue in
                                                     // Wenn der Vers im aktiven oberen Lesebereich ist
                                                     if newValue < 150 && newValue > -50 {
                                                         if lastReadVerseId != verse.id {
                                                             DispatchQueue.main.async {
                                                                 lastReadVerseId = verse.id
+                                                                if UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
+                                                                    UserDefaults.standard.set(pageNumber, forKey: "quranLastReadPage")
+                                                                }
                                                             }
                                                         }
                                                     }
-                                                    
-                                                    // Wenn der Vers oben aus der Bildfläche scrollt -> als gelesen markieren
-                                                    if newValue < 100 {
-                                                        if !globalReadVerseIds.contains(verse.id) {
+                                                }
+                                                .onChange(of: maxY) { oldValue, newValue in
+                                                    let delta = abs(newValue - oldValue)
+                                                    // Nur bei normalem Lesetempo (kein schnelles Swipen/Runter-Scrollen) als gelesen markieren
+                                                    if delta <= 30 && newValue < 120 {
+                                                        if !globalReadVerseIds.contains(verse.id) && UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
+                                                            let idx = versesList.firstIndex(where: { $0.id == verse.id }) ?? 0
+                                                            let prefixVerses = Array(versesList[0...idx])
                                                             DispatchQueue.main.async {
-                                                                onMarkVersesAsRead([verse])
+                                                                onMarkVersesAsRead(prefixVerses)
+                                                                if UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
+                                                                    UserDefaults.standard.set(pageNumber, forKey: "quranLastReadPage")
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -297,10 +480,16 @@ struct QuranPageView: View {
                         }
                         
                         // Der Fließtext der Sure für diese Seite
-                        JustifiedText(attributedText: concatenatedString(for: segment.verses), theme: quranTheme)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 6)
-                            .environment(\.layoutDirection, .rightToLeft)
+                        Group {
+                            #if os(iOS) && !SKIP
+                            JustifiedText(attributedText: concatenatedString(for: segment.verses), theme: quranTheme)
+                            #else
+                            JustifiedText(attributedText: concatenatedString(arabicTexts: segment.verses.map { $0.arabic }, ayahNumbers: segment.verses.map { $0.ayah }), theme: quranTheme)
+                            #endif
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 6)
+                        .environment(\.layoutDirection, .rightToLeft)
                     }
                     .background(
                         GeometryReader { geo in
@@ -327,11 +516,11 @@ struct QuranPageView: View {
     
     private var pageDivider: some View {
         HStack(spacing: 16) {
-            VStack { Divider().background(Color.gray.opacity(0.2)) }
+            VStack { Divider().background(Color.gray.opacity(0.3)) }
             Text("\(pageNumber)")
-                .font(.system(.caption2, design: .serif))
-                .foregroundColor(.gray.opacity(0.6))
-            VStack { Divider().background(Color.gray.opacity(0.2)) }
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundColor(Theme.getQuranTextColor(for: quranTheme, systemColorScheme: colorScheme).opacity(0.8))
+            VStack { Divider().background(Color.gray.opacity(0.3)) }
         }
         .padding(.vertical, 30)
         .padding(.horizontal, 40)
@@ -339,8 +528,9 @@ struct QuranPageView: View {
             GeometryReader { geo in
                 let minY = geo.frame(in: .global).minY
                 Color.clear
-                    .onChange(of: minY, initial: true) { _, newValue in
-                        if newValue < 100 && !verses.isEmpty && !hasTrackedPageRead {
+                    .onChange(of: minY) { oldValue, newValue in
+                        let delta = abs(newValue - oldValue)
+                        if delta <= 30 && newValue < 100 && !verses.isEmpty && !hasTrackedPageRead && UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
                             DispatchQueue.main.async {
                                 markAllVersesAsRead()
                             }
@@ -348,6 +538,56 @@ struct QuranPageView: View {
                     }
             }
         )
+    }
+    
+    private var khatmCompletionCard: some View {
+        VStack(spacing: 16) {
+            Text("الحمد لله")
+                .font(Theme.quranFont(type: quranFontType, size: fontSize * 1.1))
+                .foregroundColor(Theme.islamicGreen)
+            
+            Text(L10n.tr("khatm_title", language))
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundColor(Theme.getQuranTextColor(for: quranTheme, systemColorScheme: colorScheme))
+            
+            Text(L10n.tr("khatm_desc", language))
+                .font(.subheadline)
+                .foregroundColor(Theme.getQuranTextColor(for: quranTheme, systemColorScheme: colorScheme).opacity(0.85))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+            
+            Button(action: {
+                onCompleteKhatm?()
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                    Text(L10n.tr("khatm_button_complete", language))
+                        .fontWeight(.bold)
+                }
+                .font(.system(size: 15))
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .background(
+                    LinearGradient(colors: [Theme.islamicGreen, Theme.islamicGreen.opacity(0.85)], startPoint: .leading, endPoint: .trailing)
+                )
+                .cornerRadius(16)
+                .shadow(color: Theme.islamicGreen.opacity(0.4), radius: 8, x: 0, y: 4)
+            }
+            .padding(.top, 4)
+        }
+        .padding(24)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Theme.getQuranBackgroundColor(for: quranTheme, systemColorScheme: colorScheme))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Theme.islamicGreen.opacity(0.4), lineWidth: 2)
+                )
+        )
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 40)
     }
     
     private func surahHeader(_ surah: Int) -> some View {
@@ -368,7 +608,7 @@ struct QuranPageView: View {
     
     private var basmalaView: some View {
         Text("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ")
-            .font(Theme.uthmaniFont(size: fontSize * 0.85))
+            .font(Theme.quranFont(type: quranFontType, size: fontSize * 0.85))
             .foregroundColor(Theme.getQuranTextColor(for: quranTheme, systemColorScheme: colorScheme).opacity(0.8))
             .multilineTextAlignment(.center)
             .padding(.bottom, 20)
@@ -377,33 +617,52 @@ struct QuranPageView: View {
             .environment(\.locale, Locale(identifier: "ar"))
     }
     
+    #if os(iOS) && !SKIP
     private func concatenatedString(for versesList: [Verse]) -> NSAttributedString {
         let result = NSMutableAttributedString()
-        let font = Theme.uthmaniUIFont(size: fontSize)
+        let font = Theme.quranUIFont(type: quranFontType, size: fontSize)
+        let numberFont = Theme.quranUIFont(type: quranFontType, size: fontSize * 0.85)
         
         for verse in versesList {
             let isRead = globalReadVerseIds.contains(verse.id)
             let defaultColor = Theme.getQuranUITextColor(for: quranTheme, systemColorScheme: colorScheme)
             let color = isRead ? UIColor.gray : defaultColor
             
-            let text = "\(verse.arabic.cleanQuranText()) \u{FD3F}\(arabicNumber(verse.ayah))\u{FD3E} "
-            let attributes: [NSAttributedString.Key: Any] = [
+            let verseText = "\(verse.arabic.cleanQuranText()) "
+            let numberText = "\u{FD3F}\(arabicNumber(verse.ayah))\u{FD3E} "
+            
+            let verseString = NSAttributedString(string: verseText, attributes: [
                 .font: font,
                 .foregroundColor: color,
                 .ligature: 2
-            ]
-            let verseString = NSAttributedString(string: text, attributes: attributes)
+            ])
+            let numberString = NSAttributedString(string: numberText, attributes: [
+                .font: numberFont,
+                .foregroundColor: color.withAlphaComponent(0.85),
+                .ligature: 2
+            ])
+            
             result.append(verseString)
+            result.append(numberString)
         }
         
         let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .justified
+        paragraphStyle.alignment = .center
         paragraphStyle.baseWritingDirection = .rightToLeft
         
         result.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: result.length))
         
         return result
     }
+    #else
+    private func concatenatedString(arabicTexts: [String], ayahNumbers: [Int]) -> String {
+        var result = ""
+        for i in 0..<arabicTexts.count {
+            result += "\(arabicTexts[i].cleanQuranText()) \u{FD3F}\(arabicNumber(ayahNumbers[i]))\u{FD3E} "
+        }
+        return result
+    }
+    #endif
     
     private func arabicNumber(_ num: Int) -> String {
         let formatter = NumberFormatter()
@@ -435,6 +694,11 @@ struct QuranPageView: View {
                 await MainActor.run {
                     self.verses = fetched
                     self.isLoading = false
+                    
+                    let allAlreadyRead = !fetched.isEmpty && fetched.allSatisfy { globalReadVerseIds.contains($0.id) }
+                    if allAlreadyRead {
+                        self.hasTrackedPageRead = true
+                    }
                 }
             } catch {
                 print("Fehler beim Laden von Seite \(pageNumber): \(error)")
@@ -496,6 +760,7 @@ struct QuranSurah {
     }
 }
 
+#if os(iOS) && !SKIP
 struct JustifiedText: UIViewRepresentable {
     var attributedText: NSAttributedString
     var theme: String
@@ -534,7 +799,7 @@ struct JustifiedText: UIViewRepresentable {
         context.coordinator.lastOriginalText = attributedText
         
         uiView.attributedText = attributedText
-        uiView.textAlignment = .justified
+        uiView.textAlignment = .center
         
         uiView.layoutManager.ensureLayout(for: uiView.textContainer)
         
@@ -592,3 +857,45 @@ struct JustifiedText: UIViewRepresentable {
         return CGSize(width: width, height: size.height)
     }
 }
+#else
+struct JustifiedText: View {
+    var attributedText: String
+    var theme: String
+    
+    var body: some View {
+        Text(attributedText)
+            .font(Theme.quranFont(type: quranFontType, size: 24))
+            .multilineTextAlignment(.trailing)
+            .environment(\.layoutDirection, .rightToLeft)
+    }
+}
+#endif
+
+#if os(iOS) && !SKIP
+struct DisableScrollsToTop: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        DispatchQueue.main.async {
+            if let scrollView = view.enclosingScrollView() {
+                scrollView.scrollsToTop = false
+            }
+        }
+        return view
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
+
+extension UIView {
+    fileprivate func enclosingScrollView() -> UIScrollView? {
+        var current: UIResponder? = self
+        while let c = current {
+            if let scrollView = c as? UIScrollView {
+                return scrollView
+            }
+            current = c.next
+        }
+        return nil
+    }
+}
+#endif

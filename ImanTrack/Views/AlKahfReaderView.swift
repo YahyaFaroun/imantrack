@@ -2,19 +2,24 @@ import SwiftUI
 import SwiftData
 
 struct AlKahfReaderView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    @Query private var allDailyRecords: [DailyRecord]
+    @Environment(\.dismiss) var dismiss
+    @Environment(\.modelContext) var modelContext
+    @Query var allDailyRecords: [DailyRecord]
+    @Query var allSettings: [UserSettings]
     
-    @State private var verses: [Verse] = []
-    @State private var isLoading = true
-    @State private var hasError = false
-    @State private var fontSize: CGFloat = CGFloat(UserDefaults.standard.double(forKey: "quranFontSize") > 0
-        ? UserDefaults.standard.double(forKey: "quranFontSize") : 24)
-    @State private var lastFontSize: CGFloat = CGFloat(UserDefaults.standard.double(forKey: "quranFontSize") > 0
-        ? UserDefaults.standard.double(forKey: "quranFontSize") : 24)
-    @AppStorage("quranFontType") private var quranFontType: String = "uthmanic"
-    @AppStorage("quranTheme") private var quranTheme: String = "system"
+    private var settings: UserSettings {
+        allSettings.first ?? UserSettings()
+    }
+    
+    @State var verses: [Verse] = []
+    @State var isLoading = true
+    @State var hasError = false
+    @State var fontSize: CGFloat = CGFloat((UserDefaults.standard.double(forKey: "quranFontSize") >= 22 && UserDefaults.standard.double(forKey: "quranFontSize") <= 42)
+        ? UserDefaults.standard.double(forKey: "quranFontSize") : 30)
+    @State var lastFontSize: CGFloat = CGFloat((UserDefaults.standard.double(forKey: "quranFontSize") >= 22 && UserDefaults.standard.double(forKey: "quranFontSize") <= 42)
+        ? UserDefaults.standard.double(forKey: "quranFontSize") : 30)
+    @AppStorage("quranFontType") var quranFontType: String = "uthmanic"
+    @AppStorage("quranTheme") var quranTheme: String = "system"
     @Environment(\.colorScheme) var colorScheme
     
     private var todayRecord: DailyRecord {
@@ -43,7 +48,7 @@ struct AlKahfReaderView: View {
                         VStack(spacing: 20) {
                             // Basmala
                             Text("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ")
-                                .font(Theme.uthmaniFont(size: fontSize * 0.85))
+                                .font(Theme.quranFont(type: quranFontType, size: fontSize * 0.85))
                                 .foregroundColor(Theme.getQuranTextColor(for: quranTheme, systemColorScheme: colorScheme).opacity(0.8))
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 20)
@@ -51,11 +56,16 @@ struct AlKahfReaderView: View {
                                 .environment(\.layoutDirection, .rightToLeft)
                                 .environment(\.locale, Locale(identifier: "ar"))
                             
-                            // Attributed Text
-                            JustifiedText(attributedText: concatenatedString(for: verses), theme: quranTheme)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 30)
-                                .environment(\.layoutDirection, .rightToLeft)
+                            Group {
+                                #if os(iOS) && !SKIP
+                                JustifiedText(attributedText: concatenatedString(for: verses), theme: quranTheme)
+                                #else
+                                JustifiedText(attributedText: concatenatedString(arabicTexts: verses.map { $0.arabic }, ayahNumbers: verses.map { $0.ayah }), theme: quranTheme)
+                                #endif
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 30)
+                            .environment(\.layoutDirection, .rightToLeft)
                             
                             Button(action: {
                                 todayRecord.surahAlKahfDone = true
@@ -79,7 +89,8 @@ struct AlKahfReaderView: View {
                         MagnificationGesture()
                             .onChanged { value in
                                 let newSize = lastFontSize * value
-                                fontSize = min(max(newSize, 16), 40)
+                                let clamped = min(max(newSize, 22), 42)
+                                fontSize = round(clamped / 2.0) * 2.0
                             }
                             .onEnded { _ in
                                 lastFontSize = fontSize
@@ -89,11 +100,15 @@ struct AlKahfReaderView: View {
                 }
             }
             .navigationTitle("Sure Al-Kahf")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
+            #if os(iOS)
             .toolbarBackground(Theme.getQuranBackgroundColor(for: quranTheme, systemColorScheme: colorScheme), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Schließen") {
                         dismiss()
                     }
@@ -126,29 +141,49 @@ struct AlKahfReaderView: View {
         }
     }
     
+    #if os(iOS) && !SKIP
     private func concatenatedString(for versesList: [Verse]) -> NSAttributedString {
         let result = NSMutableAttributedString()
-        let font = Theme.uthmaniUIFont(size: fontSize)
+        let font = Theme.quranUIFont(type: quranFontType, size: fontSize)
+        let numberFont = Theme.quranUIFont(type: quranFontType, size: fontSize * 0.85)
+        let color = Theme.getQuranUITextColor(for: quranTheme, systemColorScheme: colorScheme)
         
         for verse in versesList {
-            let text = "\(verse.arabic.cleanQuranText()) \u{FD3F}\(arabicNumber(verse.ayah))\u{FD3E} "
-            let attributes: [NSAttributedString.Key: Any] = [
+            let verseText = "\(verse.arabic.cleanQuranText()) "
+            let numberText = "\u{FD3F}\(arabicNumber(verse.ayah))\u{FD3E} "
+            
+            let verseString = NSAttributedString(string: verseText, attributes: [
                 .font: font,
-                .foregroundColor: Theme.getQuranUITextColor(for: quranTheme, systemColorScheme: colorScheme),
+                .foregroundColor: color,
                 .ligature: 2
-            ]
-            let verseString = NSAttributedString(string: text, attributes: attributes)
+            ])
+            let numberString = NSAttributedString(string: numberText, attributes: [
+                .font: numberFont,
+                .foregroundColor: color.withAlphaComponent(0.85),
+                .ligature: 2
+            ])
+            
             result.append(verseString)
+            result.append(numberString)
         }
         
         let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .justified
+        paragraphStyle.alignment = .center
         paragraphStyle.baseWritingDirection = .rightToLeft
         
         result.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: result.length))
         
         return result
     }
+    #else
+    private func concatenatedString(arabicTexts: [String], ayahNumbers: [Int]) -> String {
+        var result = ""
+        for i in 0..<arabicTexts.count {
+            result += "\(arabicTexts[i].cleanQuranText()) \u{FD3F}\(arabicNumber(ayahNumbers[i]))\u{FD3E} "
+        }
+        return result
+    }
+    #endif
     
     private func arabicNumber(_ num: Int) -> String {
         let formatter = NumberFormatter()

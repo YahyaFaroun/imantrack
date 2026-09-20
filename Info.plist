@@ -2,15 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIAppFonts</key>
 	<array>
 		<string>surah-name-v2.ttf</string>
-		<string>UthmanicHafs_V22.ttf</string>
+		<string>uthmanic-shuba-v20.ttf</string>
 		<string>UthmanicHafs1Ver18.ttf</string>
 		<string>me_quran.ttf</string>
 		<string>me_quran_volt_newmet.ttf</string>
-		<string>KfgqpcHafsUthmanicScriptRegular-1jGEe.ttf</string>
-		<string>KfgqpcHafsUthmanicScriptRegular-nARZ1.ttf</string>
+		<string>AmiriQuran-Regular.ttf</string>
+		<string>KFGQPCUthmanTahaNaskh.ttf</string>
 	</array>
 </dict>
 </plist>

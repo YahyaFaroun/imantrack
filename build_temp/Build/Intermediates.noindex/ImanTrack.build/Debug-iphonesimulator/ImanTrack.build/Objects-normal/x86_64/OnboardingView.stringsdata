@@ -1,5 +1,5 @@
 {
-  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/OnboardingView.swift",
+  "source": "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/ImanTrack/Views/OnboardingView.swift",
   "tables": {
     "Localizable": [
       {
@@ -7,7 +7,7 @@
         "key": "%lld",
         "location": {
           "startingColumn": 30,
-          "startingLine": 222
+          "startingLine": 227
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "%lld",
         "location": {
           "startingColumn": 30,
-          "startingLine": 257
+          "startingLine": 262
         }
       },
       {
@@ -23,7 +23,7 @@
         "key": "%lld",
         "location": {
           "startingColumn": 30,
-          "startingLine": 292
+          "startingLine": 297
         }
       }
     ]

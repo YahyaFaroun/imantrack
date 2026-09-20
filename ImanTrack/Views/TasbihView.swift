@@ -30,7 +30,7 @@ struct TasbihView: View {
                         if settings.istighfarEnabled {
                             DhikrMainCard(
                                 titleAr: "الاستغفار",
-                                titleDe: "Ich bitte Allah um Vergebung",
+                                titleDe: L10n.tr("tasbih_istighfar", settings.language),
                                 transliteration: "Istighfar",
                                 count: todayRecord.totalIstighfarCount,
                                 goal: settings.istighfarGoal,
@@ -41,7 +41,7 @@ struct TasbihView: View {
                         if settings.salawatEnabled {
                             DhikrMainCard(
                                 titleAr: "الصلاة على النبي",
-                                titleDe: "O Allah, segne Muhammad",
+                                titleDe: L10n.tr("tasbih_salawat", settings.language),
                                 transliteration: "Salawat",
                                 count: todayRecord.totalSalawatCount,
                                 goal: settings.salawatGoal,
@@ -52,7 +52,7 @@ struct TasbihView: View {
                         if settings.subhanAllahEnabled {
                             DhikrMainCard(
                                 titleAr: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ",
-                                titleDe: "Gepriesen sei Allah und Lob sei Ihm, gepriesen sei Allah der Allgewaltige",
+                                titleDe: L10n.tr("tasbih_subhanallah", settings.language),
                                 transliteration: "SubhanAllahi wa bihamdihi SubhanAllahil 'Azim",
                                 count: todayRecord.subhanAllahCount,
                                 goal: settings.subhanAllahGoal,
@@ -63,7 +63,7 @@ struct TasbihView: View {
                         if settings.alhamdulillahEnabled {
                             DhikrMainCard(
                                 titleAr: "سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَاللَّهُ أَكْبَرُ",
-                                titleDe: "Gepriesen sei Allah, alles Lob gebührt Allah, es gibt keinen Gott außer Allah, Allah ist am größten",
+                                titleDe: L10n.tr("tasbih_alhamdulillah", settings.language),
                                 transliteration: "Subhanallah, walhamdulillah, wa la ilaha illallah, wallahu akbar",
                                 count: todayRecord.alhamdulillahCount,
                                 goal: settings.alhamdulillahGoal,
@@ -74,7 +74,7 @@ struct TasbihView: View {
                         if settings.allahuAkbarEnabled {
                             DhikrMainCard(
                                 titleAr: "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
-                                titleDe: "Es gibt keine Macht noch Kraft außer durch Allah",
+                                titleDe: L10n.tr("tasbih_lahawla", settings.language),
                                 transliteration: "La hawla wa la quwwata illa billah",
                                 count: todayRecord.allahuAkbarCount,
                                 goal: settings.allahuAkbarGoal,
@@ -85,13 +85,15 @@ struct TasbihView: View {
                         if settings.laIlahaIllallahEnabled {
                             DhikrMainCard(
                                 titleAr: "لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير",
-                                titleDe: "Es gibt keinen Gott außer Allah, dem Einzigen, der keinen Teilhaber hat. Ihm gehört die Herrschaft und Ihm gebührt alles Lob, und Er hat Macht über alle Dinge.",
+                                titleDe: L10n.tr("tasbih_lailahaillallah", settings.language),
                                 transliteration: "La ilaha illallah wahdahu la sharika lah, lahul mulk wa lahul hamd wa huwa 'ala kulli shayin qadeer.",
                                 count: todayRecord.laIlahaIllallahCount,
                                 goal: settings.laIlahaIllallahGoal,
                                 type: .laIlahaIllallah
                             )
                         }
+                        
+
                         
                         ForEach(customTasbihs) { custom in
                             if custom.isEnabled {
@@ -142,24 +144,23 @@ struct DhikrMainCard: View {
     }
     
     var body: some View {
-        let isRTL = settings.language == "ar"
         NavigationLink(destination: DhikrDetailView(type: type, titleAr: titleAr, titleDe: titleDe, transliteration: transliteration)) {
             HStack {
-                VStack(alignment: isRTL ? .trailing : .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(typeTitle)
                         .font(.headline)
                         .foregroundColor(.primary)
-                        .multilineTextAlignment(isRTL ? .trailing : .leading)
+                        .multilineTextAlignment(.leading)
                     
                     if settings.language != "ar" {
                         Text(titleAr)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(Theme.islamicGreen)
-                            .multilineTextAlignment(isRTL ? .trailing : .leading)
+                            .multilineTextAlignment(.leading)
                             .environment(\.layoutDirection, .rightToLeft)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: isRTL ? .trailing : .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Spacer()
                 
@@ -170,7 +171,7 @@ struct DhikrMainCard: View {
                     
                     Circle()
                         .trim(from: 0, to: CGFloat(count) / CGFloat(goal))
-                        .stroke(Theme.islamicGreen, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .stroke(count >= goal ? Theme.islamicGreen : .orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .frame(width: 50, height: 50)
                         .rotationEffect(.degrees(-90))
                     
@@ -179,9 +180,9 @@ struct DhikrMainCard: View {
                         .foregroundColor(.primary)
                 }
                 
-                Image(systemName: isRTL ? "chevron.left" : "chevron.right")
+                Image(systemName: "chevron.right")
                     .foregroundColor(.gray)
-                    .padding(isRTL ? .trailing : .leading, 8)
+                    .padding(.leading, 8)
             }
             .padding()
             .background(Theme.cardBackground)
@@ -200,24 +201,23 @@ struct DhikrMainCardCustom: View {
     }
     
     var body: some View {
-        let isRTL = settings.language == "ar"
         NavigationLink(destination: DhikrDetailView(customTasbih: custom)) {
             HStack {
-                VStack(alignment: isRTL ? .trailing : .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(custom.title)
                         .font(.headline)
                         .foregroundColor(.primary)
-                        .multilineTextAlignment(isRTL ? .trailing : .leading)
+                        .multilineTextAlignment(.leading)
                     
                     if settings.language != "ar" && !custom.arabic.isEmpty {
                         Text(custom.arabic)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(Theme.islamicGreen)
-                            .multilineTextAlignment(isRTL ? .trailing : .leading)
+                            .multilineTextAlignment(.leading)
                             .environment(\.layoutDirection, .rightToLeft)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: isRTL ? .trailing : .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Spacer()
                 
@@ -228,7 +228,7 @@ struct DhikrMainCardCustom: View {
                     
                     Circle()
                         .trim(from: 0, to: CGFloat(count) / CGFloat(custom.goal))
-                        .stroke(Theme.islamicGreen, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .stroke(count >= custom.goal ? Theme.islamicGreen : .orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .frame(width: 50, height: 50)
                         .rotationEffect(.degrees(-90))
                     
@@ -237,13 +237,65 @@ struct DhikrMainCardCustom: View {
                         .foregroundColor(.primary)
                 }
                 
-                Image(systemName: isRTL ? "chevron.left" : "chevron.right")
+                Image(systemName: "chevron.right")
                     .foregroundColor(.gray)
-                    .padding(isRTL ? .trailing : .leading, 8)
+                    .padding(.leading, 8)
             }
             .padding()
             .background(Theme.cardBackground)
             .cornerRadius(16)
         }
+    }
+}
+
+struct SurahBaqarahTasbihCard: View {
+    let progress: Int
+    let goal: Int
+    let language: String
+    
+    var body: some View {
+        NavigationLink(destination: AlBaqarahReaderView()) {
+            HStack {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.tr("surah_baqarah", language))
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.leading)
+                    
+                    Text("سورة البقرة")
+                        .font(.subheadline)
+                        .foregroundColor(Theme.islamicGreen)
+                        .multilineTextAlignment(.leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Spacer()
+                
+                ZStack {
+                    Circle()
+                        .stroke(Color.primary.opacity(0.1), lineWidth: 4)
+                        .frame(width: 50, height: 50)
+                    
+                    Circle()
+                        .trim(from: 0, to: CGFloat(progress) / 100.0)
+                        .stroke(progress >= goal ? Theme.islamicGreen : .orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .frame(width: 50, height: 50)
+                        .rotationEffect(.degrees(-90))
+                    
+                    Text("\(progress)%")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.primary)
+                }
+                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.gray)
+                    .padding(.leading, 8)
+            }
+            .padding()
+            .background(Theme.cardBackground)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }

@@ -4,7 +4,7 @@ import SwiftData
 @Model
 final class UserSettings {
     // Quran
-    var quranDailyGoal: Int = 20
+    var quranDailyGoal: Int = 5
     
     // Tasbih
     var subhanAllahPerMinute: Int = 16
@@ -22,14 +22,16 @@ final class UserSettings {
     var alhamdulillahEnabled: Bool = true
     var allahuAkbarEnabled: Bool = true
     var laIlahaIllallahEnabled: Bool = true
+    var surahBaqarahEnabled: Bool = true
     
     // Tasbih Goals
-    var istighfarGoal: Int = 5000
-    var salawatGoal: Int = 2000
-    var subhanAllahGoal: Int = 1000
-    var alhamdulillahGoal: Int = 1000
-    var allahuAkbarGoal: Int = 1000
-    var laIlahaIllallahGoal: Int = 500
+    var istighfarGoal: Int = 1000
+    var salawatGoal: Int = 500
+    var subhanAllahGoal: Int = 100
+    var alhamdulillahGoal: Int = 100
+    var allahuAkbarGoal: Int = 100
+    var laIlahaIllallahGoal: Int = 100
+    var surahBaqarahGoal: Int = 100
     
     var istighfarVersion: String = "mittel"
     var salawatVersion: String = "mittel"
@@ -70,8 +72,11 @@ final class UserSettings {
     // Tasbih vibration
     var tasbihVibrationEnabled: Bool = true
     
-    // Default Adhkar Playback Tempo Step
-    var defaultAdhkarSpeedStep: Int = 2
+    // Default Adhkar Playback Tempo Step (0 = Langsam, 1 = Normal, 2 = Schnell)
+    var defaultAdhkarSpeedStep: Int = 1
+    
+    // Quran Tajweed Harakat Option
+    var useTajweedHarakat: Bool = false
     
     init() {
         let locale = Locale.current.language.languageCode?.identifier ?? "en"

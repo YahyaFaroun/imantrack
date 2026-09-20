@@ -4,6 +4,14 @@
 <dict>
 	<key>files</key>
 	<dict>
+		<key>AdhkarTranslator.py</key>
+		<data>
+		S54JAOUkVAhJlD++XjRBZUt8mFc=
+		</data>
+		<key>AmiriQuran-Regular.ttf</key>
+		<data>
+		f6Nf5Z9hOr7fbDMv6AyzEZizdB4=
+		</data>
 		<key>AppIcon60x60@2x.png</key>
 		<data>
 		1W7n9/UxxM4kWCbzYh322yeGf9M=
@@ -14,7 +22,7 @@
 		</data>
 		<key>Assets.car</key>
 		<data>
-		l/fh9KMz7GUEqimgFUubTAgtjYg=
+		eLbMlrSfr5HNKZqAuMSzm2RHyoA=
 		</data>
 		<key>File.txt</key>
 		<data>
@@ -22,19 +30,11 @@
 		</data>
 		<key>ImanTrack.debug.dylib</key>
 		<data>
-		hZfDJa4Oo83gjDAuDEwjSTArNyg=
+		Gr7n3LCL1ze78UoXcbSPg5PgiSY=
 		</data>
 		<key>Info.plist</key>
 		<data>
-		sYE1jynCrdrIcoyHikyT88K0/Qs=
-		</data>
-		<key>KfgqpcHafsUthmanicScriptRegular-1jGEe.ttf</key>
-		<data>
-		hfx6dfvbopdqtGZNgM8505cF7HM=
-		</data>
-		<key>KfgqpcHafsUthmanicScriptRegular-nARZ1.ttf</key>
-		<data>
-		X83TN13/JRnNKSbb2gBg4CzJZAQ=
+		A02Amd3BfPr+bajcILhCUpVxzWA=
 		</data>
 		<key>PkgInfo</key>
 		<data>
@@ -44,14 +44,19 @@
 		<data>
 		Zy5EHQ+Va+5l1vh9mqCLZ21TAKo=
 		</data>
-		<key>UthmanicHafs_V22.ttf</key>
-		<data>
-		hfx6dfvbopdqtGZNgM8505cF7HM=
-		</data>
 		<key>__preview.dylib</key>
 		<data>
-		wIKfY/pJI4rcvF9Gd3nNLL+P0EA=
+		TfM1BLyIzErqCI6znQnqBSQjC9w=
 		</data>
+		<key>ar.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			ceUW5f8RstOWN6oLoeAvIIox+g8=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
 		<key>azan (2).m4a</key>
 		<data>
 		8cJXFAdBCE2WSS3S3gId7f7UJRY=
@@ -68,6 +73,51 @@
 		<data>
 		57uLK15UgEhhU3KOa5oyN2XxU3s=
 		</data>
+		<key>bn.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			yWIteuaB4nbJ6oUpkDjwaMF0KPs=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>de.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			qe8MMaH90zZifxwYs0WvQOADA2o=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>en.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			WhaRi4Fv/VrBjLVK7otNX7/ZtR4=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>es.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			5KzN++9KVfs4wmJztaEUlXxZlqM=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>fa.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			B6TvJV42Jz5JxD9y6yV8kQfQvm8=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
 		<key>fajar (1).m4a</key>
 		<data>
 		HW72FbztOHUYXeyoaumwEhGEBOk=
@@ -88,6 +138,51 @@
 		<data>
 		0sYfMpYpLKpW4FPVYWVZkDrZJI0=
 		</data>
+		<key>fr.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			Bi7ReRXseO4Ue0HGIgh5chSbTgg=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>ha.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			uwxBmFK1RURFv1QA/P0Jj4VRQp0=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>id.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			e9VFjmYsLJnhLHtFrwWbyv+hqMI=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>jv.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			PN0Yzn8e5Bi4yU7F5m64EJbfgF4=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>ku.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			TTI0phIvTathKFxDCve/+0/ZLLY=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
 		<key>me_quran.ttf</key>
 		<data>
 		mLvTKk207z8kKD3AEvyZFFLIDrc=
@@ -100,13 +195,108 @@
 		<data>
 		RguUQCxXIBfReTejgXfGabAh2v4=
 		</data>
+		<key>ms.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			Uq9WOU9hD/N1RbYrtY935G4pplM=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>pa.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			02xJJmm2wrriZoCVFRDSEpWAc44=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>ps.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			NxrJ0DrpW8odftmeOMAe5P2v0y4=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>ru.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			Xr714tBTtwOwB7nw1DJGan/FK5c=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>so.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			xWdAUwKlmf+14pTfCtVBz/tmIN8=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
 		<key>surah-name-v2.ttf</key>
 		<data>
 		LH+mS0003go93dR3QKrD9yg3BIs=
 		</data>
+		<key>sw.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			9vPNQjW/Igpe77TMdp2W0Fkuusw=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>tr.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			UBM8PiT+2DmSWbLX4dPv3svcyeY=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>ur.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			okwWW9+t+gRXJJbWEg3/6HQ0Pm0=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>uz.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			wtUSoP5liz7CH+Jd5A0VkN5iBrg=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
 	</dict>
 	<key>files2</key>
 	<dict>
+		<key>AdhkarTranslator.py</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			a3VuPlL8yH7sm8Nzdho1WqBAOyTceRB0w99AJUqGtG8=
+			</data>
+		</dict>
+		<key>AmiriQuran-Regular.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			4qR2RHYtFr37bTPg2NuMb/ML6uhBUO9acFMWu9gpRVw=
+			</data>
+		</dict>
 		<key>AppIcon60x60@2x.png</key>
 		<dict>
 			<key>hash2</key>
@@ -125,7 +315,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			ZFWR+JGLsniBtCvaIC2wO4vb5rEHEl+l6hTDvGj4qXs=
+			0JZ3UYvKg8f1v5b13GHZS0WigNO1HFkIdXmg0Bc8HOo=
 			</data>
 		</dict>
 		<key>File.txt</key>
@@ -139,21 +329,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			Ulh3/svAg7eu4WxIqHrA9h3qQCNHm5yjbZ9dO0qzz7Y=
-			</data>
-		</dict>
-		<key>KfgqpcHafsUthmanicScriptRegular-1jGEe.ttf</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			qmi//OKJtMDrrGjpBQLraeQjVqvNFgPLK46Zwscj8UU=
-			</data>
-		</dict>
-		<key>KfgqpcHafsUthmanicScriptRegular-nARZ1.ttf</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			puWVENyvPsmdtJQnMhoDXtlK9VX/x9J+f0MLX9Xhefg=
+			BsTiH/II3Tyz34Mb+YhqIjrKKEkrQMcaPoE6Jx8ggKU=
 			</data>
 		</dict>
 		<key>UthmanicHafs1Ver18.ttf</key>
@@ -163,19 +339,21 @@
 			oGNuaON1r5VSRw1ndzk29U1TbmWGziYIMRsv5/nL7Do=
 			</data>
 		</dict>
-		<key>UthmanicHafs_V22.ttf</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			qmi//OKJtMDrrGjpBQLraeQjVqvNFgPLK46Zwscj8UU=
-			</data>
-		</dict>
 		<key>__preview.dylib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			sWFdk8VWuS+oEY7GD+6jucJSHp3HUsQMdU+RzNhBnsw=
+			0B2KrazEOHRBytEEDHLUqwAWqqncPDhkpJYTqqivVL4=
 			</data>
+		</dict>
+		<key>ar.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			TSeQIabNXEOZj/KlCqbbNfIgKMWLe2zGOLD0lY6PSLE=
+			</data>
+			<key>optional</key>
+			<true/>
 		</dict>
 		<key>azan (2).m4a</key>
 		<dict>
@@ -204,6 +382,51 @@
 			<data>
 			ChNxPq7izIbZQwMc35id+Qg7jFyp/hLEm7fKJjgU37w=
 			</data>
+		</dict>
+		<key>bn.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			wNrfAHk9UlG1UaW6rsBgL0jcgKg3DrAFQnUusjVmkcg=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>de.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			/8TH9XORHEYGf8r3yqOFgzeXqH3YV+9FeytGNx2yAug=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>en.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			3wlaB+gSI0dTkkqM/0iLy13l21fJ8s3E7jjK5tPRIBU=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>es.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			M0ws/8n/LxXeFL8tB2oEn/TOpKZGM2ru+GjFG54RQ0s=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>fa.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			4ic2nqEspDUEHH7XsZ/jBSHZLoE8Vx5090zDvp0ekUE=
+			</data>
+			<key>optional</key>
+			<true/>
 		</dict>
 		<key>fajar (1).m4a</key>
 		<dict>
@@ -240,6 +463,51 @@
 			oCgfpsO8B5SihWGlcPkEIl4TCLxojdBfe5cpiiccc8E=
 			</data>
 		</dict>
+		<key>fr.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			cBVPiKJbaVN8H/L2YjwUOKoA1rdrwwDOik5cN6+gydE=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>ha.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			n3i0+xbe9Q5P6Rf9n4Gd6aODUkJlI83ViNArW0EtkOY=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>id.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			39GdZveYahWos+c+sY1prq5f8aWs2qHKtcPqOSFdyVM=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>jv.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			3TN8LtApAjJRUFxrdEGG1VaTRn1jTp36Vm2DKEp+Vio=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>ku.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			ATvVgtkkUwRGhcRoj0+zUtV2XFGC0vGDeOmwOSRol0A=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
 		<key>me_quran.ttf</key>
 		<dict>
 			<key>hash2</key>
@@ -261,12 +529,93 @@
 			ziPxbcU9bgNLJlIGm+Td/M2rmoH7ZJvwv50dYdZ5cCY=
 			</data>
 		</dict>
+		<key>ms.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			kmaJnD3+SWerOSmnozHgb9jM9Lq3w3rwgkrTeoBo2i4=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>pa.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			QdYPAEPvnleh+ldy+ANXu9ug1jRTn4AiC2wJU9ADsNw=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>ps.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			TY7ImrQ/RFOh8ImHZPNfvi5gS5FVE7KBtakgQduzaws=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>ru.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			JVkwfmdF1vGZ0u9dadhh+bS2Z2BFuVY8JUR6fNhKFr4=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>so.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			j4ybW8esL3Q0Pmh399lcP+arjpa31ahA7/QbAzstAGA=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
 		<key>surah-name-v2.ttf</key>
 		<dict>
 			<key>hash2</key>
 			<data>
 			LUZ471PvdsNhwywTqa0mMXuPghkImrWCKq+m7V0XUCo=
 			</data>
+		</dict>
+		<key>sw.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			VylCelPkLvcFNS/Sh4n/u0F60SJNvYcg3zFsqhrgWUs=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>tr.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			1Z/PRGydHlWHi3ogPg1SXHQiunGtvn8KCcLml9bnKDM=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>ur.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			jjsDxZ8z5e46IJZ9Py8aDLkdm501yKovAJ+5mBDvM18=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>uz.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			BlbVzRWwejpb4lRfbraXrrgqvEUTFfH+zoMasJpyK28=
+			</data>
+			<key>optional</key>
+			<true/>
 		</dict>
 	</dict>
 	<key>rules</key>

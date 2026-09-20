@@ -2,8 +2,9 @@ import Foundation
 import CoreLocation
 import Combine
 
-class LocationAndSolarManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    static let shared = LocationAndSolarManager()
+@MainActor
+class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLocationManagerDelegate {
+    @MainActor static let shared = LocationAndSolarManager()
     
     private let locationManager = CLLocationManager()
     
@@ -45,8 +46,17 @@ class LocationAndSolarManager: NSObject, ObservableObject, CLLocationManagerDele
         let status = locationManager.authorizationStatus
         if status == .notDetermined {
             locationManager.requestWhenInUseAuthorization()
-        } else if status == .authorizedWhenInUse || status == .authorizedAlways {
-            locationManager.startUpdatingLocation()
+        } else {
+            let isAuthorized: Bool
+            #if os(macOS)
+            isAuthorized = (status == .authorizedAlways)
+            #else
+            isAuthorized = (status == .authorizedWhenInUse || status == .authorizedAlways)
+            #endif
+            
+            if isAuthorized {
+                locationManager.startUpdatingLocation()
+            }
         }
     }
     
@@ -55,14 +65,21 @@ class LocationAndSolarManager: NSObject, ObservableObject, CLLocationManagerDele
         self.lastLocation = location
         // Stop updates to save battery once we have a location
         locationManager.stopUpdatingLocation()
-        updateTrackingDate()
+        self.updateTrackingDate()
         // Fajr Alarm aktualisieren, wenn neuer Standort vorliegt
         FajrAlarmManager.shared.scheduleFajrAlarm()
     }
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
-        if status == .authorizedWhenInUse || status == .authorizedAlways {
+        let isAuthorized: Bool
+        #if os(macOS)
+        isAuthorized = (status == .authorizedAlways)
+        #else
+        isAuthorized = (status == .authorizedWhenInUse || status == .authorizedAlways)
+        #endif
+        
+        if isAuthorized {
             locationManager.startUpdatingLocation()
         }
     }
@@ -70,7 +87,11 @@ class LocationAndSolarManager: NSObject, ObservableObject, CLLocationManagerDele
     private func startTimer() {
         // Alle 5 Sekunden überprüfen, um sofort reagieren zu können
         checkTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.updateTrackingDate()
+            if let self = self {
+                Task { @MainActor in
+                    self.updateTrackingDate()
+                }
+            }
         }
     }
     
@@ -78,17 +99,30 @@ class LocationAndSolarManager: NSObject, ObservableObject, CLLocationManagerDele
         let newDate = getTrackingDate(for: Date())
         let startOfNewDate = Calendar.current.startOfDay(for: newDate)
         if currentTrackingDate != startOfNewDate {
-            DispatchQueue.main.async {
-                self.currentTrackingDate = startOfNewDate
-                // Fajr Alarm automatisch bei spirituellem Datumswechsel neu planen
-                FajrAlarmManager.shared.scheduleFajrAlarm()
-            }
+            self.currentTrackingDate = startOfNewDate
+            // Fajr Alarm automatisch bei spirituellem Datumswechsel neu planen
+            FajrAlarmManager.shared.scheduleFajrAlarm()
         }
     }
     
+    var isFridayKahfVisible: Bool {
+        let cal = Calendar.current
+        let trackerDate = currentTrackingDate
+        let weekday = cal.component(.weekday, from: trackerDate)
+        guard weekday == 6 else { return false }
+        
+        let now = Date()
+        let fajrDate = getFajrDate(for: trackerDate) ?? trackerDate
+        return now >= fajrDate
+    }
+    
     // Bestimmt das Datum für das Tracking basierend auf der übergebenen Zeit
-    func getTrackingDate(for date: Date) -> Date {
-        return LocationAndSolarManager.getTrackingDateStatic(for: date, location: lastLocation)
+    // Bestimmt das Datum für das Tracking basierend auf der übergebenen Zeit
+    nonisolated func getTrackingDate(for date: Date) -> Date {
+        let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
+        let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
+        let loc = (cachedLat != 0.0 && cachedLon != 0.0) ? CLLocation(latitude: cachedLat, longitude: cachedLon) : nil
+        return LocationAndSolarManager.getTrackingDateStatic(for: date, location: loc)
     }
     
     // Berechnet die genaue Sonnenuntergangszeit für ein Datum und Koordinaten (NOAA-Equation)
@@ -97,43 +131,84 @@ class LocationAndSolarManager: NSObject, ObservableObject, CLLocationManagerDele
     }
     
     // Berechnet die Fajr-Zeit für ein Datum (Dawn-Equation mit 18 Grad Dämmerung)
-    func getFajrDate(for date: Date) -> Date? {
-        guard let loc = lastLocation else {
-            // Fallback ohne Standort: 05:00 Uhr morgens lokaler Zeit
-            let calendar = Calendar.current
-            var components = calendar.dateComponents([.year, .month, .day], from: date)
-            components.hour = 5
-            components.minute = 0
-            components.second = 0
-            return calendar.date(from: components)
+    nonisolated func getFajrDate(for date: Date) -> Date? {
+        let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
+        let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
+        if cachedLat != 0.0 && cachedLon != 0.0 {
+            return LocationAndSolarManager.calculateFajrDateStatic(for: date, latitude: cachedLat, longitude: cachedLon)
         }
-        return LocationAndSolarManager.calculateFajrDateStatic(for: date, latitude: loc.coordinate.latitude, longitude: loc.coordinate.longitude)
+        // Fallback ohne Standort: 05:00 Uhr morgens lokaler Zeit
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: date)
+        components.hour = 5
+        components.minute = 0
+        components.second = 0
+        return calendar.date(from: components)
+    }
+    
+    // Berechnet die Dhuhr-Zeit (Solar Noon) für ein Datum
+    nonisolated func getDhuhrDate(for date: Date) -> Date? {
+        let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
+        let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
+        if cachedLat != 0.0 && cachedLon != 0.0 {
+            if let sunrise = LocationAndSolarManager.calculateSunriseDateStatic(for: date, latitude: cachedLat, longitude: cachedLon),
+               let sunset = LocationAndSolarManager.calculateSunsetDateStatic(for: date, latitude: cachedLat, longitude: cachedLon) {
+                let mid = (sunrise.timeIntervalSince1970 + sunset.timeIntervalSince1970) / 2.0
+                return Date(timeIntervalSince1970: mid)
+            }
+        }
+        // Fallback ohne Standort: 13:30 Uhr mittags lokaler Zeit
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: date)
+        components.hour = 13
+        components.minute = 30
+        components.second = 0
+        return calendar.date(from: components)
+    }
+    
+    // Berechnet die Maghrib-Zeit (Sonnenuntergang) für ein Datum
+    nonisolated func getMaghribDate(for date: Date) -> Date? {
+        let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
+        let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
+        if cachedLat != 0.0 && cachedLon != 0.0 {
+            return LocationAndSolarManager.calculateSunsetDateStatic(for: date, latitude: cachedLat, longitude: cachedLon)
+        }
+        // Fallback ohne Standort: 18:30 Uhr abends lokaler Zeit
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: date)
+        components.hour = 18
+        components.minute = 30
+        components.second = 0
+        return calendar.date(from: components)
+    }
+    
+    // Berechnet die Isha-Zeit für ein Datum (Maghrib + 90 Minuten als sicherer Standard)
+    nonisolated func getIshaDate(for date: Date) -> Date? {
+        let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
+        let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
+        if cachedLat != 0.0 && cachedLon != 0.0 {
+            return LocationAndSolarManager.calculateIshaDateStatic(for: date, latitude: cachedLat, longitude: cachedLon)
+        }
+        // Fallback ohne Standort: 20:00 Uhr abends lokaler Zeit
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: date)
+        components.hour = 20
+        components.minute = 0
+        components.second = 0
+        return calendar.date(from: components)
     }
     
     // Statische Hilfsmethoden für zeitzonen- und sonnenuntergangsgetreue Berechnung ohne Instanzreferenz
-    static func getTrackingDateStatic(for date: Date, location: CLLocation?) -> Date {
+    nonisolated static func getTrackingDateStatic(for date: Date, location: CLLocation?) -> Date {
         let calendar = Calendar.current
-        
-        guard let location = location else {
-            var components = calendar.dateComponents([.year, .month, .day], from: date)
-            components.hour = 19
-            components.minute = 30
-            components.second = 0
-            let fallbackSunset = calendar.date(from: components) ?? date
-            if date >= fallbackSunset {
-                return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: date))!
-            } else {
-                return calendar.startOfDay(for: date)
-            }
-        }
-        
-        let lat = location.coordinate.latitude
-        let lon = location.coordinate.longitude
+        let loc = location ?? CLLocation(latitude: 51.2217, longitude: 6.7762) // Standard Düsseldorf Fallback
+        let lat = loc.coordinate.latitude
+        let lon = loc.coordinate.longitude
         
         guard let sunsetDate = calculateSunsetDateStatic(for: date, latitude: lat, longitude: lon) else {
             var components = calendar.dateComponents([.year, .month, .day], from: date)
             components.hour = 18
-            components.minute = 0
+            components.minute = 30
             components.second = 0
             let fallbackSunset = calendar.date(from: components) ?? date
             if date >= fallbackSunset {
@@ -149,16 +224,55 @@ class LocationAndSolarManager: NSObject, ObservableObject, CLLocationManagerDele
             return calendar.startOfDay(for: date)
         }
     }
+}
+
+public enum CalculationMethod: String, CaseIterable, Codable, Sendable {
+    case mwl = "mwl"               // MWL: Fajr 18.0°, Isha 17.0°
+    case isna = "isna"             // ISNA: Fajr 15.0°, Isha 15.0°
+    case ummAlQura = "ummAlQura"   // Umm al-Qura: Fajr 18.5°, Isha = Maghrib + 90 min
+    case karachi = "karachi"       // Karachi: Fajr 18.0°, Isha 18.0°
+    case egyptian = "egyptian"     // Egyptian: Fajr 19.5°, Isha 17.5°
     
-    static func calculateSunsetDateStatic(for date: Date, latitude: Double, longitude: Double) -> Date? {
-        let calendar = Calendar.current
-        let doy = Double(calendar.ordinality(of: .day, in: .year, for: date) ?? 1)
+    public nonisolated var fajrAngle: Double {
+        switch self {
+        case .mwl: return 18.0
+        case .isna: return 15.0
+        case .ummAlQura: return 18.5
+        case .karachi: return 18.0
+        case .egyptian: return 19.5
+        }
+    }
+    
+    public nonisolated var ishaAngle: Double? {
+        switch self {
+        case .mwl: return 17.0
+        case .isna: return 15.0
+        case .ummAlQura: return nil
+        case .karachi: return 18.0
+        case .egyptian: return 17.5
+        }
+    }
+    
+    public nonisolated var ishaIntervalMinutes: Double? {
+        switch self {
+        case .ummAlQura: return 90.0
+        default: return nil
+        }
+    }
+}
+
+extension LocationAndSolarManager {
+    nonisolated static func calculateSunsetDateStatic(for date: Date, latitude: Double, longitude: Double) -> Date? {
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        var gmtCalendar = Calendar(identifier: .gregorian)
+        gmtCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        guard let startOfTodayUTC = gmtCalendar.date(from: components) else { return nil }
         
+        let doy = Double(gmtCalendar.ordinality(of: .day, in: .year, for: startOfTodayUTC) ?? 1)
         let lngHour = longitude / 15.0
         let t = doy + ((18.0 - lngHour) / 24.0)
         
         let M = (0.9856 * t) - 3.289
-        
         var L = M + (1.916 * sin(M * .pi / 180.0)) + (0.020 * sin(2.0 * M * .pi / 180.0)) + 282.634
         L = L.truncatingRemainder(dividingBy: 360.0)
         if L < 0 { L += 360.0 }
@@ -174,44 +288,39 @@ class LocationAndSolarManager: NSObject, ObservableObject, CLLocationManagerDele
         
         let sinDec = 0.39782 * sin(L * .pi / 180.0)
         let cosDec = cos(asin(sinDec))
-        
         let zenith = 90.833 * .pi / 180.0
         let cosH = (cos(zenith) - (sinDec * sin(latitude * .pi / 180.0))) / (cosDec * cos(latitude * .pi / 180.0))
         
-        if cosH > 1.0 || cosH < -1.0 {
-            return nil
-        }
+        if cosH > 1.0 || cosH < -1.0 { return nil }
         
-        // Für Sunset verwenden wir H = acos(cosH) * 180 / pi
         let H = acos(cosH) * 180.0 / .pi
         let Hhour = H / 15.0
+        var T = Hhour + RA - (0.06571 * t) - 6.622
+        T = T.truncatingRemainder(dividingBy: 24.0)
+        if T < 0 { T += 24.0 }
         
-        let T = Hhour + RA - (0.06571 * t) - 6.622
         var UT = T - lngHour
-        UT = UT.truncatingRemainder(dividingBy: 24.0)
         if UT < 0 { UT += 24.0 }
+        UT = UT.truncatingRemainder(dividingBy: 24.0)
         
-        var components = calendar.dateComponents([.year, .month, .day], from: date)
-        components.hour = 0
-        components.minute = 0
-        components.second = 0
-        components.timeZone = TimeZone(secondsFromGMT: 0)
-        
-        guard let startOfTodayUTC = calendar.date(from: components) else { return nil }
-        let sunsetInUTC = startOfTodayUTC.addingTimeInterval(UT * 3600.0)
-        
-        return sunsetInUTC
+        var sunsetDate = startOfTodayUTC.addingTimeInterval(UT * 3600.0)
+        if T > 18.0 && UT < 6.0 {
+            sunsetDate = sunsetDate.addingTimeInterval(86400.0)
+        }
+        return sunsetDate
     }
     
-    static func calculateSunriseDateStatic(for date: Date, latitude: Double, longitude: Double) -> Date? {
-        let calendar = Calendar.current
-        let doy = Double(calendar.ordinality(of: .day, in: .year, for: date) ?? 1)
+    nonisolated static func calculateSunriseDateStatic(for date: Date, latitude: Double, longitude: Double) -> Date? {
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        var gmtCalendar = Calendar(identifier: .gregorian)
+        gmtCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        guard let startOfTodayUTC = gmtCalendar.date(from: components) else { return nil }
         
+        let doy = Double(gmtCalendar.ordinality(of: .day, in: .year, for: startOfTodayUTC) ?? 1)
         let lngHour = longitude / 15.0
         let t = doy + ((6.0 - lngHour) / 24.0)
         
         let M = (0.9856 * t) - 3.289
-        
         var L = M + (1.916 * sin(M * .pi / 180.0)) + (0.020 * sin(2.0 * M * .pi / 180.0)) + 282.634
         L = L.truncatingRemainder(dividingBy: 360.0)
         if L < 0 { L += 360.0 }
@@ -227,59 +336,105 @@ class LocationAndSolarManager: NSObject, ObservableObject, CLLocationManagerDele
         
         let sinDec = 0.39782 * sin(L * .pi / 180.0)
         let cosDec = cos(asin(sinDec))
-        
         let zenith = 90.833 * .pi / 180.0
+        let cosH = (cos(zenith) - (sinDec * sin(latitude * .pi / 180.0))) / (cosDec * cos(latitude * .pi / 180.0))
         
-        func cosCos() -> Double { return cosDec * cos(latitude * .pi / 180.0) }
-        let cosHReal = (cos(zenith) - (sinDec * sin(latitude * .pi / 180.0))) / cosCos()
+        if cosH > 1.0 || cosH < -1.0 { return nil }
         
-        if cosHReal > 1.0 || cosHReal < -1.0 {
-            return nil
-        }
-        
-        let H = acos(cosHReal) * 180.0 / .pi
+        let H = acos(cosH) * 180.0 / .pi
         let Hhour = H / 15.0
-        
         let T = RA - Hhour - (0.06571 * t) - 6.622
         var UT = T - lngHour
         UT = UT.truncatingRemainder(dividingBy: 24.0)
         if UT < 0 { UT += 24.0 }
         
-        var components = calendar.dateComponents([.year, .month, .day], from: date)
-        components.hour = 0
-        components.minute = 0
-        components.second = 0
-        components.timeZone = TimeZone(secondsFromGMT: 0)
-        
-        guard let startOfTodayUTC = calendar.date(from: components) else { return nil }
-        let sunriseInUTC = startOfTodayUTC.addingTimeInterval(UT * 3600.0)
-        
-        return sunriseInUTC
+        return startOfTodayUTC.addingTimeInterval(UT * 3600.0)
     }
     
-    static func calculateFajrDateStatic(for date: Date, latitude: Double, longitude: Double) -> Date? {
-        let calendar = Calendar.current
+    nonisolated static func calculateIshaDateStatic(for date: Date, latitude: Double, longitude: Double, method: CalculationMethod = .mwl) -> Date? {
+        guard let maghrib = calculateSunsetDateStatic(for: date, latitude: latitude, longitude: longitude) else { return nil }
         
-        // 1. Berechne Sunrise für heute und Sunset für gestern
-        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: date),
+        if let minutes = method.ishaIntervalMinutes {
+            return maghrib.addingTimeInterval(minutes * 60.0)
+        }
+        
+        guard let angle = method.ishaAngle else { return maghrib.addingTimeInterval(90.0 * 60.0) }
+        
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        var gmtCalendar = Calendar(identifier: .gregorian)
+        gmtCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        guard let startOfTodayUTC = gmtCalendar.date(from: components) else { return nil }
+        
+        let doy = Double(gmtCalendar.ordinality(of: .day, in: .year, for: startOfTodayUTC) ?? 1)
+        let lngHour = longitude / 15.0
+        let t = doy + ((18.0 - lngHour) / 24.0)
+        
+        let M = (0.9856 * t) - 3.289
+        var L = M + (1.916 * sin(M * .pi / 180.0)) + (0.020 * sin(2.0 * M * .pi / 180.0)) + 282.634
+        L = L.truncatingRemainder(dividingBy: 360.0)
+        if L < 0 { L += 360.0 }
+        
+        var RA = atan(0.91764 * tan(L * .pi / 180.0)) * (180.0 / .pi)
+        RA = RA.truncatingRemainder(dividingBy: 360.0)
+        if RA < 0 { RA += 360.0 }
+        
+        let Lquadrant = floor(L / 90.0) * 90.0
+        let RAquadrant = floor(RA / 90.0) * 90.0
+        RA = RA + (Lquadrant - RAquadrant)
+        RA = RA / 15.0
+        
+        let sinDec = 0.39782 * sin(L * .pi / 180.0)
+        let cosDec = cos(asin(sinDec))
+        let zenith = (90.0 + angle) * .pi / 180.0
+        let cosH = (cos(zenith) - (sinDec * sin(latitude * .pi / 180.0))) / (cosDec * cos(latitude * .pi / 180.0))
+        
+        if cosH >= -1.0 && cosH <= 1.0 {
+            let H = acos(cosH) * 180.0 / .pi
+            let Hhour = H / 15.0
+            let T = Hhour + RA - (0.06571 * t) - 6.622
+            var UT = T - lngHour
+            UT = UT.truncatingRemainder(dividingBy: 24.0)
+            if UT < 0 { UT += 24.0 }
+            
+            let tempIsha = startOfTodayUTC.addingTimeInterval(UT * 3600.0)
+            
+            // High-latitude check (30% night limit)
+            if abs(latitude) > 50.0,
+               let yesterday = gmtCalendar.date(byAdding: .day, value: -1, to: startOfTodayUTC),
+               let yesterdaySunset = calculateSunsetDateStatic(for: yesterday, latitude: latitude, longitude: longitude),
+               let todaySunrise = calculateSunriseDateStatic(for: date, latitude: latitude, longitude: longitude) {
+                let nightDuration = todaySunrise.timeIntervalSince(yesterdaySunset)
+                let maxIsha = maghrib.addingTimeInterval(nightDuration * 0.3)
+                if tempIsha > maxIsha {
+                    return maxIsha
+                }
+            }
+            return tempIsha
+        }
+        
+        return maghrib.addingTimeInterval(90.0 * 60.0)
+    }
+    
+    nonisolated static func calculateFajrDateStatic(for date: Date, latitude: Double, longitude: Double, method: CalculationMethod = .mwl) -> Date? {
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        var gmtCalendar = Calendar(identifier: .gregorian)
+        gmtCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        guard let startOfTodayUTC = gmtCalendar.date(from: components) else { return nil }
+        
+        guard let yesterday = gmtCalendar.date(byAdding: .day, value: -1, to: startOfTodayUTC),
               let yesterdaySunset = calculateSunsetDateStatic(for: yesterday, latitude: latitude, longitude: longitude),
               let todaySunrise = calculateSunriseDateStatic(for: date, latitude: latitude, longitude: longitude) else {
-            // Absoluter Fallback falls Sonnenberechnung komplett fehlschlägt
             return nil
         }
         
         let nightDuration = todaySunrise.timeIntervalSince(yesterdaySunset)
-        
-        // 2. Berechne Twilight-Angle-Limit (nach adhan-swift, 30% der Nacht bei 18 Grad)
         let twilightLimit = todaySunrise.addingTimeInterval(-nightDuration * 0.3)
         
-        // 3. Berechne standardmäßiges Fajr bei 18 Grad Dämmerung
-        let doy = Double(calendar.ordinality(of: .day, in: .year, for: date) ?? 1)
+        let doy = Double(gmtCalendar.ordinality(of: .day, in: .year, for: startOfTodayUTC) ?? 1)
         let lngHour = longitude / 15.0
         let t = doy + ((6.0 - lngHour) / 24.0)
         
         let M = (0.9856 * t) - 3.289
-        
         var L = M + (1.916 * sin(M * .pi / 180.0)) + (0.020 * sin(2.0 * M * .pi / 180.0)) + 282.634
         L = L.truncatingRemainder(dividingBy: 360.0)
         if L < 0 { L += 360.0 }
@@ -296,40 +451,31 @@ class LocationAndSolarManager: NSObject, ObservableObject, CLLocationManagerDele
         let sinDec = 0.39782 * sin(L * .pi / 180.0)
         let cosDec = cos(asin(sinDec))
         
-        // Versuche 18-Grad-Berechnung
-        let zenith18 = 108.0 * .pi / 180.0
-        let cosH18 = (cos(zenith18) - (sinDec * sin(latitude * .pi / 180.0))) / (cosDec * cos(latitude * .pi / 180.0))
+        let angle = method.fajrAngle
+        let zenith = (90.0 + angle) * .pi / 180.0
+        let cosH = (cos(zenith) - (sinDec * sin(latitude * .pi / 180.0))) / (cosDec * cos(latitude * .pi / 180.0))
         
         var calculatedFajr: Date? = nil
         
-        if cosH18 >= -1.0 && cosH18 <= 1.0 {
-            let H = acos(cosH18) * 180.0 / .pi
+        if cosH >= -1.0 && cosH <= 1.0 {
+            let H = acos(cosH) * 180.0 / .pi
             let Hhour = H / 15.0
             let T = RA - Hhour - (0.06571 * t) - 6.622
             var UT = T - lngHour
             UT = UT.truncatingRemainder(dividingBy: 24.0)
             if UT < 0 { UT += 24.0 }
             
-            var components = calendar.dateComponents([.year, .month, .day], from: date)
-            components.hour = 0
-            components.minute = 0
-            components.second = 0
-            components.timeZone = TimeZone(secondsFromGMT: 0)
-            if let startOfTodayUTC = calendar.date(from: components) {
-                let tempFajr = startOfTodayUTC.addingTimeInterval(UT * 3600.0)
-                // Wende die HighLatitudeRule.twilightAngle Begrenzung an:
-                if tempFajr >= twilightLimit {
-                    calculatedFajr = tempFajr
-                }
+            let tempFajr = startOfTodayUTC.addingTimeInterval(UT * 3600.0)
+            if tempFajr >= twilightLimit {
+                calculatedFajr = tempFajr
             }
         }
         
-        // Falls die 18-Grad-Dämmerung nicht erreicht wird (Sommermonate) oder vor dem twilightLimit liegt,
-        // weichen wir für Diyanet/DITIB im Sommer direkt auf 90 Minuten vor Sonnenaufgang aus.
         if let fajr = calculatedFajr {
             return fajr
         } else {
-            return todaySunrise.addingTimeInterval(-90.0 * 60.0)
+            return todaySunrise.addingTimeInterval(-nightDuration * 0.3)
         }
     }
 }
+

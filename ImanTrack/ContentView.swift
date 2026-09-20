@@ -1,11 +1,14 @@
 import SwiftUI
 import SwiftData
+import Combine
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var settings: [UserSettings]
-    @State private var selectedTab = 2 // 2 is Heute (0-indexed)
+    @Environment(\.modelContext) var modelContext
+    @Query var settings: [UserSettings]
+    @State var selectedTab = 2 // 2 is Heute (0-indexed)
+    @StateObject private var quranViewModel = QuranViewModel()
 
+    #if os(iOS) && !SKIP
     init() {
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
@@ -19,6 +22,19 @@ struct ContentView: View {
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
+    #endif
+
+    private var tabSelectionBinding: Binding<Int> {
+        Binding(
+            get: { selectedTab },
+            set: { newValue in
+                if newValue == selectedTab && newValue == 3 {
+                    NotificationCenter.default.post(name: Notification.Name("QuranTabRetapped"), object: nil)
+                }
+                selectedTab = newValue
+            }
+        )
+    }
 
     var body: some View {
         let isDark = settings.first?.isDarkMode ?? true
@@ -30,16 +46,18 @@ struct ContentView: View {
             return ["de", "en", "ar"].contains(locale) ? locale : "en"
         }()
         
-        TabView(selection: $selectedTab) {
+        let isRTL = ["ar", "ur", "fa", "ps", "ku", "he"].contains(language)
+        
+        TabView(selection: tabSelectionBinding) {
             TasbihView()
                 .tabItem {
-                    Label(L10n.tr("tab_tasbih", language), systemImage: "circle.grid.3x3.fill")
+                    Label(L10n.tr("tab_tasbih", language), systemImage: "circle.hexagongrid.fill")
                 }
                 .tag(0)
             
             AdhkarOverviewView(selectedTab: $selectedTab)
                 .tabItem {
-                    Label(L10n.tr("tab_adhkar", language), systemImage: "doc.plaintext.fill")
+                    Label(L10n.tr("tab_adhkar", language), systemImage: "book.closed.fill")
                 }
                 .tag(1)
             
@@ -49,7 +67,7 @@ struct ContentView: View {
                 }
                 .tag(2)
             
-            QuranView()
+            QuranView(viewModel: quranViewModel)
                 .tabItem {
                     Label(L10n.tr("tab_quran", language), systemImage: "book.fill")
                 }
@@ -63,7 +81,7 @@ struct ContentView: View {
         }
         .tint(Theme.islamicGreen)
         .preferredColorScheme(isDark ? .dark : .light)
-        .environment(\.layoutDirection, language == "ar" ? .rightToLeft : .leftToRight)
+        .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
         .onAppear {
             LocationAndSolarManager.shared.requestAuthorization()
             if settings.isEmpty {

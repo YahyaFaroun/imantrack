@@ -1,6 +1,10 @@
 import SwiftUI
 import SwiftData
 
+func progressColor(percentage: Double) -> Color {
+    return percentage >= 1.0 ? Theme.islamicGreen : .gray
+}
+
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var allSettings: [UserSettings]
@@ -18,18 +22,38 @@ struct TodayView: View {
         DailyRecord.current(in: modelContext, allRecords: allDailyRecords, date: solarManager.currentTrackingDate)
     }
     
+    func formattedHijriDateTransliterated(for date: Date) -> String {
+        let cal = Calendar(identifier: .islamicUmmAlQura)
+        let weekday = cal.component(.weekday, from: date)
+        let day = cal.component(.day, from: date)
+        let month = cal.component(.month, from: date)
+        let year = cal.component(.year, from: date)
+        
+        let weekdays = ["Al-Ahad", "Al-Ithnayn", "Al-Thulatha", "Al-Arba'a", "Al-Khamis", "Al-Jumu'ah", "Al-Sabt"]
+        let months = [
+            "Muharram", "Safar", "Rabi' al-Awwal", "Rabi' al-Thani",
+            "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Sha'ban",
+            "Ramadan", "Shawwal", "Dhu al-Qi'dah", "Dhu al-Hijjah"
+        ]
+        
+        let dayName = (weekday >= 1 && weekday <= 7) ? weekdays[weekday - 1] : ""
+        let monthName = (month >= 1 && month <= 12) ? months[month - 1] : ""
+        
+        return "\(dayName), \(day). \(monthName) \(year) AH"
+    }
+    
     func formattedDate(for lang: String) -> String {
         let formatter = DateFormatter()
-        switch lang.lowercased() {
-        case "ar":
-            formatter.locale = Locale(identifier: "ar_SA")
-            formatter.dateFormat = "EEEE, d MMMM"
-        case "en":
-            formatter.locale = Locale(identifier: "en_US")
+        formatter.locale = Locale(identifier: lang)
+        
+        if lang.lowercased() == "en" {
             formatter.dateFormat = "EEEE, MMMM d"
-        default:
-            formatter.locale = Locale(identifier: "de_DE")
+        } else if lang.lowercased() == "ar" {
+            formatter.dateFormat = "EEEE, d MMMM"
+        } else if lang.lowercased() == "de" {
             formatter.dateFormat = "EEEE, d. MMMM"
+        } else {
+            formatter.setLocalizedDateFormatFromTemplate("EEEE d MMMM")
         }
         return formatter.string(from: solarManager.currentTrackingDate)
     }
@@ -43,15 +67,20 @@ struct TodayView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         // Header
-                        VStack(spacing: 8) {
+                        VStack(spacing: 6) {
                             Text("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ")
                                 .font(Theme.uthmaniFontForced(size: 28))
                                 .foregroundColor(.primary)
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 20)
                             
-                            Text(formattedDate(for: lang))
+                            Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate))
                                 .font(.headline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(Theme.islamicGreen)
+                            
+                            Text(formattedDate(for: lang))
+                                .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
                         
@@ -61,45 +90,45 @@ struct TodayView: View {
                                 selectedTab = 1
                             }
                         }) {
-                            HStack {
-                                Image("sujud_icon")
-                                    .renderingMode(.template)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 18, height: 18)
-                                    .foregroundColor(Theme.islamicGreen)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Image("sujud_icon")
+                                        .renderingMode(.template)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 20, height: 20)
+                                        .foregroundColor(Theme.islamicGreen)
+                                    
                                     Text(L10n.tr("fajr_prayer", lang))
                                         .font(.headline)
                                         .foregroundColor(.primary)
                                     
-                                    let statusText: String = {
-                                        switch todayRecord.fajrPrayerStatus {
-                                        case "onTime": return L10n.tr("fajr_status_ontime", lang)
-                                        case "late": return L10n.tr("fajr_status_late", lang)
-                                        default: return L10n.tr("fajr_status_none", lang)
-                                        }
-                                    }()
-                                    Text(statusText)
-                                        .font(.subheadline)
-                                        .foregroundColor(todayRecord.fajrPrayerStatus != "none" ? (todayRecord.fajrPrayerStatus == "onTime" ? Theme.islamicGreen : .orange) : .gray)
+                                    Spacer()
+                                    
+                                    let status = todayRecord.fajrPrayerStatus
+                                    let isPrayed = status != "none"
+                                    let isOnTime = status == "onTime"
+                                    
+                                    if isPrayed {
+                                        Text("✓")
+                                            .foregroundColor(isOnTime ? Theme.islamicGreen : .orange)
+                                            .fontWeight(.bold)
+                                    } else {
+                                        Text("○")
+                                            .foregroundColor(.gray)
+                                    }
                                 }
                                 
-                                Spacer()
-                                
-                                let status = todayRecord.fajrPrayerStatus
-                                let isPrayed = status != "none"
-                                let isOnTime = status == "onTime"
-                                
-                                if isPrayed {
-                                    Text("✓")
-                                        .foregroundColor(isOnTime ? Theme.islamicGreen : .orange)
-                                        .fontWeight(.bold)
-                                } else {
-                                    Text("○")
-                                        .foregroundColor(.gray)
-                                }
+                                let statusText: String = {
+                                    switch todayRecord.fajrPrayerStatus {
+                                    case "onTime": return L10n.tr("fajr_status_ontime", lang)
+                                    case "late": return L10n.tr("fajr_status_late", lang)
+                                    default: return L10n.tr("fajr_status_none", lang)
+                                    }
+                                }()
+                                Text(statusText)
+                                    .font(.subheadline)
+                                    .foregroundColor(todayRecord.fajrPrayerStatus != "none" ? (todayRecord.fajrPrayerStatus == "onTime" ? Theme.islamicGreen : .orange) : .gray)
                             }
                             .padding()
                             .background(Theme.cardBackground)
@@ -110,15 +139,26 @@ struct TodayView: View {
                         
                         // Result Card 1: Koran
                         ResultCard(title: L10n.tr("tab_quran", lang), systemImage: "book.fill") {
+                            let goal = max(1, settings.quranDailyGoal)
+                            let percentage = min(1.0, Double(todayRecord.quranPagesRead) / Double(goal))
+                            let displayPercent = Int(percentage * 100)
+                            
                             VStack(alignment: .leading, spacing: 12) {
-                                Text(String(format: L10n.tr("quran_pages_read_goal", lang), todayRecord.quranPagesRead, max(1, settings.quranDailyGoal)))
-                                    .font(.subheadline)
-                                    .foregroundColor(.primary)
+                                HStack {
+                                    Text(L10n.tr("daily_goal_title", lang))
+                                        .font(.subheadline)
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Text("\(displayPercent)%")
+                                        .font(.subheadline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(progressColor(percentage: percentage))
+                                }
                                 
-                                ProgressView(value: min(Double(todayRecord.quranPagesRead) / Double(max(1, settings.quranDailyGoal)), 1.0))
+                                ProgressView(value: percentage)
                                     .tint(Theme.islamicGreen)
                                 
-                                Text("\(todayRecord.quranVersesRead) Verse gelesen")
+                                Text("\(todayRecord.quranPagesRead)/\(goal) \(L10n.tr("pages", lang)) · \(todayRecord.quranVersesRead) \(L10n.tr("verses", lang))")
                                     .font(.caption)
                                     .foregroundColor(.gray)
                             }
@@ -128,14 +168,14 @@ struct TodayView: View {
                         }
                         
                         // Result Card 2: Adhkar
-                        ResultCard(title: L10n.tr("tab_adhkar", lang), systemImage: "doc.plaintext.fill") {
+                        ResultCard(title: L10n.tr("tab_adhkar", lang), systemImage: "book.closed.fill") {
                             VStack(spacing: 12) {
                                 AdhkarResultRow(title: L10n.tr("adhkar_sleep", lang), isDone: todayRecord.schlafAdhkarDone, time: todayRecord.schlafAdhkarTime)
                                 AdhkarResultRow(title: L10n.tr("adhkar_morning", lang), isDone: todayRecord.morgenAdhkarDone, time: todayRecord.morgenAdhkarTime)
-                                AdhkarResultRow(title: L10n.tr("adhkar_evening", lang), isDone: todayRecord.abendAdhkarDone, time: todayRecord.abendAdhkarTime)
-                                if Calendar.current.component(.weekday, from: solarManager.currentTrackingDate) == 6 {
+                                if solarManager.isFridayKahfVisible {
                                     AdhkarResultRow(title: L10n.tr("surah_alkahf", lang), isDone: todayRecord.surahAlKahfDone, time: todayRecord.surahAlKahfTime)
                                 }
+                                AdhkarResultRow(title: L10n.tr("adhkar_evening", lang), isDone: todayRecord.abendAdhkarDone, time: todayRecord.abendAdhkarTime)
                             }
                         }
                         .onTapGesture {
@@ -143,7 +183,7 @@ struct TodayView: View {
                         }
                         
                         // Result Card 3: Tasbih
-                        ResultCard(title: L10n.tr("tab_tasbih", lang), systemImage: "circle.grid.3x3.fill") {
+                        ResultCard(title: L10n.tr("tab_tasbih", lang), systemImage: "circle.hexagongrid.fill") {
                             VStack(spacing: 10) {
                                 if settings.istighfarEnabled {
                                     TasbihResultRow(title: L10n.tr("tasbih_istighfar", lang), count: todayRecord.totalIstighfarCount, goal: settings.istighfarGoal)
@@ -203,6 +243,8 @@ struct ResultCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: systemImage)
+                    .font(.headline)
+                    .frame(width: 20, height: 20, alignment: .center)
                     .foregroundColor(Theme.islamicGreen)
                 Text(title)
                     .font(.headline)
@@ -227,7 +269,7 @@ struct AdhkarResultRow: View {
         HStack {
             Text(title)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.primary)
             Spacer()
             if isDone {
                 if let time = time {
@@ -251,20 +293,42 @@ struct TasbihResultRow: View {
     let count: Int
     let goal: Int
     
+    private var shortTitle: String {
+        let lower = title.lowercased()
+        if lower.contains("istighfar") || lower.contains("vergebung") || lower.contains("forgiveness") { return "Istighfar" }
+        if lower.contains("salawat") || lower.contains("segne") || lower.contains("bless") { return "Salawat" }
+        if lower.contains("subhan allahi wa bihamdihi") { return "Subhanallahi wa bihamdihi" }
+        if lower.contains("subhan allah") && !lower.contains("wa bihamdihi") { return "Subhanallah" }
+        if lower.contains("alhamdulillah") { return "Alhamdulillah" }
+        if lower.contains("allahu akbar") { return "Allahu Akbar" }
+        if lower.contains("la ilaha") { return "La ilaha illallah" }
+        if lower.contains("hawla") { return "La hawla" }
+        return title
+    }
+    
     var body: some View {
+        let safeGoal = max(1, goal)
+        let percentage = min(1.0, Double(count) / Double(safeGoal))
+        let displayPercent = Int(percentage * 100)
+        
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(title)
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                Spacer()
-                Text("\(count) / \(goal)")
-                    .font(.caption)
+                Text(shortTitle)
+                    .font(.subheadline)
                     .foregroundColor(.primary)
+                Spacer()
+                Text("\(displayPercent)%")
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(progressColor(percentage: percentage))
             }
-            ProgressView(value: min(Double(count) / Double(max(1, goal)), 1.0))
+            ProgressView(value: percentage)
                 .tint(Theme.islamicGreen)
                 .scaleEffect(x: 1, y: 0.5, anchor: .center)
+            
+            Text("\(count)/\(safeGoal)")
+                .font(.caption)
+                .foregroundColor(.gray)
         }
     }
 }

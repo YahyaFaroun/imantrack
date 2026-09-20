@@ -7,7 +7,7 @@ struct DhikrSettingsView: View {
     
     @State private var adhkarAutoCount: Bool = true
     @State private var adhkarAutoAdvance: Bool = true
-    @State private var defaultAdhkarSpeedStep: Int = 2
+    @State private var defaultAdhkarSpeedStep: Int = 1
     
     private var language: String {
         settingsList.first?.language ?? "de"
@@ -31,6 +31,16 @@ struct DhikrSettingsView: View {
                 }
             }
             
+            Section(header: Text(L10n.tr("playback_tempo", language))) {
+                Picker(L10n.tr("playback_tempo", language), selection: $defaultAdhkarSpeedStep) {
+                    Text(L10n.tr("tempo_slow", language)).tag(0)
+                    Text(L10n.tr("tempo_normal", language)).tag(1)
+                    Text(L10n.tr("tempo_fast", language)).tag(2)
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: defaultAdhkarSpeedStep) { _, _ in saveSettings() }
+            }
+            
             if adhkarAutoCount {
                 Section {
                     Toggle(isOn: $adhkarAutoAdvance) {
@@ -44,18 +54,6 @@ struct DhikrSettingsView: View {
                     }
                     .padding(.vertical, 4)
                     .onChange(of: adhkarAutoAdvance) { _, _ in saveSettings() }
-                }
-                
-                Section(header: Text(L10n.tr("playback_tempo", language))) {
-                    Picker(L10n.tr("playback_tempo", language), selection: $defaultAdhkarSpeedStep) {
-                        Text(L10n.tr("tempo_slowest", language)).tag(0)
-                        Text(L10n.tr("tempo_slow", language)).tag(1)
-                        Text(L10n.tr("tempo_normal", language)).tag(2)
-                        Text(L10n.tr("tempo_fast", language)).tag(3)
-                        Text(L10n.tr("tempo_fastest", language)).tag(4)
-                    }
-                    .pickerStyle(.menu)
-                    .onChange(of: defaultAdhkarSpeedStep) { _, _ in saveSettings() }
                 }
             }
         }

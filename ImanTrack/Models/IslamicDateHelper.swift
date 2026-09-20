@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 
+@MainActor
 func getIslamicDateString(for date: Date = Date()) -> String {
     let cal = Calendar.current
     let isMidnight = cal.component(.hour, from: date) == 0 && cal.component(.minute, from: date) == 0 && cal.component(.second, from: date) == 0
@@ -12,6 +13,7 @@ func getIslamicDateString(for date: Date = Date()) -> String {
 }
 
 extension DailyRecord {
+    @MainActor
     static func current(in modelContext: ModelContext, allRecords: [DailyRecord], date: Date = Date()) -> DailyRecord {
         let key = getIslamicDateString(for: date)
         if let existing = allRecords.first(where: { $0.dateString == key }) {

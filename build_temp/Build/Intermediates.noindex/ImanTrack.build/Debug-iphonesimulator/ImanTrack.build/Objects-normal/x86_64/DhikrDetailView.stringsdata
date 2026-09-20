@@ -1,5 +1,5 @@
 {
-  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/DhikrDetailView.swift",
+  "source": "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/ImanTrack/Views/DhikrDetailView.swift",
   "tables": {
     "Localizable": [
       {
@@ -7,15 +7,7 @@
         "key": "ما شاء الله",
         "location": {
           "startingColumn": 22,
-          "startingLine": 349
-        }
-      },
-      {
-        "comment": "",
-        "key": "0",
-        "location": {
-          "startingColumn": 35,
-          "startingLine": 420
+          "startingLine": 393
         }
       },
       {
@@ -23,7 +15,7 @@
         "key": "100%",
         "location": {
           "startingColumn": 34,
-          "startingLine": 489
+          "startingLine": 515
         }
       },
       {
@@ -31,7 +23,7 @@
         "key": "-%lld%%",
         "location": {
           "startingColumn": 42,
-          "startingLine": 509
+          "startingLine": 535
         }
       },
       {
@@ -39,7 +31,7 @@
         "key": "",
         "location": {
           "startingColumn": 30,
-          "startingLine": 877
+          "startingLine": 938
         }
       },
       {
@@ -47,7 +39,7 @@
         "key": "Geschwindigkeit",
         "location": {
           "startingColumn": 57,
-          "startingLine": 819
+          "startingLine": 880
         }
       },
       {
@@ -55,7 +47,7 @@
         "key": "Speed",
         "location": {
           "startingColumn": 77,
-          "startingLine": 819
+          "startingLine": 880
         }
       },
       {
@@ -63,7 +55,7 @@
         "key": "Sehr langsam",
         "location": {
           "startingColumn": 72,
-          "startingLine": 825
+          "startingLine": 886
         }
       },
       {
@@ -71,7 +63,7 @@
         "key": "Very slow",
         "location": {
           "startingColumn": 89,
-          "startingLine": 825
+          "startingLine": 886
         }
       },
       {
@@ -79,7 +71,7 @@
         "key": "Langsam",
         "location": {
           "startingColumn": 72,
-          "startingLine": 826
+          "startingLine": 887
         }
       },
       {
@@ -87,7 +79,7 @@
         "key": "Slow",
         "location": {
           "startingColumn": 84,
-          "startingLine": 826
+          "startingLine": 887
         }
       },
       {
@@ -95,7 +87,7 @@
         "key": "Normal",
         "location": {
           "startingColumn": 72,
-          "startingLine": 827
+          "startingLine": 888
         }
       },
       {
@@ -103,7 +95,7 @@
         "key": "Normal",
         "location": {
           "startingColumn": 83,
-          "startingLine": 827
+          "startingLine": 888
         }
       },
       {
@@ -111,7 +103,7 @@
         "key": "Schnell",
         "location": {
           "startingColumn": 72,
-          "startingLine": 828
+          "startingLine": 889
         }
       },
       {
@@ -119,7 +111,7 @@
         "key": "Fast",
         "location": {
           "startingColumn": 84,
-          "startingLine": 828
+          "startingLine": 889
         }
       },
       {
@@ -127,7 +119,7 @@
         "key": "Sehr schnell",
         "location": {
           "startingColumn": 57,
-          "startingLine": 829
+          "startingLine": 890
         }
       },
       {
@@ -135,7 +127,15 @@
         "key": "Very fast",
         "location": {
           "startingColumn": 74,
-          "startingLine": 829
+          "startingLine": 890
+        }
+      },
+      {
+        "comment": "",
+        "key": "0",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 964
         }
       }
     ]

@@ -159,7 +159,6 @@ struct FajrSettingsView: View {
             Section(header: Text(L10n.tr("fajr_alarm_sound", language))) {
                 Picker(L10n.tr("fajr_alarm_sound", language), selection: $fajrAlarmSound) {
                     Text(L10n.tr("fajr_sound_system", language)).tag("default")
-                    Text(L10n.tr("fajr_sound_quran", language)).tag("fajr_quran.wav")
                     Text(L10n.tr("fajr_sound_azan1", language)).tag("azan.m4a")
                     Text(L10n.tr("fajr_sound_azan2", language)).tag("azan (2).m4a")
                     Text(L10n.tr("fajr_sound_azan_mecca", language)).tag("azan_holy_makkah.m4a")
@@ -182,6 +181,38 @@ struct FajrSettingsView: View {
                         Spacer()
                     }
                 }
+            }
+            
+            Section {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label(L10n.tr("fajr_settings_info_title", language), systemImage: "info.circle.fill")
+                        .font(.headline)
+                        .foregroundColor(Theme.islamicGreen)
+                    
+                    Text(L10n.tr("fajr_settings_info_desc", language))
+                        .font(.footnote)
+                        .foregroundColor(.primary)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    Button(action: {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    }) {
+                        Text(L10n.tr("fajr_settings_open_ios_settings", language))
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background(Theme.islamicGreen)
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.top, 4)
+                }
+                .padding(.vertical, 6)
             }
         }
         .onDisappear {
@@ -243,10 +274,7 @@ struct FajrSettingsView: View {
     private var nextAlarmPreviewText1: String {
         guard isFajrAlarmEnabled else { return "" }
         if let nextDate = FajrAlarmManager.shared.getNextAlarmDate(alarmNumber: 1) {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "HH:mm"
-            let timeStr = formatter.string(from: nextDate)
-            return "\(L10n.tr("fajr_alarm_next_prefix", language)) \(timeStr) Uhr"
+            return formatNextAlarmPreview(nextDate: nextDate)
         }
         return ""
     }
@@ -254,12 +282,38 @@ struct FajrSettingsView: View {
     private var nextAlarmPreviewText2: String {
         guard isFajrAlarm2Enabled else { return "" }
         if let nextDate = FajrAlarmManager.shared.getNextAlarmDate(alarmNumber: 2) {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "HH:mm"
-            let timeStr = formatter.string(from: nextDate)
-            return "\(L10n.tr("fajr_alarm_next_prefix", language)) \(timeStr) Uhr"
+            return formatNextAlarmPreview(nextDate: nextDate)
         }
         return ""
+    }
+    
+    private func formatNextAlarmPreview(nextDate: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        let timeStr = formatter.string(from: nextDate)
+        
+        let dayStr: String
+        if Calendar.current.isDateInToday(nextDate) {
+            dayStr = L10n.tr("today", language).lowercased()
+        } else if Calendar.current.isDateInTomorrow(nextDate) {
+            dayStr = L10n.tr("tomorrow", language).lowercased()
+        } else {
+            let dayFormatter = DateFormatter()
+            dayFormatter.locale = Locale(identifier: language)
+            dayFormatter.dateFormat = "EEEE"
+            dayStr = dayFormatter.string(from: nextDate)
+        }
+        
+        let nextPrefix = L10n.tr("fajr_alarm_next_prefix_dynamic", language)
+        if language == "de" {
+            return "\(nextPrefix) \(dayStr) um \(timeStr) Uhr"
+        } else if language == "en" {
+            return "\(nextPrefix) \(dayStr) at \(timeStr)"
+        } else if language == "fr" {
+            return "\(nextPrefix) \(dayStr) à \(timeStr)"
+        } else {
+            return "\(nextPrefix) \(dayStr) \(timeStr)"
+        }
     }
     
     private func toggleSoundPreview() {

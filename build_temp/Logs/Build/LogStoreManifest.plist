@@ -6,7 +6,7 @@
 	<integer>12</integer>
 	<key>logs</key>
 	<dict>
-		<key>08274E53-9663-4B89-A3CB-5EC0F3941C9D</key>
+		<key>4C22418D-F854-4E3F-B8A7-2B6E79539CBF</key>
 		<dict>
 			<key>className</key>
 			<string>IDECommandLineBuildLog</string>
@@ -15,7 +15,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>08274E53-9663-4B89-A3CB-5EC0F3941C9D.xcactivitylog</string>
+			<string>4C22418D-F854-4E3F-B8A7-2B6E79539CBF.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -40,15 +40,15 @@
 			<key>signature</key>
 			<string>Building project ImanTrack with scheme ImanTrack and configuration Debug</string>
 			<key>timeStartedRecording</key>
-			<real>803651580.70784402</real>
+			<real>805958803.40382802</real>
 			<key>timeStoppedRecording</key>
-			<real>803651589.10069096</real>
+			<real>805958832.71850002</real>
 			<key>title</key>
 			<string>Building project ImanTrack with scheme ImanTrack and configuration Debug</string>
 			<key>uniqueIdentifier</key>
-			<string>08274E53-9663-4B89-A3CB-5EC0F3941C9D</string>
+			<string>4C22418D-F854-4E3F-B8A7-2B6E79539CBF</string>
 		</dict>
-		<key>F63BFF5D-EDC5-47D0-9308-DF1BD0C1A0EB</key>
+		<key>84F9BEAD-D7C3-41C7-A9AE-57808C3A6634</key>
 		<dict>
 			<key>className</key>
 			<string>IDECommandLineBuildLog</string>
@@ -57,7 +57,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>F63BFF5D-EDC5-47D0-9308-DF1BD0C1A0EB.xcactivitylog</string>
+			<string>84F9BEAD-D7C3-41C7-A9AE-57808C3A6634.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -82,13 +82,13 @@
 			<key>signature</key>
 			<string>Building project ImanTrack with scheme ImanTrack and configuration Debug</string>
 			<key>timeStartedRecording</key>
-			<real>803650977.74620295</real>
+			<real>809097787.68138397</real>
 			<key>timeStoppedRecording</key>
-			<real>803651003.86164796</real>
+			<real>809097802.95506704</real>
 			<key>title</key>
 			<string>Building project ImanTrack with scheme ImanTrack and configuration Debug</string>
 			<key>uniqueIdentifier</key>
-			<string>F63BFF5D-EDC5-47D0-9308-DF1BD0C1A0EB</string>
+			<string>84F9BEAD-D7C3-41C7-A9AE-57808C3A6634</string>
 		</dict>
 	</dict>
 </dict>

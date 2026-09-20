@@ -11,27 +11,30 @@ struct TasbihSettingsView: View {
     @State private var newDhikrArabic = ""
     @State private var newDhikrTransliteration = ""
     @State private var newDhikrGoal = 100
+    @State private var dhikrToEdit: CustomTasbih?
     
     @State private var tasbihAutoCount: Bool = true
     @State private var tasbihVibrationEnabled: Bool = true
     
     @State private var istighfarEnabled: Bool = true
-    @State private var istighfarGoal: Int = 5000
+    @State private var istighfarGoal: Int = 1000
     
     @State private var salawatEnabled: Bool = true
-    @State private var salawatGoal: Int = 2000
+    @State private var salawatGoal: Int = 500
     
     @State private var subhanAllahEnabled: Bool = true
-    @State private var subhanAllahGoal: Int = 1000
+    @State private var subhanAllahGoal: Int = 100
     
     @State private var alhamdulillahEnabled: Bool = true
-    @State private var alhamdulillahGoal: Int = 1000
+    @State private var alhamdulillahGoal: Int = 100
     
     @State private var allahuAkbarEnabled: Bool = true
-    @State private var allahuAkbarGoal: Int = 1000
+    @State private var allahuAkbarGoal: Int = 100
     
     @State private var laIlahaIllallahEnabled: Bool = true
-    @State private var laIlahaIllallahGoal: Int = 500
+    @State private var laIlahaIllallahGoal: Int = 100
+    
+
     
     private var language: String {
         settingsList.first?.language ?? "de"
@@ -65,39 +68,46 @@ struct TasbihSettingsView: View {
                 tasbihSettingRow(title: L10n.tr("tasbih_lahawla", language), arabicLabel: "لا حول ولا قوة إلا بالله", isEnabled: $allahuAkbarEnabled, goal: $allahuAkbarGoal, saveAction: saveSettings, minVal: 10, maxVal: 10000, step: 10)
                 
                 tasbihSettingRow(title: L10n.tr("tasbih_type_lailahaillallah", language), arabicLabel: "لا إله إلا الله", isEnabled: $laIlahaIllallahEnabled, goal: $laIlahaIllallahGoal, saveAction: saveSettings, minVal: 10, maxVal: 10000, step: 10)
+                
             }
             
-            Section(header: Text(language == "ar" ? "تسبيح مخصص" : (language == "en" ? "Custom Dhikr" : "Eigene Dhikr"))) {
+            Section(header: Text(L10n.tr("custom_dhikr", language))) {
                 ForEach(customTasbihs) { custom in
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(custom.title)
-                                    .font(.headline)
-                                if !custom.arabic.isEmpty {
-                                    Text(custom.arabic)
-                                        .font(.caption)
-                                        .foregroundColor(Theme.islamicGreen)
-                                }
-                            }
-                            Spacer()
-                            Button(role: .destructive) {
-                                modelContext.delete(custom)
-                                try? modelContext.save()
-                            } label: {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                        
-                        Toggle(language == "ar" ? "تفعيل" : (language == "en" ? "Enabled" : "Aktiviert"), isOn: Binding(
+                        Toggle(isOn: Binding(
                             get: { custom.isEnabled },
                             set: { newValue in
                                 custom.isEnabled = newValue
                                 try? modelContext.save()
                             }
-                        ))
+                        )) {
+                            HStack {
+                                Text(custom.title)
+                                Spacer()
+                                Button(action: {
+                                    dhikrToEdit = custom
+                                    newDhikrTitle = custom.title
+                                    newDhikrArabic = custom.arabic
+                                    newDhikrTransliteration = custom.transliteration
+                                    newDhikrGoal = custom.goal
+                                    showAddCustomDhikr = true
+                                }) {
+                                    Image(systemName: "pencil")
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .padding(.trailing, 8)
+                                
+                                Button(role: .destructive) {
+                                    modelContext.delete(custom)
+                                    try? modelContext.save()
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
                         
                         if custom.isEnabled {
                             Stepper(value: Binding(
@@ -108,6 +118,11 @@ struct TasbihSettingsView: View {
                                 }
                             ), in: 10...100000, step: 10) {
                                 HStack {
+                                    if !custom.arabic.isEmpty {
+                                        Text(custom.arabic)
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
                                     Spacer()
                                     Text("\(formatNumber(custom.goal))")
                                         .font(.caption)
@@ -121,11 +136,18 @@ struct TasbihSettingsView: View {
                     .padding(.vertical, 4)
                 }
                 
-                Button(action: { showAddCustomDhikr = true }) {
+                Button(action: { 
+                    dhikrToEdit = nil
+                    newDhikrTitle = ""
+                    newDhikrArabic = ""
+                    newDhikrTransliteration = ""
+                    newDhikrGoal = 100
+                    showAddCustomDhikr = true 
+                }) {
                     HStack {
                         Image(systemName: "plus.circle.fill")
                             .foregroundColor(Theme.islamicGreen)
-                        Text(language == "ar" ? "إضافة ذكر جديد" : (language == "en" ? "Add Custom Dhikr" : "Neuen Dhikr hinzufügen"))
+                        Text(L10n.tr("add_custom_dhikr", language))
                             .foregroundColor(.primary)
                     }
                 }
@@ -154,17 +176,18 @@ struct TasbihSettingsView: View {
                 allahuAkbarGoal = s.allahuAkbarGoal
                 
                 laIlahaIllallahEnabled = s.laIlahaIllallahEnabled
-                laIlahaIllallahGoal = s.laIlahaIllallahGoal == 0 ? 500 : s.laIlahaIllallahGoal
+                laIlahaIllallahGoal = (s.laIlahaIllallahGoal == 0 || s.laIlahaIllallahGoal == 500) ? 100 : s.laIlahaIllallahGoal
+
             }
         }
         .sheet(isPresented: $showAddCustomDhikr) {
             NavigationStack {
                 Form {
-                    Section(header: Text(language == "ar" ? "تفاصيل الذكر" : (language == "en" ? "Dhikr Details" : "Dhikr Details"))) {
-                        TextField(language == "ar" ? "الاسم" : (language == "en" ? "Title / Translation" : "Titel / Übersetzung"), text: $newDhikrTitle)
-                        TextField(language == "ar" ? "النص العربي (اختياري)" : (language == "en" ? "Arabic Text (Optional)" : "Arabischer Text (Optional)"), text: $newDhikrArabic)
+                    Section(header: Text(L10n.tr("dhikr_details", language))) {
+                        TextField(L10n.tr("title_translation", language), text: $newDhikrTitle)
+                        TextField(L10n.tr("arabic_text_optional", language), text: $newDhikrArabic)
                             .environment(\.layoutDirection, .rightToLeft)
-                        TextField(language == "ar" ? "اللفظ اللاتيني (اختياري)" : (language == "en" ? "Transliteration (Optional)" : "Transliteration (Optional)"), text: $newDhikrTransliteration)
+                        TextField(L10n.tr("transliteration_optional", language), text: $newDhikrTransliteration)
                     }
                     
                     Section(header: Text(L10n.tr("daily_goal", language))) {
@@ -179,17 +202,18 @@ struct TasbihSettingsView: View {
                         }
                     }
                 }
-                .navigationTitle(language == "ar" ? "ذكر جديد" : (language == "en" ? "New Dhikr" : "Neuer Dhikr"))
+                .navigationTitle(L10n.tr(dhikrToEdit == nil ? "new_dhikr" : "edit_dhikr", language))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button(L10n.tr("cancel", language)) {
+                            dhikrToEdit = nil
                             showAddCustomDhikr = false
                         }
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button(L10n.tr("save", language)) {
-                            addCustomTasbih()
+                            saveCustomTasbih()
                         }
                         .disabled(newDhikrTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
@@ -198,20 +222,29 @@ struct TasbihSettingsView: View {
         }
     }
     
-    private func addCustomTasbih() {
+    private func saveCustomTasbih() {
         let trimmedTitle = newDhikrTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedTitle.isEmpty else { return }
         
-        let newCustom = CustomTasbih(
-            title: trimmedTitle,
-            arabic: newDhikrArabic.trimmingCharacters(in: .whitespacesAndNewlines),
-            transliteration: newDhikrTransliteration.trimmingCharacters(in: .whitespacesAndNewlines),
-            goal: newDhikrGoal
-        )
-        modelContext.insert(newCustom)
+        if let custom = dhikrToEdit {
+            custom.title = trimmedTitle
+            custom.arabic = newDhikrArabic.trimmingCharacters(in: .whitespacesAndNewlines)
+            custom.transliteration = newDhikrTransliteration.trimmingCharacters(in: .whitespacesAndNewlines)
+            custom.goal = newDhikrGoal
+        } else {
+            let newCustom = CustomTasbih(
+                title: trimmedTitle,
+                arabic: newDhikrArabic.trimmingCharacters(in: .whitespacesAndNewlines),
+                transliteration: newDhikrTransliteration.trimmingCharacters(in: .whitespacesAndNewlines),
+                goal: newDhikrGoal
+            )
+            modelContext.insert(newCustom)
+        }
+        
         try? modelContext.save()
         
         // Reset form
+        dhikrToEdit = nil
         newDhikrTitle = ""
         newDhikrArabic = ""
         newDhikrTransliteration = ""
@@ -245,6 +278,8 @@ struct TasbihSettingsView: View {
         
         s.laIlahaIllallahEnabled = laIlahaIllallahEnabled
         s.laIlahaIllallahGoal = laIlahaIllallahGoal
+        
+
         
         try? modelContext.save()
     }

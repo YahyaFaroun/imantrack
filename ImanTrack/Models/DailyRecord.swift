@@ -21,6 +21,9 @@ final class DailyRecord {
     var schlafAdhkarTime: Date? = nil
     var surahAlKahfDone: Bool = false
     var surahAlKahfTime: Date? = nil
+    var surahBaqarahDone: Bool = false
+    var surahBaqarahTime: Date? = nil
+    var surahBaqarahProgress: Int = 0
     
     // Tasbih
     var istighfarCount: Int = 0
@@ -90,6 +93,7 @@ final class DailyRecord {
         }
     }
     
+    @MainActor
     init(date: Date = Date()) {
         let trackingDate = LocationAndSolarManager.shared.getTrackingDate(for: date)
         self.date = trackingDate

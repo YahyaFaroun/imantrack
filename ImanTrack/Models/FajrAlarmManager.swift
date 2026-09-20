@@ -7,10 +7,22 @@ enum FajrAlarmMode: String, Codable, CaseIterable {
     case fixedTime = "fixedTime"
 }
 
-class FajrAlarmManager {
+class FajrAlarmManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = FajrAlarmManager()
     
-    private init() {}
+    private override init() {
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
+    
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        // Erlaube Banner, Sound und Benachrichtigungsliste, auch wenn die App im Vordergrund geöffnet ist
+        completionHandler([.banner, .sound, .list])
+    }
     
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
@@ -29,23 +41,42 @@ class FajrAlarmManager {
     func scheduleFajrAlarm(alarmNumber: Int) {
         let suffix = alarmNumber == 1 ? "" : "2"
         let isEnabled = UserDefaults.standard.bool(forKey: "isFajrAlarm\(suffix)Enabled")
-        guard isEnabled else {
-            cancelFajrAlarm(alarmNumber: alarmNumber)
-            return
-        }
         
-        guard let alarmDate = getNextAlarmDate(alarmNumber: alarmNumber) else {
-            print("Could not calculate next alarm date for alarm \(alarmNumber).")
-            return
-        }
+        cancelFajrAlarm(alarmNumber: alarmNumber)
         
-        scheduleNotification(at: alarmDate, alarmNumber: alarmNumber)
+        guard isEnabled else { return }
+        
+        var scheduledCount = 0
+        var dayOffset = 0
+        
+        while scheduledCount < 10 && dayOffset < 30 {
+            if let alarmDate = getAlarmDate(alarmNumber: alarmNumber, dayOffset: dayOffset) {
+                if alarmDate > Date() {
+                    scheduleNotification(at: alarmDate, alarmNumber: alarmNumber, index: scheduledCount)
+                    scheduledCount += 1
+                }
+            }
+            dayOffset += 1
+        }
     }
     
     func getNextAlarmDate(alarmNumber: Int) -> Date? {
+        var dayOffset = 0
+        while dayOffset < 30 {
+            if let alarmDate = getAlarmDate(alarmNumber: alarmNumber, dayOffset: dayOffset) {
+                if alarmDate > Date() {
+                    return alarmDate
+                }
+            }
+            dayOffset += 1
+        }
+        return nil
+    }
+    
+    func getAlarmDate(alarmNumber: Int, dayOffset: Int) -> Date? {
         let calendar = Calendar.current
         let today = Date()
-        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) else { return nil }
+        guard let targetDate = calendar.date(byAdding: .day, value: dayOffset, to: today) else { return nil }
         
         let suffix = alarmNumber == 1 ? "" : "2"
         let modeRaw = UserDefaults.standard.string(forKey: "fajrAlarm\(suffix)Mode") ?? "atFajr"
@@ -53,67 +84,57 @@ class FajrAlarmManager {
         
         switch mode {
         case .atFajr:
-            guard let fajrDate = LocationAndSolarManager.shared.getFajrDate(for: tomorrow) else {
+            guard let fajrDate = LocationAndSolarManager.shared.getFajrDate(for: targetDate) else {
                 return nil
-            }
-            if fajrDate <= Date() {
-                guard let afterTomorrow = calendar.date(byAdding: .day, value: 2, to: today) else { return nil }
-                return LocationAndSolarManager.shared.getFajrDate(for: afterTomorrow)
             }
             return fajrDate
             
         case .beforeFajr:
-            guard let fajrDate = LocationAndSolarManager.shared.getFajrDate(for: tomorrow) else {
+            guard let fajrDate = LocationAndSolarManager.shared.getFajrDate(for: targetDate) else {
                 return nil
             }
             let defaultOffset = 30
             let offsetMinutes = UserDefaults.standard.object(forKey: "fajrAlarm\(suffix)OffsetMinutes") != nil ? UserDefaults.standard.integer(forKey: "fajrAlarm\(suffix)OffsetMinutes") : defaultOffset
-            guard let offsetDate = calendar.date(byAdding: .minute, value: -offsetMinutes, to: fajrDate) else { return nil }
-            
-            if offsetDate <= Date() {
-                guard let afterTomorrow = calendar.date(byAdding: .day, value: 2, to: today),
-                      let fajrAfterTomorrow = LocationAndSolarManager.shared.getFajrDate(for: afterTomorrow) else { return nil }
-                return calendar.date(byAdding: .minute, value: -offsetMinutes, to: fajrAfterTomorrow)
-            }
-            return offsetDate
+            return calendar.date(byAdding: .minute, value: -offsetMinutes, to: fajrDate)
             
         case .fixedTime:
-            var rawSeconds = alarmNumber == 1 ? 18000.0 : 21600.0 // 5:00 AM (18000) or 6:00 AM (21600)
+            var rawSeconds = alarmNumber == 1 ? 18000.0 : 21600.0
             if UserDefaults.standard.object(forKey: "fajrAlarm\(suffix)FixedTime") != nil {
                 rawSeconds = UserDefaults.standard.double(forKey: "fajrAlarm\(suffix)FixedTime")
             }
             let hour = Int(rawSeconds) / 3600
             let minute = (Int(rawSeconds) % 3600) / 60
             
-            var components = calendar.dateComponents([.year, .month, .day], from: tomorrow)
+            var components = calendar.dateComponents([.year, .month, .day], from: targetDate)
             components.hour = hour
             components.minute = minute
             components.second = 0
             
-            guard let fixedDate = calendar.date(from: components) else { return nil }
-            if fixedDate <= Date() {
-                guard let afterTomorrow = calendar.date(byAdding: .day, value: 2, to: today) else { return nil }
-                var componentsAfter = calendar.dateComponents([.year, .month, .day], from: afterTomorrow)
-                componentsAfter.hour = hour
-                componentsAfter.minute = minute
-                componentsAfter.second = 0
-                return calendar.date(from: componentsAfter)
-            }
-            return fixedDate
+            return calendar.date(from: components)
         }
     }
     
-    private func scheduleNotification(at date: Date, alarmNumber: Int) {
+    private func scheduleNotification(at date: Date, alarmNumber: Int, index: Int) {
         let center = UNUserNotificationCenter.current()
         let content = UNMutableNotificationContent()
         
-        // Sprache aus UserDefaults laden
         let lang = UserDefaults.standard.string(forKey: "language") ?? "de"
         
         content.title = L10n.tr("fajr_alarm_title", lang)
         content.body = L10n.tr("fajr_alarm_body", lang)
         
-        let soundName = UserDefaults.standard.string(forKey: "fajrAlarmSound") ?? "default"
+        if #available(iOS 15.0, *) {
+            content.interruptionLevel = .timeSensitive
+        }
+        
+        var soundName = UserDefaults.standard.string(forKey: "fajrAlarmSound") ?? "default"
+        
+        if soundName.hasSuffix(".m4a") {
+            soundName = soundName.replacingOccurrences(of: ".m4a", with: ".caf")
+        } else if soundName.hasSuffix(".wav") {
+            soundName = soundName.replacingOccurrences(of: ".wav", with: ".caf")
+        }
+        
         if soundName == "default" {
             content.sound = .default
         } else {
@@ -124,16 +145,14 @@ class FajrAlarmManager {
         let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         
-        let identifier = "FajrAlarm\(alarmNumber)"
+        let identifier = "FajrAlarm\(alarmNumber)_\(index)"
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
-        
-        center.removePendingNotificationRequests(withIdentifiers: [identifier])
         
         center.add(request) { error in
             if let error = error {
-                print("Error scheduling Fajr Alarm \(alarmNumber): \(error)")
+                print("Error scheduling Fajr Alarm \(alarmNumber)_\(index): \(error)")
             } else {
-                print("Successfully scheduled Fajr Alarm \(alarmNumber) for \(date)")
+                print("Successfully scheduled Fajr Alarm \(alarmNumber)_\(index) for \(date)")
             }
         }
     }
@@ -144,8 +163,9 @@ class FajrAlarmManager {
     }
     
     func cancelFajrAlarm(alarmNumber: Int) {
-        let identifier = "FajrAlarm\(alarmNumber)"
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
-        print("Cancelled pending Fajr Alarm \(alarmNumber) notification.")
+        let center = UNUserNotificationCenter.current()
+        let identifiers = (0..<10).map { "FajrAlarm\(alarmNumber)_\($0)" }
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
+        print("Cancelled pending Fajr Alarm \(alarmNumber) notifications.")
     }
 }

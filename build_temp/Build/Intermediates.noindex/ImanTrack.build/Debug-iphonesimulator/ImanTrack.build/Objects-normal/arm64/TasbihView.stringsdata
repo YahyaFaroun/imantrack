@@ -1,5 +1,5 @@
 {
-  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/TasbihView.swift",
+  "source": "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/ImanTrack/Views/TasbihView.swift",
   "tables": {
     "Localizable": [
       {
@@ -7,7 +7,15 @@
         "key": "%lld%%",
         "location": {
           "startingColumn": 26,
-          "startingLine": 168
+          "startingLine": 177
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 235
         }
       }
     ]

@@ -1,13 +1,29 @@
 {
-  "source": "/Users/princepalestine/Desktop/ImanTracker/ImanTracker/ImanTrack/Views/TasbihSettingsView.swift",
+  "source": "/Users/princepalestine/Desktop/ImanTrack/ImanTrack/ImanTrack/Views/TasbihSettingsView.swift",
   "tables": {
     "Localizable": [
       {
         "comment": "",
         "key": "%@",
         "location": {
+          "startingColumn": 42,
+          "startingLine": 112
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 174
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@",
+        "location": {
           "startingColumn": 30,
-          "startingLine": 141
+          "startingLine": 272
         }
       }
     ]

@@ -2,9 +2,9 @@ import SwiftUI
 import SwiftData
 
 struct DhikrDetailView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var allSettings: [UserSettings]
-    @Query private var allDailyRecords: [DailyRecord]
+    @Environment(\.modelContext) var modelContext
+    @Query var allSettings: [UserSettings]
+    @Query var allDailyRecords: [DailyRecord]
     
     let type: DhikrType?
     let customTasbih: CustomTasbih?
@@ -28,29 +28,30 @@ struct DhikrDetailView: View {
         self.transliteration = customTasbih.transliteration
     }
     
-    @State private var selectedIndex: Int = 0
+    @State var selectedIndex: Int = 0
     
     enum CounterState { case idle, running, paused }
-    @State private var counterState: CounterState = .idle
-    @State private var sessionCount = 0
-    @State private var autoTimer: Timer? = nil
+    @State var counterState: CounterState = .idle
+    @State var sessionCount = 0
+    @State var autoTimer: Timer? = nil
     
-    @State private var showMashaAllah = false
-    @State private var showResetToast = false
-    @State private var isPulsing = false
-    @State private var flashGreen = false
+    @State var showMashaAllah = false
+    @State var showResetToast = false
+    @State var isPulsing = false
+    @State var flashGreen = false
     
-    @State private var showStopSessionSheet = false
-    @State private var showManualAddAlert = false
-    @State private var manualAddAmount = ""
-    @State private var showInfoSheet = false
-    @FocusState private var isTextFieldFocused: Bool
+    @State var showStopSessionSheet = false
+    @State var showManualAddAlert = false
+    @State var manualAddAmount = ""
+    @State var manualSubtractAmount = ""
+    @State var showInfoSheet = false
+    @FocusState var isTextFieldFocused: Bool
     
     private var settings: UserSettings {
         allSettings.first ?? UserSettings()
     }
     
-    @StateObject private var solarManager = LocationAndSolarManager.shared
+    @StateObject var solarManager = LocationAndSolarManager.shared
     
     private var todayRecord: DailyRecord {
         DailyRecord.current(in: modelContext, allRecords: allDailyRecords, date: solarManager.currentTrackingDate)
@@ -181,7 +182,87 @@ struct DhikrDetailView: View {
         }
     }
     
-    var interval: Double { 60.0 / Double(max(1, currentTempo)) }
+    struct TasbihIntervals {
+        let langsam: Double
+        let normal: Double
+        let schnell: Double
+    }
+    
+    private var presetTasbihIntervals: TasbihIntervals? {
+        guard let type = type else { return nil }
+        switch type {
+        case .istighfar:
+            guard selectedIndex < activeIstighfarCases.count else { return nil }
+            switch activeIstighfarCases[selectedIndex] {
+            case .kurz: return TasbihIntervals(langsam: 1.67, normal: 1.08, schnell: 0.50)
+            case .extended: return TasbihIntervals(langsam: 2.04, normal: 1.51, schnell: 0.99)
+            case .gewaltig: return TasbihIntervals(langsam: 5.63, normal: 4.95, schnell: 4.27)
+            case .lang: return TasbihIntervals(langsam: 15.70, normal: 13.45, schnell: 11.20)
+            case .quranisch: return TasbihIntervals(langsam: 7.33, normal: 6.40, schnell: 5.47)
+            }
+        case .salawat:
+            guard selectedIndex < activeSalawatCases.count else { return nil }
+            switch activeSalawatCases[selectedIndex] {
+            case .kurz: return TasbihIntervals(langsam: 3.33, normal: 2.63, schnell: 1.93)
+            case .lang: return TasbihIntervals(langsam: 11.60, normal: 10.45, schnell: 9.30)
+            }
+        case .subhanAllah:
+            return TasbihIntervals(langsam: 3.77, normal: 3.28, schnell: 2.80)
+        case .alhamdulillah:
+            return TasbihIntervals(langsam: 5.63, normal: 4.57, schnell: 3.50)
+        case .allahuAkbar:
+            return TasbihIntervals(langsam: 3.33, normal: 2.80, schnell: 2.27)
+        case .laIlahaIllallah:
+            return TasbihIntervals(langsam: 6.67, normal: 5.63, schnell: 4.60)
+        }
+    }
+    
+    private var currentTasbihKey: String {
+        if let custom = customTasbih {
+            return "tasbih_speed_\(custom.id)"
+        }
+        guard let type = type else { return "tasbih_speed_default" }
+        switch type {
+        case .istighfar:
+            guard selectedIndex < activeIstighfarCases.count else { return "tasbih_speed_istighfar" }
+            let form = activeIstighfarCases[selectedIndex]
+            return "tasbih_speed_istighfar_\(form.rawValue)"
+        case .salawat:
+            guard selectedIndex < activeSalawatCases.count else { return "tasbih_speed_salawat" }
+            let form = activeSalawatCases[selectedIndex]
+            return "tasbih_speed_salawat_\(form.rawValue)"
+        case .subhanAllah:
+            return "tasbih_speed_subhanAllah"
+        case .alhamdulillah:
+            return "tasbih_speed_alhamdulillah"
+        case .allahuAkbar:
+            return "tasbih_speed_allahuAkbar"
+        case .laIlahaIllallah:
+            return "tasbih_speed_laIlahaIllallah"
+        }
+    }
+    
+    private var currentSpeedStep: Int {
+        if let saved = UserDefaults.standard.object(forKey: currentTasbihKey) as? Int {
+            return saved
+        }
+        return 1 // Voreinstellung "Mittel" für Tasbih
+    }
+    
+    var interval: Double {
+        if let preset = presetTasbihIntervals {
+            let step = currentSpeedStep
+            switch step {
+            case 0: return preset.langsam
+            case 1: return preset.normal
+            case 2: return preset.schnell
+            default: return preset.normal
+            }
+        }
+        
+        // Für individuelle Tasbihs vom User: BPM-Umrechnung (60.0 / BPM)
+        return 60.0 / Double(max(1, currentTempo))
+    }
     
     private var tempoBinding: Binding<Double> {
         Binding<Double>(
@@ -231,18 +312,18 @@ struct DhikrDetailView: View {
         }
     }
     
-    private var fiveStepSliderBinding: Binding<Double> {
+    private var threeStepSliderBinding: Binding<Double> {
         Binding<Double>(
             get: {
-                let diff = currentTempo - baseTempo
-                let step = Double(diff) / Double(tempoStepSize)
-                let stepClamped = min(max(round(step), -2.0), 2.0)
-                return stepClamped + 2.0
+                Double(min(max(currentSpeedStep, 0), 2))
             },
             set: { newValue in
-                let stepFromCenter = Int(round(newValue)) - 2
-                let newTempo = max(1, baseTempo + stepFromCenter * tempoStepSize)
-                updateTempo(to: newTempo)
+                let step = Int(round(newValue))
+                UserDefaults.standard.set(step, forKey: currentTasbihKey)
+                if counterState == .running {
+                    pauseTimer()
+                    startTimer()
+                }
             }
         )
     }
@@ -291,9 +372,18 @@ struct DhikrDetailView: View {
                         ScrollView {
                             VStack(spacing: 12) {
                                 let isLangIstighfar = (type == .istighfar && activeIstighfarCases[index] == .lang)
+                                let fontSize: CGFloat = {
+                                    if isLangIstighfar { return 24 }
+                                    switch type {
+                                    case .istighfar: return 26
+                                    case .salawat: return 24
+                                    case .laIlahaIllallah: return 26
+                                    default: return 30
+                                    }
+                                }()
                                 
                                 Text(titleArFor(index))
-                                    .font(.system(size: isLangIstighfar ? 24 : (type == .istighfar ? 26 : (type == .salawat ? 24 : (type == .laIlahaIllallah ? 26 : 30)))))
+                                    .font(.system(size: fontSize))
                                     .lineSpacing(8)
                                     .foregroundColor(.primary)
                                     .multilineTextAlignment(.center)
@@ -315,7 +405,9 @@ struct DhikrDetailView: View {
                         .tag(index)
                     }
                 }
+                #if os(iOS)
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                #endif
                 .frame(height: (type == .istighfar && selectedIndex == 3) ? 270 : 240)
                 .onChange(of: selectedIndex) { _, newValue in
                     if type == .istighfar {
@@ -362,6 +454,16 @@ struct DhikrDetailView: View {
                         Text(formatNumber(currentGoal))
                             .font(.system(size: 16, weight: .medium, design: .rounded))
                             .foregroundColor(.gray.opacity(0.8))
+                            
+                        if settings.tasbihAutoCount {
+                            let iconName = counterState == .running ? "stop.fill" : "play.fill"
+                            let iconColor: Color = .gray
+                            
+                            Image(systemName: iconName)
+                                .font(.title3)
+                                .foregroundColor(iconColor)
+                                .padding(.top, 4)
+                        }
                     }
                     .padding(.horizontal, 20)
                     .multilineTextAlignment(.center)
@@ -401,39 +503,48 @@ struct DhikrDetailView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             
-            // Symmetrische Buttons unten
+            // Symmetrische Buttons unten mit sanften, zum Design passenden Farben
             VStack {
                 Spacer()
                 HStack {
-                    // Links: Stopp-Button
+                    // Links: Korrektur-Button (Minus, sanftes Rot)
                     Button(action: {
+                        manualSubtractAmount = ""
                         handleStopButtonTap()
                     }) {
-                        Image(systemName: "square.fill")
-                            .font(.title)
-                            .foregroundColor(.white)
-                            .frame(width: 64, height: 64)
-                            .background(Color.red)
+                        Image(systemName: "minus")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color.red.opacity(0.85))
+                            .frame(width: 58, height: 58)
+                            .background(Color.red.opacity(0.14))
                             .clipShape(Circle())
-                            .shadow(radius: 5)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.red.opacity(0.25), lineWidth: 1.5)
+                            )
                     }
                     .padding(.leading, 30)
                     
                     Spacer()
                     
-                    // Rechts: Plus-Button für manuelles Eintragen
+                    // Rechts: Plus-Button für manuelles Eintragen (sanftes Grün)
                     Button(action: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             showManualAddAlert = true
                         }
                     }) {
                         Image(systemName: "plus")
-                            .font(.title)
-                            .foregroundColor(.white)
-                            .frame(width: 64, height: 64)
-                            .background(Theme.islamicGreen)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(Theme.islamicGreen)
+                            .frame(width: 58, height: 58)
+                            .background(Theme.islamicGreen.opacity(0.14))
                             .clipShape(Circle())
-                            .shadow(radius: 5)
+                            .overlay(
+                                Circle()
+                                    .stroke(Theme.islamicGreen.opacity(0.25), lineWidth: 1.5)
+                            )
                     }
                     .padding(.trailing, 30)
                 }
@@ -450,25 +561,7 @@ struct DhikrDetailView: View {
                         }
                     
                     VStack(spacing: 20) {
-                        TextField("0", text: $manualAddAmount)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.center)
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundColor(.primary)
-                            .padding(.vertical, 10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.primary.opacity(0.05))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Theme.islamicGreen.opacity(0.4), lineWidth: 1.5)
-                            )
-                            .focused($isTextFieldFocused)
-                            .frame(width: 140)
-                            .onAppear {
-                                isTextFieldFocused = true
-                            }
+                        ManualAddTextField(manualAddAmount: $manualAddAmount, isTextFieldFocused: $isTextFieldFocused)
                         
                         Button(action: {
                             if let amount = Int(manualAddAmount), amount > 0 {
@@ -500,7 +593,7 @@ struct DhikrDetailView: View {
                 .zIndex(10)
             }
             
-            // Custom-Overlay für Beenden (minimalistisches Stop-Menü)
+            // Custom-Overlay für Beenden & Korrektur (Prozente + Manuelle Zahleneingabe)
             if showStopSessionSheet {
                 ZStack {
                     Color.black.opacity(0.5)
@@ -511,27 +604,10 @@ struct DhikrDetailView: View {
                             }
                         }
                     
-                    VStack(spacing: 12) {
-                        // 100% Button (Oben)
-                        Button(action: {
-                            saveSession(discountPercent: 0)
-                            withAnimation(.easeOut(duration: 0.2)) {
-                                showStopSessionSheet = false
-                            }
-                        }) {
-                            Text("100%")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(Theme.islamicGreen)
-                                .cornerRadius(14)
-                                .shadow(color: Theme.islamicGreen.opacity(0.3), radius: 5, x: 0, y: 3)
-                        }
-                        
-                        // Prozent-Leiste (Darunter)
+                    VStack(spacing: 16) {
+                        // Prozentuale Abzüge
                         HStack(spacing: 8) {
-                            let discounts = [5, 10, 20, 30]
+                            let discounts = [10, 30, 50, 100]
                             ForEach(discounts, id: \.self) { pct in
                                 Button(action: {
                                     saveSession(discountPercent: pct)
@@ -541,18 +617,48 @@ struct DhikrDetailView: View {
                                 }) {
                                     Text("-\(pct)%")
                                         .font(.system(size: 14, weight: .bold, design: .rounded))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(Color.red.opacity(0.9))
                                         .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(Color.red)
+                                        .padding(.vertical, 10)
+                                        .background(Color.red.opacity(0.12))
                                         .cornerRadius(10)
-                                        .shadow(color: Color.red.opacity(0.2), radius: 3, x: 0, y: 2)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color.red.opacity(0.25), lineWidth: 1)
+                                        )
                                 }
                             }
                         }
+                        
+                        Divider()
+                            .background(Color.primary.opacity(0.15))
+                        
+                        // Manuelle Zahleneingabe für Abzug
+                        VStack(spacing: 12) {
+                            ManualAddTextField(manualAddAmount: $manualSubtractAmount, isTextFieldFocused: $isTextFieldFocused)
+                            
+                            Button(action: {
+                                if let amount = Int(manualSubtractAmount), amount > 0 {
+                                    applyCorrection(removeDiff: amount)
+                                }
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    showStopSessionSheet = false
+                                    manualSubtractAmount = ""
+                                }
+                            }) {
+                                Text(L10n.tr("correct", lang))
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(Color.red.opacity(0.8))
+                                    .cornerRadius(12)
+                                    .shadow(color: Color.red.opacity(0.25), radius: 4, x: 0, y: 2)
+                            }
+                        }
                     }
-                    .padding(16)
-                    .frame(width: 240)
+                    .padding(20)
+                    .frame(width: 280)
                     .background(Theme.cardBackground)
                     .cornerRadius(24)
                     .overlay(
@@ -566,9 +672,11 @@ struct DhikrDetailView: View {
             }
         }
         .navigationTitle(localizedTitle)
-        .navigationBarTitleDisplayMode(.inline)
+        #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .primaryAction) {
                 Button(action: {
                     showInfoSheet = true
                 }) {
@@ -607,7 +715,7 @@ struct DhikrDetailView: View {
                 language: settings.language,
                 title: localizedTitle,
                 translation: currentTranslation,
-                sliderValue: fiveStepSliderBinding
+                sliderValue: threeStepSliderBinding
             )
         }
     }
@@ -641,13 +749,15 @@ struct DhikrDetailView: View {
     }
     
     private func startTimer() {
+        #if os(iOS) && !SKIP
         UIApplication.shared.isIdleTimerDisabled = true
+        #endif
         autoTimer = Timer.scheduledTimer(
             withTimeInterval: interval,
             repeats: true
         ) { _ in
             DispatchQueue.main.async {
-                incrementCount(isAuto: true)
+                self.incrementCount(isAuto: true)
             }
         }
     }
@@ -655,7 +765,9 @@ struct DhikrDetailView: View {
     private func pauseTimer() {
         autoTimer?.invalidate()
         autoTimer = nil
+        #if os(iOS) && !SKIP
         UIApplication.shared.isIdleTimerDisabled = false
+        #endif
     }
     
     private func saveSession(discountPercent: Int) {
@@ -748,8 +860,10 @@ struct DhikrDetailView: View {
         let record = todayRecord
         
         if settings.tasbihVibrationEnabled {
+            #if os(iOS) && !SKIP
             UIImpactFeedbackGenerator(style: isAuto ? .light : .medium)
                 .impactOccurred()
+            #endif
         }
         
         if let custom = customTasbih {
@@ -842,7 +956,7 @@ struct DhikrDetailView: View {
 }
 
 struct TranslationSheet: View {
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) var dismiss
     let language: String
     let title: String
     let translation: String
@@ -880,13 +994,11 @@ struct TranslationSheet: View {
                                     .font(.footnote)
                                     .foregroundColor(.gray)
                                 Spacer()
-                                let stepVal = Int(round(sliderValue.wrappedValue))
+                                 let stepVal = Int(round(sliderValue.wrappedValue))
                                 Text(
-                                    stepVal == 0 ? (language == "de" ? "Sehr langsam" : "Very slow") :
-                                    stepVal == 1 ? (language == "de" ? "Langsam" : "Slow") :
-                                    stepVal == 2 ? (language == "de" ? "Normal" : "Normal") :
-                                    stepVal == 3 ? (language == "de" ? "Schnell" : "Fast") :
-                                    (language == "de" ? "Sehr schnell" : "Very fast")
+                                    stepVal == 0 ? (language == "de" ? "Langsam" : (language == "ar" ? "بطيء" : "Slow")) :
+                                    stepVal == 1 ? (language == "de" ? "Normal" : (language == "ar" ? "عادي" : "Normal")) :
+                                    (language == "de" ? "Schnell" : (language == "ar" ? "سريع" : "Fast"))
                                 )
                                 .font(.footnote)
                                 .fontWeight(.semibold)
@@ -908,7 +1020,7 @@ struct TranslationSheet: View {
                                 
                                 Slider(
                                     value: sliderValue,
-                                    in: 0...4,
+                                    in: 0...2,
                                     step: 1
                                 )
                                 .tint(Theme.islamicGreen)
@@ -916,12 +1028,12 @@ struct TranslationSheet: View {
                                 .padding(.vertical, 8)
                                 
                                 Button(action: {
-                                    if sliderValue.wrappedValue < 4 {
+                                    if sliderValue.wrappedValue < 2 {
                                         sliderValue.wrappedValue = sliderValue.wrappedValue + 1
                                     }
                                 }) {
                                     Image(systemName: "hare.fill")
-                                        .foregroundColor(sliderValue.wrappedValue == 4 ? .gray.opacity(0.3) : .gray)
+                                        .foregroundColor(sliderValue.wrappedValue == 2 ? .gray.opacity(0.3) : .gray)
                                         .font(.body)
                                         .frame(width: 32, height: 32)
                                 }
@@ -935,17 +1047,48 @@ struct TranslationSheet: View {
                 }
             }
             .navigationTitle("")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button(L10n.tr("done", language)) {
                         dismiss()
                     }
                     .foregroundColor(Theme.islamicGreen)
                 }
             }
+            #if os(iOS)
             .toolbarBackground(Theme.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            #endif
         }
+}
+}
+
+struct ManualAddTextField: View {
+    @Binding var manualAddAmount: String
+    @FocusState.Binding var isTextFieldFocused: Bool
+    
+    var body: some View {
+        #if os(iOS)
+        TextField("0", text: $manualAddAmount)
+            .keyboardType(.numberPad)
+            .multilineTextAlignment(.center)
+            .font(.system(size: 32, weight: .bold, design: .rounded))
+            .foregroundColor(.primary)
+            .padding(.vertical, 10)
+            .background(Color.primary.opacity(0.05))
+            .cornerRadius(12)
+            .focused($isTextFieldFocused)
+            .frame(width: 140)
+            .onAppear {
+                isTextFieldFocused = true
+            }
+        #else
+        TextField("0", text: $manualAddAmount)
+            .focused($isTextFieldFocused)
+            .frame(width: 140)
+        #endif
     }
 }
