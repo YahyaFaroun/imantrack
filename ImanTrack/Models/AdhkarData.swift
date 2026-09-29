@@ -27,6 +27,30 @@ struct AdhkarItem: Identifiable {
         self.normalInterval = normalInterval
         self.slowInterval = slowInterval
     }
+
+    var defaultBpm: Int {
+        let normal = normalInterval ?? 2.0
+        let bpm = Int(round(60.0 / normal))
+        return max(40, bpm)
+    }
+
+    var currentBpm: Int {
+        if customSpeedStep > 2 {
+            return max(40, customSpeedStep)
+        }
+        let slowVal = slowInterval ?? ((normalInterval ?? 2.0) * 1.35)
+        let normalVal = normalInterval ?? 2.0
+        let quickVal = quickInterval ?? ((normalInterval ?? 2.0) * 0.70)
+        let sec: TimeInterval
+        switch customSpeedStep {
+        case 0: sec = slowVal
+        case 1: sec = normalVal
+        case 2: sec = quickVal
+        default: sec = normalVal
+        }
+        let bpm = Int(round(60.0 / sec))
+        return max(40, bpm)
+    }
 }
 
 let morgenAdhkar: [AdhkarItem] = [

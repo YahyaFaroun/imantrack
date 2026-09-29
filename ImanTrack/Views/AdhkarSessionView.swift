@@ -456,6 +456,7 @@ struct AdhkarSessionView: View {
                         if record.abendAdhkarTime == nil { record.abendAdhkarTime = now }
                     }
                     try? modelContext.save()
+                    AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
                 }
                 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -619,6 +620,7 @@ struct AdhkarSessionView: View {
             record.abendAdhkarTime = now
         }
         try? modelContext.save()
+        AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
         
         clearSessionState()
         
@@ -981,14 +983,14 @@ struct AdhkarInfoModalView: View {
                         .background(Theme.cardBackground)
                         .cornerRadius(12)
                         
-                        // 3. Tempo-Regler
+                        // 3. Tempo-Regler (BPM)
                         VStack(spacing: 8) {
                             HStack {
                                 Text(language == "de" ? "Geschwindigkeit" : "Speed")
                                     .font(.footnote)
                                     .foregroundColor(.gray)
                                 Spacer()
-                                 Text(
+                                Text(
                                     item.customSpeedStep == 0 ? (language == "de" ? "Langsam" : (language == "ar" ? "بطيء" : "Slow")) :
                                     item.customSpeedStep == 1 ? (language == "de" ? "Normal" : (language == "ar" ? "عادي" : "Normal")) :
                                     (language == "de" ? "Schnell" : (language == "ar" ? "سريع" : "Fast"))

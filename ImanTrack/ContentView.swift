@@ -67,7 +67,7 @@ struct ContentView: View {
                 }
                 .tag(2)
             
-            QuranView(viewModel: quranViewModel)
+            QuranView(viewModel: quranViewModel, selectedTab: $selectedTab)
                 .tabItem {
                     Label(L10n.tr("tab_quran", language), systemImage: "book.fill")
                 }

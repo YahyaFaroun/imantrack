@@ -21,6 +21,12 @@ class QuranAPIService {
         return verses.filter { $0.pageNumber == pageNumber }
     }
     
+    func getVersesForPage(pageNumber: Int) -> [Verse] {
+        loadOfflineDataSync()
+        guard let verses = allVerses else { return [] }
+        return verses.filter { $0.pageNumber == pageNumber }
+    }
+    
     func fetchSurah(surahNumber: Int) async throws -> [Verse] {
         if allVerses == nil {
             try await loadOfflineData()
@@ -73,6 +79,24 @@ class QuranAPIService {
         loadOfflineDataSync()
         guard let verses = allVerses else { return nil }
         return verses.first { !globalReadVerseIds.contains($0.id) }
+    }
+
+    func getAllVerseIdsUpTo(verseId: String) -> [String] {
+        loadOfflineDataSync()
+        guard let verses = allVerses, let idx = verses.firstIndex(where: { $0.id == verseId }) else { return [verseId] }
+        return Array(verses[0...idx].map { $0.id })
+    }
+
+    func isVerseAfter(verseA: String, verseB: String) -> Bool {
+        if verseB.isEmpty { return true }
+        if verseA == verseB { return false }
+        loadOfflineDataSync()
+        guard let verses = allVerses,
+              let idxA = verses.firstIndex(where: { $0.id == verseA }),
+              let idxB = verses.firstIndex(where: { $0.id == verseB }) else {
+            return false
+        }
+        return idxA > idxB
     }
 
     private func loadOfflineData() async throws {

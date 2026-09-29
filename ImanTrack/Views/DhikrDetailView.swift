@@ -81,29 +81,31 @@ struct DhikrDetailView: View {
     private var currentTempo: Int {
         if let _ = customTasbih { return 60 }
         guard let type = type else { return 60 }
+        let rawVal: Int
         switch type {
         case .istighfar:
             guard selectedIndex < activeIstighfarCases.count else { return baseTempo }
             let form = activeIstighfarCases[selectedIndex]
             switch form {
-            case .kurz: return settings.istighfarKurzBpm == 0 ? baseTempo : settings.istighfarKurzBpm
-            case .extended: return settings.istighfarExtendedBpm == 0 ? baseTempo : settings.istighfarExtendedBpm
-            case .gewaltig: return settings.istighfarGewaltigBpm == 0 ? baseTempo : settings.istighfarGewaltigBpm
-            case .lang: return settings.istighfarLangBpm == 0 ? baseTempo : settings.istighfarLangBpm
-            case .quranisch: return settings.istighfarQuranischBpm == 0 ? baseTempo : settings.istighfarQuranischBpm
+            case .kurz: rawVal = settings.istighfarKurzBpm == 0 ? baseTempo : settings.istighfarKurzBpm
+            case .extended: rawVal = settings.istighfarExtendedBpm == 0 ? baseTempo : settings.istighfarExtendedBpm
+            case .gewaltig: rawVal = settings.istighfarGewaltigBpm == 0 ? baseTempo : settings.istighfarGewaltigBpm
+            case .lang: rawVal = settings.istighfarLangBpm == 0 ? baseTempo : settings.istighfarLangBpm
+            case .quranisch: rawVal = settings.istighfarQuranischBpm == 0 ? baseTempo : settings.istighfarQuranischBpm
             }
         case .salawat:
             guard selectedIndex < activeSalawatCases.count else { return baseTempo }
             let form = activeSalawatCases[selectedIndex]
             switch form {
-            case .kurz: return settings.salawatKurzBpm == 0 ? baseTempo : settings.salawatKurzBpm
-            case .lang: return settings.salawatLangBpm == 0 ? baseTempo : settings.salawatLangBpm
+            case .kurz: rawVal = settings.salawatKurzBpm == 0 ? baseTempo : settings.salawatKurzBpm
+            case .lang: rawVal = settings.salawatLangBpm == 0 ? baseTempo : settings.salawatLangBpm
             }
-        case .subhanAllah: return settings.subhanAllahPerMinute == 0 ? baseTempo : settings.subhanAllahPerMinute
-        case .alhamdulillah: return settings.alhamdulillahPerMinute == 0 ? baseTempo : settings.alhamdulillahPerMinute
-        case .allahuAkbar: return settings.allahuAkbarPerMinute == 0 ? baseTempo : settings.allahuAkbarPerMinute
-        case .laIlahaIllallah: return settings.laIlahaIllallahPerMinute == 0 ? baseTempo : settings.laIlahaIllallahPerMinute
+        case .subhanAllah: rawVal = settings.subhanAllahPerMinute == 0 ? baseTempo : settings.subhanAllahPerMinute
+        case .alhamdulillah: rawVal = settings.alhamdulillahPerMinute == 0 ? baseTempo : settings.alhamdulillahPerMinute
+        case .allahuAkbar: rawVal = settings.allahuAkbarPerMinute == 0 ? baseTempo : settings.allahuAkbarPerMinute
+        case .laIlahaIllallah: rawVal = settings.laIlahaIllallahPerMinute == 0 ? baseTempo : settings.laIlahaIllallahPerMinute
         }
+        return max(40, rawVal)
     }
     
     private var pageCount: Int {
@@ -259,8 +261,6 @@ struct DhikrDetailView: View {
             default: return preset.normal
             }
         }
-        
-        // Für individuelle Tasbihs vom User: BPM-Umrechnung (60.0 / BPM)
         return 60.0 / Double(max(1, currentTempo))
     }
     
@@ -276,26 +276,26 @@ struct DhikrDetailView: View {
         guard let type = type else { return 60 }
         switch type {
         case .istighfar:
-            guard selectedIndex < activeIstighfarCases.count else { return 29 }
+            guard selectedIndex < activeIstighfarCases.count else { return 60 }
             let form = activeIstighfarCases[selectedIndex]
             switch form {
-            case .kurz: return 36
-            case .extended: return 29
-            case .gewaltig: return 11
-            case .lang: return 4
-            case .quranisch: return 8
+            case .kurz: return 60
+            case .extended: return 50
+            case .gewaltig: return 40
+            case .lang: return 40
+            case .quranisch: return 40
             }
         case .salawat:
-            guard selectedIndex < activeSalawatCases.count else { return 18 }
+            guard selectedIndex < activeSalawatCases.count else { return 60 }
             let form = activeSalawatCases[selectedIndex]
             switch form {
-            case .kurz: return 18
-            case .lang: return 5
+            case .kurz: return 60
+            case .lang: return 40
             }
-        case .subhanAllah: return 16
-        case .alhamdulillah: return 11
-        case .allahuAkbar: return 18
-        case .laIlahaIllallah: return 9
+        case .subhanAllah: return 60
+        case .alhamdulillah: return 60
+        case .allahuAkbar: return 60
+        case .laIlahaIllallah: return 60
         }
     }
     
@@ -633,7 +633,7 @@ struct DhikrDetailView: View {
                         Divider()
                             .background(Color.primary.opacity(0.15))
                         
-                        // Manuelle Zahleneingabe für Abzug
+                        // Manuelle Zahleneingabe für Abzug/Korrektur
                         VStack(spacing: 12) {
                             ManualAddTextField(manualAddAmount: $manualSubtractAmount, isTextFieldFocused: $isTextFieldFocused)
                             
@@ -813,20 +813,56 @@ struct DhikrDetailView: View {
         try? modelContext.save()
     }
     
-    private func getCurrentCount() -> Int {
+    private func resetCurrentCountToZero() {
         let record = todayRecord
         if let custom = customTasbih {
-            return record.getCustomTasbihCount(for: custom.id)
+            record.setCustomTasbihCount(for: custom.id, count: 0)
+        } else if let type = type {
+            switch type {
+            case .istighfar:
+                record.istighfarCount = 0
+                record.istighfarMediumCount = 0
+                record.istighfarSayyidCount = 0
+            case .salawat:
+                record.salawatCount = 0
+                record.salawatCombinedCount = 0
+                record.salawatIbrahimiyahCount = 0
+            case .subhanAllah: record.subhanAllahCount = 0
+            case .alhamdulillah: record.alhamdulillahCount = 0
+            case .allahuAkbar: record.allahuAkbarCount = 0
+            case .laIlahaIllallah: record.laIlahaIllallahCount = 0
+            }
         }
-        guard let type = type else { return 0 }
-        switch type {
-        case .istighfar: return record.istighfarCount
-        case .salawat: return record.salawatCount
-        case .subhanAllah: return record.subhanAllahCount
-        case .alhamdulillah: return record.alhamdulillahCount
-        case .allahuAkbar: return record.allahuAkbarCount
-        case .laIlahaIllallah: return record.laIlahaIllallahCount
+        sessionCount = 0
+        try? modelContext.save()
+    }
+    
+    private func getCurrentCount() -> Int {
+        let record = todayRecord
+        let rawCount: Int
+        if let custom = customTasbih {
+            rawCount = record.getCustomTasbihCount(for: custom.id)
+        } else if let type = type {
+            switch type {
+            case .istighfar: rawCount = record.istighfarCount
+            case .salawat: rawCount = record.salawatCount
+            case .subhanAllah: rawCount = record.subhanAllahCount
+            case .alhamdulillah: rawCount = record.alhamdulillahCount
+            case .allahuAkbar: rawCount = record.allahuAkbarCount
+            case .laIlahaIllallah: rawCount = record.laIlahaIllallahCount
+            }
+        } else {
+            rawCount = 0
         }
+        
+        // Automatische Selbstheilung: Falls der Zählerstand z.B. durch Fehleingabe extrem hoch ist (> 500.000)
+        if rawCount > 500_000 {
+            DispatchQueue.main.async {
+                self.resetCurrentCountToZero()
+            }
+            return 0
+        }
+        return max(0, rawCount)
     }
     
     private func dismissManualAdd() {
@@ -838,18 +874,19 @@ struct DhikrDetailView: View {
     }
     
     private func addManualCount(_ amount: Int) {
+        let safeAmount = min(max(1, amount), 5_000)
         let record = todayRecord
         if let custom = customTasbih {
-            let current = record.getCustomTasbihCount(for: custom.id)
-            record.setCustomTasbihCount(for: custom.id, count: current + amount)
+            let current = max(0, record.getCustomTasbihCount(for: custom.id))
+            record.setCustomTasbihCount(for: custom.id, count: min(current + safeAmount, 500_000))
         } else if let type = type {
             switch type {
-            case .istighfar: record.istighfarCount += amount
-            case .salawat: record.salawatCount += amount
-            case .subhanAllah: record.subhanAllahCount += amount
-            case .alhamdulillah: record.alhamdulillahCount += amount
-            case .allahuAkbar: record.allahuAkbarCount += amount
-            case .laIlahaIllallah: record.laIlahaIllallahCount += amount
+            case .istighfar: record.istighfarCount = min(max(0, record.istighfarCount) + safeAmount, 500_000)
+            case .salawat: record.salawatCount = min(max(0, record.salawatCount) + safeAmount, 500_000)
+            case .subhanAllah: record.subhanAllahCount = min(max(0, record.subhanAllahCount) + safeAmount, 500_000)
+            case .alhamdulillah: record.alhamdulillahCount = min(max(0, record.alhamdulillahCount) + safeAmount, 500_000)
+            case .allahuAkbar: record.allahuAkbarCount = min(max(0, record.allahuAkbarCount) + safeAmount, 500_000)
+            case .laIlahaIllallah: record.laIlahaIllallahCount = min(max(0, record.laIlahaIllallahCount) + safeAmount, 500_000)
             }
         }
         checkCompletion()
@@ -898,13 +935,16 @@ struct DhikrDetailView: View {
     }
     
     private func checkCompletion() {
-        if getCurrentCount() == currentGoal {
-            withAnimation {
-                showMashaAllah = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        if getCurrentCount() >= currentGoal {
+            AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
+            if getCurrentCount() == currentGoal {
                 withAnimation {
-                    showMashaAllah = false
+                    showMashaAllah = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    withAnimation {
+                        showMashaAllah = false
+                    }
                 }
             }
         }
@@ -987,14 +1027,14 @@ struct TranslationSheet: View {
                                 .cornerRadius(16)
                         }
                         
-                        // Tempo-Regler
+                        // Tempo-Regler (3 Stufen)
                         VStack(spacing: 8) {
                             HStack {
                                 Text(language == "de" ? "Geschwindigkeit" : "Speed")
                                     .font(.footnote)
                                     .foregroundColor(.gray)
                                 Spacer()
-                                 let stepVal = Int(round(sliderValue.wrappedValue))
+                                let stepVal = Int(round(sliderValue.wrappedValue))
                                 Text(
                                     stepVal == 0 ? (language == "de" ? "Langsam" : (language == "ar" ? "بطيء" : "Slow")) :
                                     stepVal == 1 ? (language == "de" ? "Normal" : (language == "ar" ? "عادي" : "Normal")) :
@@ -1013,7 +1053,7 @@ struct TranslationSheet: View {
                                     }
                                 }) {
                                     Image(systemName: "tortoise.fill")
-                                        .foregroundColor(sliderValue.wrappedValue == 0 ? .gray.opacity(0.3) : .gray)
+                                        .foregroundColor(sliderValue.wrappedValue <= 0 ? .gray.opacity(0.3) : .gray)
                                         .font(.body)
                                         .frame(width: 32, height: 32)
                                 }
@@ -1033,7 +1073,7 @@ struct TranslationSheet: View {
                                     }
                                 }) {
                                     Image(systemName: "hare.fill")
-                                        .foregroundColor(sliderValue.wrappedValue == 2 ? .gray.opacity(0.3) : .gray)
+                                        .foregroundColor(sliderValue.wrappedValue >= 2 ? .gray.opacity(0.3) : .gray)
                                         .font(.body)
                                         .frame(width: 32, height: 32)
                                 }
@@ -1082,6 +1122,14 @@ struct ManualAddTextField: View {
             .cornerRadius(12)
             .focused($isTextFieldFocused)
             .frame(width: 140)
+            .onChange(of: manualAddAmount) { _, newValue in
+                let filtered = newValue.filter { "0123456789".contains($0) }
+                if let val = Int(filtered), val > 5000 {
+                    manualAddAmount = "5000"
+                } else if filtered != newValue || filtered.count > 4 {
+                    manualAddAmount = String(filtered.prefix(4))
+                }
+            }
             .onAppear {
                 isTextFieldFocused = true
             }
@@ -1089,6 +1137,14 @@ struct ManualAddTextField: View {
         TextField("0", text: $manualAddAmount)
             .focused($isTextFieldFocused)
             .frame(width: 140)
+            .onChange(of: manualAddAmount) { _, newValue in
+                let filtered = newValue.filter { "0123456789".contains($0) }
+                if let val = Int(filtered), val > 5000 {
+                    manualAddAmount = "5000"
+                } else if filtered != newValue || filtered.count > 4 {
+                    manualAddAmount = String(filtered.prefix(4))
+                }
+            }
         #endif
     }
 }

@@ -44,13 +44,28 @@ struct Theme {
     }
     
     static func uthmaniUIFont(size: CGFloat) -> UIFont {
+        var baseFont: UIFont? = nil
         if let font = UIFont(name: "KFGQPCHAFSUthmanicScript-Regula", size: size) {
-            return font
+            baseFont = font
+        } else if let font = UIFont(name: "kfgqpchafsuthmanicscript-Reg", size: size) {
+            baseFont = font
         }
-        if let font = UIFont(name: "kfgqpchafsuthmanicscript-Reg", size: size) {
-            return font
+        
+        guard let font = baseFont else {
+            return UIFont(name: "GeezaPro", size: size) ?? UIFont.systemFont(ofSize: size)
         }
-        return UIFont(name: "GeezaPro", size: size) ?? UIFont.systemFont(ofSize: size)
+        
+        // OpenType 'calt' (Contextual Alternates) für versetztes Tanwin in UthmanicHafs1Ver18.ttf aktivieren
+        let featureSettings: [[UIFontDescriptor.FeatureKey: Int]] = [
+            [
+                .type: kContextualAlternatesType,
+                .selector: kContextualAlternatesOnSelector
+            ]
+        ]
+        let descriptor = font.fontDescriptor.addingAttributes([
+            .featureSettings: featureSettings
+        ])
+        return UIFont(descriptor: descriptor, size: size)
     }
     
     static func uthmaniFontForced(size: CGFloat) -> Font {
@@ -75,7 +90,7 @@ struct Theme {
     static func getQuranBackgroundColor(for theme: String, systemColorScheme: ColorScheme) -> Color {
         switch theme {
         case "light":
-            return .white
+            return Color(red: 235 / 255, green: 243 / 255, blue: 250 / 255) // Soft Ice Blue
         case "sepia":
             return Color(red: 244/255, green: 236/255, blue: 216/255)
         case "dark":
@@ -88,7 +103,7 @@ struct Theme {
     static func getQuranTextColor(for theme: String, systemColorScheme: ColorScheme) -> Color {
         switch theme {
         case "light":
-            return .black
+            return Color(red: 20 / 255, green: 32 / 255, blue: 48 / 255) // Deep navy/charcoal for soft contrast
         case "sepia":
             return Color(red: 44/255, green: 34/255, blue: 24/255) // dunkelbraun
         case "dark":
@@ -101,7 +116,7 @@ struct Theme {
     static func getQuranUIBackgroundColor(for theme: String, systemColorScheme: ColorScheme) -> UIColor {
         switch theme {
         case "light":
-            return .white
+            return UIColor(red: 235 / 255, green: 243 / 255, blue: 250 / 255, alpha: 1.0)
         case "sepia":
             return UIColor(red: 244/255, green: 236/255, blue: 216/255, alpha: 1.0)
         case "dark":
@@ -114,7 +129,7 @@ struct Theme {
     static func getQuranUITextColor(for theme: String, systemColorScheme: ColorScheme) -> UIColor {
         switch theme {
         case "light":
-            return .black
+            return UIColor(red: 20 / 255, green: 32 / 255, blue: 48 / 255, alpha: 1.0)
         case "sepia":
             return UIColor(red: 44/255, green: 34/255, blue: 24/255, alpha: 1.0)
         case "dark":
@@ -187,6 +202,19 @@ struct L10n {
             "tr": "Kur'an Tamamlandı! 🎉", "id": "Khatam Al-Qur'an! 🎉", "ms": "Khatam Al-Quran! 🎉",
             "fr": "Coran Terminé ! 🎉", "es": "¡Corán Completado! 🎉", "ur": "قرآن مکمل ہوا! 🎉", "ru": "Коран завершен! 🎉"
         ],
+        "khatm_gap_title": [
+            "de": "Fast geschafft! 📖", "en": "Almost done! 📖", "ar": "كادت تكتمل! 📖",
+            "tr": "Neredeyse bitti! 📖", "id": "Hampir selesai! 📖", "ms": "Hampir selesai! 📖",
+            "fr": "Presque terminé ! 📖", "es": "¡Casi terminado! 📖", "ur": "تقریباً مکمل! 📖", "ru": "Почти готово! 📖"
+        ],
+        "khatm_gap_desc": [
+            "de": "Hier hast du noch eine Stelle offen. Springe zur ersten ungelesenen Seite, um deine Chatma zu vervollständigen.",
+            "en": "You still have an unread verse here. Jump to the first unread page to complete your Khatm.",
+            "ar": "لا تزال لديك آية غير مقروءة. انتقل إلى أول صفحة غير مقروءة لإتمام الختمة.",
+            "tr": "Burada henüz okunmamış bir yer var. Hatmini tamamlamak için ilk okunmamış sayfaya git.",
+            "id": "Masih ada ayat yang belum dibaca. Lompat ke halaman pertama yang belum dibaca untuk menyelesaikan Khatam Anda.",
+            "fr": "Vous avez encore un verset non lu ici. Allez à la première page non lue pour terminer votre Khatm."
+        ],
         "khatm_desc": [
             "de": "MashaAllah! Du hast den gesamten Koran gelesen. Möge Allah es von dir annehmen.",
             "en": "MashaAllah! You have completed reading the entire Quran. May Allah accept it from you.",
@@ -221,6 +249,25 @@ struct L10n {
         "add": ["de": "Hinzufügen", "en": "Add", "ar": "إضافة"],
         "amount": ["de": "Anzahl", "en": "Amount", "ar": "العدد"],
         "custom_dhikr": ["de": "Eigene Dhikr", "en": "Custom Dhikr", "ar": "أذكار خاصة"],
+        "adhkar_reminder_section_header": ["de": "Adhkar-Erinnerungen", "en": "Adhkar Reminders", "ar": "تنبيهات الأذكار"],
+        "salawat_reminder_section_header": ["de": "Salawat-Erinnerung", "en": "Salawat Reminder", "ar": "تنبيه الصلاة على النبي"],
+        "reminder_morning_adhkar": ["de": "Morgen-Adhkar-Erinnerung", "en": "Morning Adhkar Reminder", "ar": "تذكير أذكار الصباح"],
+        "reminder_evening_adhkar": ["de": "Abend-Adhkar-Erinnerung", "en": "Evening Adhkar Reminder", "ar": "تذكير أذكار المساء"],
+        "reminder_sleep_adhkar": ["de": "Schlaf-Adhkar-Erinnerung", "en": "Sleep Adhkar Reminder", "ar": "تذكير أذكار النوم"],
+        "reminder_kahf": ["de": "Sure Al-Kahf-Erinnerung (Freitag)", "en": "Surah Al-Kahf Reminder (Friday)", "ar": "تذكير سورة الكهف (الجمعة)"],
+        "reminder_salawat": ["de": "Salawat-Erinnerung", "en": "Salawat Reminder", "ar": "تذكير الصلاة على النبي"],
+        "adhkar_reminder_morning_title": ["de": "🌅 Morgen-Adhkar", "en": "🌅 Morning Adhkar", "ar": "🌅 أذكار الصباح"],
+        "adhkar_reminder_morning_body": ["de": "Zeit für deine Morgen-Adhkar. Beginne deinen Tag mit dem Gedenken Allahs.", "en": "Time for your Morning Adhkar. Start your day with the remembrance of Allah.", "ar": "حان وقت أذكار الصباح. ابدأ يومك بذكر الله."],
+        "adhkar_reminder_evening_title": ["de": "🌆 Abend-Adhkar", "en": "🌆 Evening Adhkar", "ar": "🌆 أذكار المساء"],
+        "adhkar_reminder_evening_body": ["de": "Zeit für deine Abend-Adhkar. Schütze deinen Nachmittag und Abend.", "en": "Time for your Evening Adhkar. Protect your afternoon and evening.", "ar": "حان وقت أذكار المساء. احفظ عصرك ومساءك."],
+        "adhkar_reminder_sleep_title": ["de": "🌙 Schlaf-Adhkar", "en": "🌙 Sleep Adhkar", "ar": "🌙 أذكار النوم"],
+        "adhkar_reminder_sleep_body": ["de": "Vergiss nicht deine Schlaf-Adhkar vor dem Schlafen zu rezitieren.", "en": "Don't forget to recite your Sleep Adhkar before sleeping.", "ar": "لا تنسَ قراءة أذكار النوم قبل النوم."],
+        "adhkar_reminder_kahf_title": ["de": "📖 Sure Al-Kahf (Freitag)", "en": "📖 Surah Al-Kahf (Friday)", "ar": "📖 سورة الكهف (الجمعة)"],
+        "adhkar_reminder_kahf_body": ["de": "Heute ist Freitag! Vergiss nicht, Sure Al-Kahf zu lesen.", "en": "Today is Friday! Don't forget to read Surah Al-Kahf.", "ar": "اليوم الجمعة! لا تنسَ قراءة سورة الكهف."],
+        "salawat_reminder_title": ["de": "✨ Salawat auf den Propheten", "en": "✨ Salawat upon the Prophet", "ar": "✨ الصلاة على النبي ﷺ"],
+        "salawat_reminder_body": ["de": "Sendest du heute Salawat auf unseren Propheten Muhammad ﷺ?", "en": "Will you send Salawat upon our Prophet Muhammad ﷺ today?", "ar": "هل صليت اليوم على نبينا محمد ﷺ؟"],
+        "salawat_reminder_friday_title": ["de": "🕌 Segensreicher Freitag – Salawat Sunnah", "en": "🕌 Blessed Friday – Salawat Sunnah", "ar": "🕌 الجمعة المباركة – سنة الصلاة على النبي ﷺ"],
+        "salawat_reminder_friday_body": ["de": "Heute ist Freitag! Es ist eine besondere Sunnah, vermehrt Salawat auf den Propheten ﷺ zu sprechen.", "en": "Today is Friday! It is a special Sunnah to send abundant Salawat upon the Prophet ﷺ.", "ar": "اليوم يوم الجمعة! من السنة المأكورة الإكثار من الصلاة على النبي ﷺ."],
         "add_custom_dhikr": ["de": "Eigenen Dhikr hinzufügen", "en": "Add Custom Dhikr", "ar": "إضافة ذكر خاص"],
         "dhikr_details": ["de": "Dhikr-Details", "en": "Dhikr Details", "ar": "تفاصيل الذكر"],
         "title_translation": ["de": "Titel / Übersetzung", "en": "Title / Translation", "ar": "العنوان / الترجمة"],
@@ -553,16 +600,42 @@ extension String {
     func cleanQuranText() -> String {
         var cleaned = self
         
+        // 0. Trimm nachlaufende QPC-Versnummern (U+00A0 + arabische Ziffern)
+        if let range = cleaned.range(of: "[\\u{00A0}\\u{0660}-\\u{0669}\\u{06D4}\\s]+$", options: .regularExpression) {
+            cleaned.removeSubrange(range)
+        }
+        
         // 1. Ersetze Standard-Sukun (U+0652) durch das koranische Sukun-Zeichen (U+06E1 - kleine Khah-Kopfform)
         cleaned = cleaned.replacingOccurrences(of: "\u{0652}", with: "\u{06E1}")
         
-        // 2. Entferne schwarze/ausgefüllte Kreise und Dotted Circles (U+06DF, U+06E0, U+25CC),
+        // 2. Entferne schwarze/ausgefüllte Kreise und Dotted Circles (U+06DF, U+25CC),
         // da sie auf iOS als störende schwarze Punkte (z. B. auf 'أُولَـٰٓئِكَ') dargestellt werden.
         cleaned = cleaned.replacingOccurrences(of: "\u{06DF}", with: "")
-        cleaned = cleaned.replacingOccurrences(of: "\u{06E0}", with: "")
         cleaned = cleaned.replacingOccurrences(of: "\u{25CC}", with: "")
         
-        // 3. Positionierungs-Fix: Ersetze Tatweel (U+0640) + Dagger Alif (U+0670) durch einfaches Dagger Alif,
+        // 3. Typografischer Iqlab/Idgham-Fix: Ersetze doppelten Haraka (Tanwin) vor dem kleinen Meem (\u{06E2}/\u{06E8})
+        // durch die einzelne Haraka (Fatha/Damma/Kasra) + Meem.
+        // Dies verhindert das unschöne Überlappen/Kollidieren von Meem und Tanwin-Strichen in iOS CoreText.
+        cleaned = cleaned.replacingOccurrences(of: "\u{064B}\u{06E2}", with: "\u{064E}\u{06E2}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{064C}\u{06E2}", with: "\u{064F}\u{06E2}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{064D}\u{06E2}", with: "\u{0650}\u{06E2}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{064B}\u{06E8}", with: "\u{064E}\u{06E8}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{064C}\u{06E8}", with: "\u{064F}\u{06E8}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{064D}\u{06E8}", with: "\u{0650}\u{06E8}")
+        
+        // Erweiterter Iqlab-Fix für QPC Open Tanwin (\u{0657}, \u{065E}, \u{08F0}..) vor Meem
+        cleaned = cleaned.replacingOccurrences(of: "\u{0657}\u{06E2}", with: "\u{064E}\u{06E2}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{065E}\u{06E2}", with: "\u{064F}\u{06E2}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{08F0}\u{06E2}", with: "\u{064E}\u{06E2}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{08F1}\u{06E2}", with: "\u{064F}\u{06E2}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{08F2}\u{06E2}", with: "\u{0650}\u{06E2}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{0657}\u{06E8}", with: "\u{064E}\u{06E8}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{065E}\u{06E8}", with: "\u{064F}\u{06E8}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{08F0}\u{06E8}", with: "\u{064E}\u{06E8}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{08F1}\u{06E8}", with: "\u{064F}\u{06E8}")
+        cleaned = cleaned.replacingOccurrences(of: "\u{08F2}\u{06E8}", with: "\u{0650}\u{06E8}")
+        
+        // 4. Positionierungs-Fix: Ersetze Tatweel (U+0640) + Dagger Alif (U+0670) durch einfaches Dagger Alif,
         // um das Verrutschen des Dagger Alif auf das Folgezeichen (z.B. bei 'Ar-Rahman') zu verhindern.
         cleaned = cleaned.replacingOccurrences(of: "\u{0640}\u{0670}", with: "\u{0670}")
         cleaned = cleaned.replacingOccurrences(of: "\u{064E}\u{0640}\u{0670}", with: "\u{064E}\u{0670}")

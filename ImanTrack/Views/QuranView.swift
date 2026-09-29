@@ -12,10 +12,15 @@ class QuranViewModel: ObservableObject {
     @Published var lastFontSize: CGFloat = storedFontSize()
     @Published var navTitle: String = ""
     @Published var hasScrolledToLastRead: Bool = false
+    
+    init() {
+        UserDefaults.standard.set(false, forKey: "quranHasRestoredInitialPosition")
+    }
 }
 
 struct QuranView: View {
     @ObservedObject var viewModel: QuranViewModel
+    @Binding var selectedTab: Int
 
     @Environment(\.modelContext) var modelContext
     @Query var allDailyRecords: [DailyRecord]
@@ -23,6 +28,7 @@ struct QuranView: View {
     @Environment(\.colorScheme) var colorScheme
     
     @AppStorage("globalReadVerseIds") var globalReadVerseIdsData: Data = Data()
+    @AppStorage("currentKhatmReadVerseIds") var currentKhatmReadVerseIdsData: Data = Data()
     @AppStorage("lastReadVerseId") var lastReadVerseId: String = ""
     @AppStorage("quranTheme") var quranTheme: String = "system"
     @AppStorage("quranFontType") var quranFontType: String = "uthmanic"
@@ -49,34 +55,57 @@ struct QuranView: View {
         }
     }
     
-    @State private var hasDoneInitialRestore: Bool = false
-    @State private var showKhatmCelebrationAnimation: Bool = false
-    
-    private var lastReadPage: Int {
-        let saved = UserDefaults.standard.integer(forKey: "quranLastReadPage")
-        return saved > 0 ? saved : 1
+    private var currentKhatmReadVerseIds: Set<String> {
+        get {
+            guard let array = try? JSONDecoder().decode([String].self, from: currentKhatmReadVerseIdsData) else { return [] }
+            return Set(array)
+        }
+        nonmutating set {
+            if let data = try? JSONEncoder().encode(Array(newValue)) {
+                currentKhatmReadVerseIdsData = data
+            }
+        }
     }
     
-    private var lastReadTarget: (page: Int, verseId: String?) {
-        let lastPage = lastReadPage
-        let lastVerse = lastReadVerseId
-        if !lastVerse.isEmpty {
-            return (lastPage, lastVerse)
+    @State private var hasDoneInitialRestore: Bool = false
+    @State private var showKhatmCelebrationAnimation: Bool = false
+    @State private var showGapNoticeBanner: Bool = false
+    @State private var gapVerseTarget: Verse? = nil
+    @State private var targetPageToRestore: Int? = nil
+    @State private var targetVerseToRestore: String? = nil
+    @State private var isUserDragging: Bool = false
+    
+    private func migrateIfNeeded() {
+        let key = "hasMigratedKhatmVerseIds_v1"
+        if !UserDefaults.standard.bool(forKey: key) {
+            UserDefaults.standard.set(true, forKey: key)
+            if currentKhatmReadVerseIdsData.isEmpty && !globalReadVerseIdsData.isEmpty {
+                currentKhatmReadVerseIdsData = globalReadVerseIdsData
+            }
         }
-        return (lastPage, nil)
+    }
+
+    private var lastReadPage: Int {
+        if !lastReadVerseId.isEmpty, let verse = QuranAPIService.shared.getVerse(id: lastReadVerseId) {
+            return verse.pageNumber
+        }
+        return 1
+    }
+
+    private var lastReadTarget: (page: Int, verseId: String?) {
+        if !lastReadVerseId.isEmpty, let verse = QuranAPIService.shared.getVerse(id: lastReadVerseId) {
+            return (verse.pageNumber, verse.id)
+        }
+        let page1Verses = QuranAPIService.shared.getVersesForPage(pageNumber: 1)
+        return (1, page1Verses.first?.id)
     }
 
     private var firstUnreadTarget: (page: Int, verseId: String?) {
-        if let unreadVerse = QuranAPIService.shared.findFirstUnreadVerse(globalReadVerseIds: globalReadVerseIds) {
+        if let unreadVerse = QuranAPIService.shared.findFirstUnreadVerse(globalReadVerseIds: currentKhatmReadVerseIds) {
             return (unreadVerse.pageNumber, unreadVerse.id)
         }
-        let lastVerse = lastReadVerseId
-        if !lastVerse.isEmpty {
-            if let currentVerse = QuranAPIService.shared.getVerse(id: lastVerse) {
-                return (currentVerse.pageNumber, currentVerse.id)
-            }
-        }
-        return (lastReadPage, nil)
+        let page1Verses = QuranAPIService.shared.getVersesForPage(pageNumber: 1)
+        return (1, page1Verses.first?.id)
     }
 
     var body: some View {
@@ -94,7 +123,7 @@ struct QuranView: View {
                                 QuranPageView(
                                     pageNumber: pageNum,
                                     fontSize: viewModel.fontSize,
-                                    globalReadVerseIds: globalReadVerseIds,
+                                    globalReadVerseIds: currentKhatmReadVerseIds,
                                     language: settings.language,
                                     useTajweedHarakat: settings.useTajweedHarakat,
                                     onMarkVersesAsRead: { verses in
@@ -110,6 +139,34 @@ struct QuranView: View {
                                     },
                                     onCompleteKhatm: {
                                         completeKhatm(proxy: proxy)
+                                    },
+                                    onPageMounted: { pageNum in
+                                        if pageNum == targetPageToRestore {
+                                            let verseToLock = targetVerseToRestore ?? lastReadTarget.verseId
+                                            targetPageToRestore = nil
+                                            targetVerseToRestore = nil
+                                            proxy.scrollTo(pageNum, anchor: .top)
+                                            if let vId = verseToLock {
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                                    withAnimation(.easeOut(duration: 0.22)) {
+                                                        proxy.scrollTo(vId, anchor: UnitPoint(x: 0.5, y: 0.15))
+                                                    }
+                                                }
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
+                                                    withAnimation(.easeOut(duration: 0.15)) {
+                                                        proxy.scrollTo(vId, anchor: UnitPoint(x: 0.5, y: 0.15))
+                                                    }
+                                                }
+                                            }
+                                            // Ebene 1: Deterministische Bestätigung erst nach Ausrollen/Stabilisierung (+0.35s)
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                                if let vId = verseToLock, !vId.isEmpty {
+                                                    lastReadVerseId = vId
+                                                }
+                                                UserDefaults.standard.set(true, forKey: "quranHasRestoredInitialPosition")
+                                                print("[LOG] Deterministic restore confirmed for page \(pageNum). Fixed lastReadVerseId = '\(lastReadVerseId)'. Tracking locked until user drag.")
+                                            }
+                                        }
                                     }
                                 )
                                 .id(pageNum)
@@ -128,19 +185,78 @@ struct QuranView: View {
                                 UserDefaults.standard.set(Double(viewModel.fontSize), forKey: "quranFontSize")
                             }
                     )
+                    .simultaneousGesture(
+                        DragGesture()
+                            .onChanged { _ in
+                                isUserDragging = true
+                                UserDefaults.standard.set(true, forKey: "quranHasUserDraggedSinceRestore")
+                            }
+                            .onEnded { _ in
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                                    isUserDragging = false
+                                }
+                            }
+                    )
                     .onAppear {
-                        if !hasDoneInitialRestore {
-                            hasDoneInitialRestore = true
-                            restorePosition(proxy: proxy)
-                        } else {
-                            UserDefaults.standard.set(true, forKey: "quranHasRestoredInitialPosition")
+                        migrateIfNeeded()
+                        checkAndRestorePosition(proxy: proxy)
+                    }
+                    .onChange(of: selectedTab) { _, newValue in
+                        if newValue == 3 {
+                            checkAndRestorePosition(proxy: proxy)
                         }
                     }
                     .onReceive(NotificationCenter.default.publisher(for: Notification.Name("QuranTabRetapped"))) { _ in
                         scrollToUnreadTarget(proxy: proxy)
                     }
+                    
+                    if showGapNoticeBanner {
+                        ZStack {
+                            Color.black.opacity(0.65).ignoresSafeArea()
+                            
+                            VStack(spacing: 20) {
+                                Text("📖")
+                                    .font(.system(size: 64))
+                                
+                                Text(L10n.tr("khatm_gap_title", settings.language))
+                                    .font(.title2.bold())
+                                    .foregroundColor(.white)
+                                
+                                Text(L10n.tr("khatm_gap_desc", settings.language))
+                                    .font(.subheadline)
+                                    .foregroundColor(.white.opacity(0.85))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 16)
+                                
+                                Button(action: {
+                                    withAnimation(.easeOut(duration: 0.25)) {
+                                        showGapNoticeBanner = false
+                                    }
+                                    if let gap = gapVerseTarget {
+                                        performFastScrollToTarget(proxy: proxy, target: (gap.pageNumber, gap.id))
+                                    }
+                                }) {
+                                    Text(L10n.tr("done", settings.language))
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(Theme.islamicGreen)
+                                        .cornerRadius(14)
+                                }
+                                .padding(.top, 8)
+                            }
+                            .padding(28)
+                            .background(Theme.cardBackground)
+                            .cornerRadius(28)
+                            .padding(.horizontal, 30)
+                            .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                        }
+                        .transition(.scale(scale: 0.9).combined(with: .opacity))
+                        .zIndex(100)
+                    }
                 }
-                
+
                 if showKhatmCelebrationAnimation {
                     ZStack {
                         Color.black.opacity(0.65).ignoresSafeArea()
@@ -199,54 +315,63 @@ struct QuranView: View {
         }
     }
     
-    private func restorePosition(proxy: ScrollViewProxy) {
-        UserDefaults.standard.set(false, forKey: "quranHasRestoredInitialPosition")
-        let target = lastReadTarget
-        let targetPage = target.page
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            proxy.scrollTo(targetPage, anchor: .top)
-            if let vId = target.verseId {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    proxy.scrollTo(vId, anchor: UnitPoint(x: 0.5, y: 0.15))
-                }
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                UserDefaults.standard.set(true, forKey: "quranHasRestoredInitialPosition")
-            }
+    private func checkAndRestorePosition(proxy: ScrollViewProxy) {
+        if selectedTab == 3 && !hasDoneInitialRestore {
+            hasDoneInitialRestore = true
+            UserDefaults.standard.set(false, forKey: "quranHasRestoredInitialPosition")
+            restorePosition(proxy: proxy)
         }
     }
 
+    private func restorePosition(proxy: ScrollViewProxy) {
+        performFastScrollToTarget(proxy: proxy, target: lastReadTarget)
+    }
+
     private func scrollToUnreadTarget(proxy: ScrollViewProxy) {
+        performFastScrollToTarget(proxy: proxy, target: lastReadTarget)
+    }
+
+    private func performFastScrollToTarget(proxy: ScrollViewProxy, target: (page: Int, verseId: String?)) {
         UserDefaults.standard.set(false, forKey: "quranHasRestoredInitialPosition")
-        let target = firstUnreadTarget
+        UserDefaults.standard.set(false, forKey: "quranHasUserDraggedSinceRestore")
         let targetPage = target.page
+        let targetVerseId = target.verseId
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+        targetPageToRestore = targetPage
+        targetVerseToRestore = targetVerseId
+        
+        // 1. Sofort zur Zielseite springen, um LazyVStack zum Erzeugen der Zielseite zu bewegen
+        proxy.scrollTo(targetPage, anchor: .top)
+        
+        // Fallback-Retry nach 0.08s, falls die Zielseite durch Vorabpufferung bereits gerendert war
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
             proxy.scrollTo(targetPage, anchor: .top)
-            if let vId = target.verseId {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let vId = targetVerseId {
+                withAnimation(.easeOut(duration: 0.22)) {
                     proxy.scrollTo(vId, anchor: UnitPoint(x: 0.5, y: 0.15))
                 }
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                UserDefaults.standard.set(true, forKey: "quranHasRestoredInitialPosition")
             }
         }
     }
     
     private func markVersesAsRead(_ verses: [Verse]) {
-        var current = globalReadVerseIds
+        var current = currentKhatmReadVerseIds
         var addedCount = 0
         var maxPageNumber = 0
         
+        var allPrefixIds: Set<String> = []
         for verse in verses {
-            if !current.contains(verse.id) {
-                current.insert(verse.id)
-                addedCount += 1
-            }
+            let prefixIds = QuranAPIService.shared.getAllVerseIdsUpTo(verseId: verse.id)
+            allPrefixIds.formUnion(prefixIds)
             if verse.pageNumber > maxPageNumber {
                 maxPageNumber = verse.pageNumber
+            }
+        }
+        
+        for id in allPrefixIds {
+            if !current.contains(id) {
+                current.insert(id)
+                addedCount += 1
             }
         }
         
@@ -258,7 +383,13 @@ struct QuranView: View {
         }
         
         if addedCount > 0 {
-            globalReadVerseIds = current
+            currentKhatmReadVerseIds = current
+            
+            var globalSet = globalReadVerseIds
+            globalSet.formUnion(allPrefixIds)
+            globalReadVerseIds = globalSet
+            
+            print("[LOG] markVersesAsRead: Monotonic backfill up to page \(maxPageNumber). Total read verses in current Khatm: \(currentKhatmReadVerseIds.count)")
             
             // Tagesfortschritt erhöhen
             let record = todayRecord
@@ -283,19 +414,25 @@ struct QuranView: View {
     }
     
     private func completeKhatm(proxy: ScrollViewProxy) {
-        let currentKhatm = UserDefaults.standard.integer(forKey: "quranKhatmCount")
-        UserDefaults.standard.set(currentKhatm + 1, forKey: "quranKhatmCount")
-        
-        globalReadVerseIds = Set<String>()
-        lastReadVerseId = ""
-        UserDefaults.standard.set(1, forKey: "quranLastReadPage")
-        
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-            showKhatmCelebrationAnimation = true
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            proxy.scrollTo(1, anchor: .top)
+        if let unreadVerse = QuranAPIService.shared.findFirstUnreadVerse(globalReadVerseIds: currentKhatmReadVerseIds) {
+            gapVerseTarget = unreadVerse
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                showGapNoticeBanner = true
+            }
+        } else {
+            let currentKhatm = UserDefaults.standard.integer(forKey: "quranKhatmCount")
+            UserDefaults.standard.set(currentKhatm + 1, forKey: "quranKhatmCount")
+            
+            currentKhatmReadVerseIds = Set<String>()
+            lastReadVerseId = ""
+            
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                showKhatmCelebrationAnimation = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                proxy.scrollTo(1, anchor: .top)
+            }
         }
     }
 }
@@ -317,6 +454,7 @@ struct QuranPageView: View {
     let onPageRead: (Int) -> Void
     var onTopVisible: ((String) -> Void)? = nil
     var onCompleteKhatm: (() -> Void)? = nil
+    var onPageMounted: ((Int) -> Void)? = nil
     
     @AppStorage("lastReadVerseId") var lastReadVerseId: String = ""
     @AppStorage("quranTheme") var quranTheme: String = "system"
@@ -365,6 +503,9 @@ struct QuranPageView: View {
         }
         .onAppear {
             loadPage()
+            DispatchQueue.main.async {
+                onPageMounted?(pageNumber)
+            }
         }
         .onChange(of: pageNumber) { _, _ in
             verses = []
@@ -391,7 +532,6 @@ struct QuranPageView: View {
                                 DispatchQueue.main.async {
                                     onTopVisible?(QuranSurah.getName(firstSurah))
                                     if UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
-                                        UserDefaults.standard.set(pageNumber, forKey: "quranLastReadPage")
                                         let currentHighest = UserDefaults.standard.integer(forKey: "quranHighestReadPage")
                                         if pageNumber > currentHighest {
                                             UserDefaults.standard.set(pageNumber, forKey: "quranHighestReadPage")
@@ -424,30 +564,29 @@ struct QuranPageView: View {
                                             let maxY = verseGeo.frame(in: .global).maxY
                                             Color.clear
                                                 .onChange(of: minY) { _, newValue in
-                                                    // Wenn der Vers im aktiven oberen Lesebereich ist
                                                     if newValue < 150 && newValue > -50 {
-                                                        if lastReadVerseId != verse.id {
-                                                            DispatchQueue.main.async {
-                                                                lastReadVerseId = verse.id
-                                                                if UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
-                                                                    UserDefaults.standard.set(pageNumber, forKey: "quranLastReadPage")
+                                                        let hasRestored = UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition")
+                                                        let hasDragged = UserDefaults.standard.bool(forKey: "quranHasUserDraggedSinceRestore")
+                                                        if hasRestored && hasDragged {
+                                                            if lastReadVerseId != verse.id && QuranAPIService.shared.isVerseAfter(verseA: verse.id, verseB: lastReadVerseId) {
+                                                                DispatchQueue.main.async {
+                                                                    lastReadVerseId = verse.id
+                                                                    print("[LOG] lastReadVerseId updated to: \(verse.id) (Page \(verse.pageNumber))")
                                                                 }
                                                             }
                                                         }
                                                     }
                                                 }
                                                 .onChange(of: maxY) { oldValue, newValue in
+                                                    let isScrollingDown = newValue < oldValue
                                                     let delta = abs(newValue - oldValue)
-                                                    // Nur bei normalem Lesetempo (kein schnelles Swipen/Runter-Scrollen) als gelesen markieren
-                                                    if delta <= 30 && newValue < 120 {
+                                                    // Ausgrauen/Lesen DARF NUR von oben nach unten (beim Vorwärts-Lesen) passieren, wenn die unterste Kante (maxY) nach oben aus dem Bereich scrollt
+                                                    if isScrollingDown && delta <= 30 && newValue < 120 {
                                                         if !globalReadVerseIds.contains(verse.id) && UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
                                                             let idx = versesList.firstIndex(where: { $0.id == verse.id }) ?? 0
                                                             let prefixVerses = Array(versesList[0...idx])
                                                             DispatchQueue.main.async {
                                                                 onMarkVersesAsRead(prefixVerses)
-                                                                if UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
-                                                                    UserDefaults.standard.set(pageNumber, forKey: "quranLastReadPage")
-                                                                }
                                                             }
                                                         }
                                                     }
@@ -529,8 +668,9 @@ struct QuranPageView: View {
                 let minY = geo.frame(in: .global).minY
                 Color.clear
                     .onChange(of: minY) { oldValue, newValue in
+                        let isScrollingDown = newValue < oldValue
                         let delta = abs(newValue - oldValue)
-                        if delta <= 30 && newValue < 100 && !verses.isEmpty && !hasTrackedPageRead && UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
+                        if isScrollingDown && delta <= 30 && newValue < 100 && !verses.isEmpty && !hasTrackedPageRead && UserDefaults.standard.bool(forKey: "quranHasRestoredInitialPosition") {
                             DispatchQueue.main.async {
                                 markAllVersesAsRead()
                             }
@@ -686,6 +826,19 @@ struct QuranPageView: View {
     
     private func loadPage() {
         guard verses.isEmpty && !isLoading else { return }
+        
+        let offlineVerses = QuranAPIService.shared.getVersesForPage(pageNumber: pageNumber)
+        if !offlineVerses.isEmpty {
+            self.verses = offlineVerses
+            self.isLoading = false
+            self.hasError = false
+            let allAlreadyRead = offlineVerses.allSatisfy { globalReadVerseIds.contains($0.id) }
+            if allAlreadyRead {
+                self.hasTrackedPageRead = true
+            }
+            return
+        }
+        
         isLoading = true
         hasError = false
         Task {
@@ -715,12 +868,10 @@ struct QuranPageView: View {
         let unread = verses.filter { !globalReadVerseIds.contains($0.id) }
         if !unread.isEmpty {
             onMarkVersesAsRead(unread)
-            UserDefaults.standard.set(pageNumber, forKey: "quranLastReadPage")
         }
         if !hasTrackedPageRead {
             hasTrackedPageRead = true
             onPageRead(pageNumber)
-            UserDefaults.standard.set(pageNumber, forKey: "quranLastReadPage")
         }
     }
     
@@ -730,7 +881,6 @@ struct QuranPageView: View {
         if allRead && !hasTrackedPageRead {
             hasTrackedPageRead = true
             onPageRead(pageNumber)
-            UserDefaults.standard.set(pageNumber, forKey: "quranLastReadPage")
         }
     }
 }

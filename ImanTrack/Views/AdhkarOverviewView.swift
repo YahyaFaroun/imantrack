@@ -46,6 +46,7 @@ struct AdhkarOverviewView: View {
     }
     
     @State var activeSessionType: AdhkarSessionType? = nil
+    @State private var showPermissionSheet = false
     
     var body: some View {
         NavigationStack {
@@ -166,6 +167,20 @@ struct AdhkarOverviewView: View {
             #endif
             .sheet(isPresented: $showAlKahfReader) {
                 AlKahfReaderView()
+            }
+            .sheet(isPresented: $showPermissionSheet) {
+                NotificationPermissionSheet()
+            }
+            .onChange(of: activeSessionType) { oldValue, newValue in
+                if oldValue != nil && newValue == nil {
+                    AdhkarReminderManager.shared.shouldPromptPermissionAfterFirstSession { shouldPrompt in
+                        if shouldPrompt {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                showPermissionSheet = true
+                            }
+                        }
+                    }
+                }
             }
             .alert(L10n.tr("fajr_option_title", language), isPresented: $showFajrDialog) {
                 Button(L10n.tr("fajr_option_ontime", language)) {

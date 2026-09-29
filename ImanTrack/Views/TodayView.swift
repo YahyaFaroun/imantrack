@@ -22,24 +22,48 @@ struct TodayView: View {
         DailyRecord.current(in: modelContext, allRecords: allDailyRecords, date: solarManager.currentTrackingDate)
     }
     
-    func formattedHijriDateTransliterated(for date: Date) -> String {
+    func formattedHijriDateTransliterated(for date: Date, lang: String = "de") -> String {
         let cal = Calendar(identifier: .islamicUmmAlQura)
         let weekday = cal.component(.weekday, from: date)
         let day = cal.component(.day, from: date)
         let month = cal.component(.month, from: date)
         let year = cal.component(.year, from: date)
         
-        let weekdays = ["Al-Ahad", "Al-Ithnayn", "Al-Thulatha", "Al-Arba'a", "Al-Khamis", "Al-Jumu'ah", "Al-Sabt"]
-        let months = [
-            "Muharram", "Safar", "Rabi' al-Awwal", "Rabi' al-Thani",
-            "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Sha'ban",
-            "Ramadan", "Shawwal", "Dhu al-Qi'dah", "Dhu al-Hijjah"
-        ]
-        
-        let dayName = (weekday >= 1 && weekday <= 7) ? weekdays[weekday - 1] : ""
-        let monthName = (month >= 1 && month <= 12) ? months[month - 1] : ""
-        
-        return "\(dayName), \(day). \(monthName) \(year) AH"
+        if lang.lowercased() == "ar" {
+            let weekdaysAr = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+            let monthsAr = [
+                "محرم", "صفر", "ربيع الأول", "ربيع الثاني",
+                "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان",
+                "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
+            ]
+            let dayName = (weekday >= 1 && weekday <= 7) ? weekdaysAr[weekday - 1] : ""
+            let monthName = (month >= 1 && month <= 12) ? monthsAr[month - 1] : ""
+            let formatter = NumberFormatter()
+            formatter.locale = Locale(identifier: "ar")
+            let dayAr = formatter.string(from: NSNumber(value: day)) ?? "\(day)"
+            let yearAr = formatter.string(from: NSNumber(value: year)) ?? "\(year)"
+            return "\(dayName)، \(dayAr) \(monthName) \(yearAr) هـ"
+        } else if lang.lowercased() == "de" {
+            let weekdaysDe = ["Ahad", "Ithnayn", "Thulatha", "Arba'a", "Chamis", "Jumu'ah", "Sabt"]
+            let monthsDe = [
+                "Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani",
+                "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Sha'ban",
+                "Ramadan", "Shawwal", "Dhu al-Qi'dah", "Dhu al-Hijjah"
+            ]
+            let dayName = (weekday >= 1 && weekday <= 7) ? weekdaysDe[weekday - 1] : ""
+            let monthName = (month >= 1 && month <= 12) ? monthsDe[month - 1] : ""
+            return "\(dayName), \(day). \(monthName) \(year) n.H."
+        } else {
+            let weekdaysEn = ["Al-Ahad", "Al-Ithnayn", "Al-Thulatha", "Al-Arba'a", "Al-Khamis", "Al-Jumu'ah", "Al-Sabt"]
+            let monthsEn = [
+                "Muharram", "Safar", "Rabi' al-Awwal", "Rabi' al-Thani",
+                "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Sha'ban",
+                "Ramadan", "Shawwal", "Dhu al-Qi'dah", "Dhu al-Hijjah"
+            ]
+            let dayName = (weekday >= 1 && weekday <= 7) ? weekdaysEn[weekday - 1] : ""
+            let monthName = (month >= 1 && month <= 12) ? monthsEn[month - 1] : ""
+            return "\(dayName), \(day). \(monthName) \(year) AH"
+        }
     }
     
     func formattedDate(for lang: String) -> String {
@@ -74,7 +98,7 @@ struct TodayView: View {
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 20)
                             
-                            Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate))
+                            Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(Theme.islamicGreen)

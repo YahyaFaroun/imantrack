@@ -7,12 +7,12 @@ final class UserSettings {
     var quranDailyGoal: Int = 5
     
     // Tasbih
-    var subhanAllahPerMinute: Int = 16
-    var alhamdulillahPerMinute: Int = 11
-    var allahuAkbarPerMinute: Int = 18
-    var istighfarPerMinute: Int = 36
-    var salawatPerMinute: Int = 18
-    var laIlahaIllallahPerMinute: Int = 9
+    var subhanAllahPerMinute: Int = 60
+    var alhamdulillahPerMinute: Int = 60
+    var allahuAkbarPerMinute: Int = 60
+    var istighfarPerMinute: Int = 60
+    var salawatPerMinute: Int = 60
+    var laIlahaIllallahPerMinute: Int = 60
     var globalTasbihTempo: Int = 60
     
     // Tasbih Enabled
@@ -47,14 +47,14 @@ final class UserSettings {
     var showSalawatLang: Bool = true
     
     // Individual Tempos (BPM)
-    var istighfarKurzBpm: Int = 36
-    var istighfarExtendedBpm: Int = 29
-    var istighfarGewaltigBpm: Int = 11
-    var istighfarLangBpm: Int = 4
-    var istighfarQuranischBpm: Int = 8
+    var istighfarKurzBpm: Int = 60
+    var istighfarExtendedBpm: Int = 50
+    var istighfarGewaltigBpm: Int = 40
+    var istighfarLangBpm: Int = 40
+    var istighfarQuranischBpm: Int = 40
     
-    var salawatKurzBpm: Int = 18
-    var salawatLangBpm: Int = 5
+    var salawatKurzBpm: Int = 60
+    var salawatLangBpm: Int = 40
     
     // Appearance
     var isDarkMode: Bool = true
@@ -145,11 +145,11 @@ enum IstighfarForm: String, CaseIterable, Codable {
     
     var defaultBpm: Int {
         switch self {
-        case .kurz: return 80
-        case .extended: return 60
-        case .gewaltig: return 30
-        case .lang: return 4
-        case .quranisch: return 20
+        case .kurz: return 60
+        case .extended: return 50
+        case .gewaltig: return 40
+        case .lang: return 40
+        case .quranisch: return 40
         }
     }
 }
@@ -199,8 +199,8 @@ enum SalawatForm: String, CaseIterable, Codable {
     
     var defaultBpm: Int {
         switch self {
-        case .kurz: return 50
-        case .lang: return 8
+        case .kurz: return 60
+        case .lang: return 40
         }
     }
 }

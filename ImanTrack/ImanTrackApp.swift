@@ -97,9 +97,26 @@ struct ImanTrackApp: App {
                 if newPhase == .active {
                     LocationAndSolarManager.shared.updateTrackingDate()
                     FajrAlarmManager.shared.scheduleFajrAlarm()
+                    AdhkarReminderManager.shared.scheduleReminders(container: sharedModelContainer)
+                } else if newPhase == .background || newPhase == .inactive {
+                    saveReadingStateOnLifecycleChange()
                 }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+                saveReadingStateOnLifecycleChange()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
+                saveReadingStateOnLifecycleChange()
             }
         }
         .modelContainer(sharedModelContainer)
+    }
+
+    private func saveReadingStateOnLifecycleChange() {
+        let currentVerse = UserDefaults.standard.string(forKey: "lastReadVerseId") ?? ""
+        if !currentVerse.isEmpty {
+            UserDefaults.standard.set(currentVerse, forKey: "lastReadVerseId")
+        }
+        UserDefaults.standard.synchronize()
     }
 }
