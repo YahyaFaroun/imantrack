@@ -48,6 +48,10 @@ struct QuranView: View {
     @State private var showGapNoticeBanner: Bool = false
     @State private var gapVerseTarget: Verse? = nil
 
+    @State private var minAllowedOffsetY: CGFloat = 0
+    @State private var hasRestoredInitialPosition: Bool = false
+    @State private var uiScrollView: UIScrollView? = nil
+
     #if DEBUG
     @State private var debugTopPage: Int = 1
     @State private var debugTopPageGrayCount: Int = 0
@@ -76,39 +80,65 @@ struct QuranView: View {
                         }
                     }
                 } else if let start = startPage {
-                    ScrollView {
-                        #if os(iOS) && !SKIP
-                        DisableScrollsToTop().frame(width: 0, height: 0)
-                        #endif
-                        LazyVStack(spacing: 0) {
-                            ForEach(start...604, id: \.self) { pageNum in
-                                QuranPageView(
-                                    pageNumber: pageNum,
-                                    fontSize: viewModel.fontSize,
-                                    readFrontier: progressStore.readFrontier,
-                                    language: settings.language,
-                                    useTajweedHarakat: settings.useTajweedHarakat,
-                                    onMarkVersesAsRead: { verses in
-                                        markVersesAsRead(verses)
-                                    },
-                                    onTopVisible: { surahName in
-                                        if viewModel.navTitle != surahName {
-                                            viewModel.navTitle = surahName
+                    ZStack {
+                        if !hasRestoredInitialPosition {
+                            VStack(spacing: 16) {
+                                ProgressView()
+                                    .tint(Theme.accent)
+                                Text("Position wird geladen...")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                        
+                        ScrollView {
+                            #if os(iOS) && !SKIP
+                            DisableScrollsToTop().frame(width: 0, height: 0)
+                            QuranScrollViewTracker(
+                                minAllowedOffsetY: $minAllowedOffsetY,
+                                onScrollViewFound: { sv in
+                                    self.uiScrollView = sv
+                                }
+                            )
+                            .frame(width: 0, height: 0)
+                            #endif
+                            LazyVStack(spacing: 0) {
+                                ForEach(start...604, id: \.self) { pageNum in
+                                    QuranPageView(
+                                        pageNumber: pageNum,
+                                        fontSize: viewModel.fontSize,
+                                        readFrontier: progressStore.readFrontier,
+                                        language: settings.language,
+                                        useTajweedHarakat: settings.useTajweedHarakat,
+                                        onPageBoundsCalculated: { boundsMap in
+                                            if pageNum == start && !hasRestoredInitialPosition {
+                                                restoreInitialPosition(pageBoundsMap: boundsMap)
+                                            }
+                                        },
+                                        onMarkVersesAsRead: { verses, maxVerseMaxY in
+                                            markVersesAsRead(verses, maxVerseMaxYInPage: maxVerseMaxY)
+                                        },
+                                        onTopVisible: { surahName in
+                                            if viewModel.navTitle != surahName {
+                                                viewModel.navTitle = surahName
+                                            }
+                                        },
+                                        onCompleteKhatm: {
+                                            completeKhatm()
+                                        },
+                                        onPageScrollUpdate: { pageNum, grayCount in
+                                            #if DEBUG
+                                            self.debugTopPage = pageNum
+                                            self.debugTopPageGrayCount = grayCount
+                                            #endif
                                         }
-                                    },
-                                    onCompleteKhatm: {
-                                        completeKhatm()
-                                    },
-                                    onPageScrollUpdate: { pageNum, grayCount in
-                                        #if DEBUG
-                                        self.debugTopPage = pageNum
-                                        self.debugTopPageGrayCount = grayCount
-                                        #endif
-                                    }
-                                )
-                                .id(pageNum)
+                                    )
+                                    .id(pageNum)
+                                }
                             }
                         }
+                        .opacity(hasRestoredInitialPosition ? 1.0 : 0.0)
                     }
                     .simultaneousGesture(
                         MagnificationGesture()
@@ -252,29 +282,68 @@ struct QuranView: View {
             #endif
         }
         .onAppear {
-            initStartPageIfNeeded()
+            if hasRestoredInitialPosition {
+                // Re-entering Quran tab: recalculate startPage for current readFrontier
+                initStartPageIfNeeded(force: true)
+            } else {
+                initStartPageIfNeeded()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ResetQuranStartPage"))) { _ in
             self.startPage = nil
-            initStartPageIfNeeded()
+            initStartPageIfNeeded(force: true)
         }
     }
     
-    private func initStartPageIfNeeded() {
-        guard quranAPIService.isLoaded, startPage == nil else { return }
-        let unreadVerse = quranAPIService.getVerseAtIndex(progressStore.readFrontier)
-        let page = unreadVerse?.pageNumber ?? 1
-        self.startPage = page
-        print("[QURAN_VIEW] Session startPage fixed to: \(page) for readFrontier: \(progressStore.readFrontier)")
+    private func initStartPageIfNeeded(force: Bool = false) {
+        guard quranAPIService.isLoaded else { return }
+        if force || startPage == nil {
+            let unreadVerse = quranAPIService.getVerseAtIndex(progressStore.readFrontier)
+            let page = unreadVerse?.pageNumber ?? 1
+            self.startPage = page
+            self.hasRestoredInitialPosition = false
+            self.minAllowedOffsetY = 0
+            print("[QURAN_VIEW] Session startPage fixed to: \(page) for readFrontier: \(progressStore.readFrontier)")
+        }
     }
     
-    private func markVersesAsRead(_ verses: [Verse]) {
+    private func restoreInitialPosition(pageBoundsMap: [String: CGFloat]) {
+        guard !hasRestoredInitialPosition else { return }
+        
+        let targetIndex = progressStore.readFrontier
+        guard let targetVerse = quranAPIService.getVerseAtIndex(targetIndex) else {
+            self.hasRestoredInitialPosition = true
+            return
+        }
+        
+        let verseMaxY = pageBoundsMap[targetVerse.id] ?? 0
+        let fontLineHeight = Theme.quranUIFont(type: quranFontType, size: viewModel.fontSize).lineHeight
+        let targetVerseTopInPage = max(0, verseMaxY - fontLineHeight)
+        
+        self.minAllowedOffsetY = targetVerseTopInPage
+        self.hasRestoredInitialPosition = true
+        
+        DispatchQueue.main.async {
+            self.uiScrollView?.setContentOffset(CGPoint(x: 0, y: targetVerseTopInPage), animated: false)
+            print("[QURAN_VIEW] Restored initial scroll position directly to readFrontier verse \(targetVerse.surah):\(targetVerse.ayah) (index \(targetIndex)) at offset Y: \(targetVerseTopInPage)")
+        }
+    }
+    
+    private func markVersesAsRead(_ verses: [Verse], maxVerseMaxYInPage: CGFloat? = nil) {
         guard let maxVerse = verses.max(by: { 
             (quranAPIService.getVerseIndex(id: $0.id) ?? -1) < (quranAPIService.getVerseIndex(id: $1.id) ?? -1) 
         }) else { return }
         
         if let maxIdx = quranAPIService.getVerseIndex(id: maxVerse.id) {
             progressStore.advance(toIndex: maxIdx + 1, modelContext: modelContext, date: solarManager.currentTrackingDate)
+            
+            if let maxVerseMaxY = maxVerseMaxYInPage {
+                let fontLineHeight = Theme.quranUIFont(type: quranFontType, size: viewModel.fontSize).lineHeight
+                let newMinOffset = max(0, maxVerseMaxY - fontLineHeight)
+                if newMinOffset > self.minAllowedOffsetY {
+                    self.minAllowedOffsetY = newMinOffset
+                }
+            }
         }
     }
     
@@ -308,7 +377,8 @@ struct QuranPageView: View {
     let readFrontier: Int
     let language: String
     let useTajweedHarakat: Bool
-    let onMarkVersesAsRead: ([Verse]) -> Void
+    var onPageBoundsCalculated: (([String: CGFloat]) -> Void)? = nil
+    let onMarkVersesAsRead: ([Verse], CGFloat?) -> Void
     var onTopVisible: ((String) -> Void)? = nil
     var onCompleteKhatm: (() -> Void)? = nil
     var onPageScrollUpdate: ((Int, Int) -> Void)? = nil
@@ -430,6 +500,9 @@ struct QuranPageView: View {
             }
         }
         self.verseBoundsMap = updated
+        if !verses.isEmpty && updated.count == verses.count {
+            onPageBoundsCalculated?(updated)
+        }
     }
     
     private var pageDivider: some View {
@@ -515,17 +588,20 @@ struct QuranPageView: View {
             return 47.0
         }()
         let threshold = topInset + 44.0 + 15.0 // navbar height (44) + 15pt offset buffer
+        let fontLineHeight = Theme.quranUIFont(type: quranFontType, size: fontSize).lineHeight
         
         let first5 = Array(verses.prefix(5))
         let first5Bounds = first5.compactMap { verseBoundsMap[$0.id] }
         let first5GlobalMaxY = first5Bounds.map { minY + $0 }
-        print("[QURAN_DETECT] Page \(pageNumber): pageMinY=\(String(format: "%.1f", minY)), boundsCount=\(verseBoundsMap.count)/\(verses.count), first5Bounds=\(first5Bounds.map { String(format: "%.1f", $0) }), first5GlobalMaxY=\(first5GlobalMaxY.map { String(format: "%.1f", $0) }), threshold=\(String(format: "%.1f", threshold))")
+        print("[QURAN_DETECT] Page \(pageNumber): pageMinY=\(String(format: "%.1f", minY)), boundsCount=\(verseBoundsMap.count)/\(verses.count), first5Bounds=\(first5Bounds.map { String(format: "%.1f", $0) }), first5GlobalMaxY=\(first5GlobalMaxY.map { String(format: "%.1f", $0) }), threshold=\(String(format: "%.1f", threshold)), lineHeight=\(String(format: "%.1f", fontLineHeight))")
         
         var readVersesOnPage: [Verse] = []
         for verse in verses {
             if let verseMaxY = verseBoundsMap[verse.id] {
                 let globalVerseMaxY = minY + verseMaxY
-                if globalVerseMaxY <= threshold {
+                // Shift evaluation point by (fontLineHeight) so verse turns gray when only ONE line remains visible
+                let adjustedVerseMaxY = globalVerseMaxY - fontLineHeight
+                if adjustedVerseMaxY <= threshold {
                     readVersesOnPage.append(verse)
                 }
             }
@@ -538,7 +614,8 @@ struct QuranPageView: View {
                 if maxIdx + 1 > readFrontier {
                     let idxInPage = verses.firstIndex(where: { $0.id == maxVerse.id }) ?? 0
                     let prefixVerses = Array(verses[0...idxInPage])
-                    onMarkVersesAsRead(prefixVerses)
+                    let maxVerseMaxY = verseBoundsMap[maxVerse.id]
+                    onMarkVersesAsRead(prefixVerses, maxVerseMaxY)
                 }
             }
         }
@@ -820,6 +897,50 @@ struct JustifiedText: View {
 
 
 #if os(iOS) && !SKIP
+struct QuranScrollViewTracker: UIViewRepresentable {
+    @Binding var minAllowedOffsetY: CGFloat
+    var onScrollViewFound: ((UIScrollView) -> Void)?
+    var onScroll: ((CGFloat) -> Void)?
+    
+    class Coordinator: NSObject, UIScrollViewDelegate {
+        var parent: QuranScrollViewTracker
+        weak var scrollView: UIScrollView?
+        
+        init(parent: QuranScrollViewTracker) {
+            self.parent = parent
+        }
+        
+        func scrollViewDidScroll(_ scrollView: UIScrollView) {
+            let minOffset = parent.minAllowedOffsetY
+            if minOffset > 0 && scrollView.contentOffset.y < minOffset {
+                scrollView.contentOffset.y = minOffset
+            }
+            parent.onScroll?(scrollView.contentOffset.y)
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+    
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.isUserInteractionEnabled = false
+        DispatchQueue.main.async {
+            if let scrollView = view.enclosingScrollView() {
+                context.coordinator.scrollView = scrollView
+                scrollView.delegate = context.coordinator
+                onScrollViewFound?(scrollView)
+            }
+        }
+        return view
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        context.coordinator.parent = self
+    }
+}
+
 struct DisableScrollsToTop: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
