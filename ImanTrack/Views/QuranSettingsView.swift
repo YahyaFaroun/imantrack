@@ -10,6 +10,19 @@ struct QuranSettingsView: View {
     @AppStorage("quranFontSize") private var quranFontSize: Double = 30.0
     @AppStorage("quranFontType") private var quranFontType: String = "uthmanic"
     @AppStorage("quranTheme") private var quranTheme: String = "system"
+    @AppStorage("quranHideReadPages") private var quranHideReadPages: Bool = false
+    @AppStorage("lastReadVerseId") private var lastReadVerseId: String = ""
+    
+    @State private var showResetConfirmAlert = false
+    
+    #if DEBUG
+    @State private var debugSelectedSurah: Int = 1
+    @State private var debugSelectedAyah: Int = 1
+    
+    private var maxAyahsForDebugSurah: Int {
+        QuranAPIService.shared.getVerseCount(surah: debugSelectedSurah)
+    }
+    #endif
     
     private var language: String {
         settingsList.first?.language ?? "de"
@@ -29,6 +42,16 @@ struct QuranSettingsView: View {
                 }
                 .onChange(of: quranDailyGoal) { _, _ in
                     saveSettings()
+                }
+            }
+
+            Section(header: Text(L10n.tr("quran_reading_options", language))) {
+                Toggle(L10n.tr("quran_hide_read_pages", language), isOn: $quranHideReadPages)
+                
+                Button(role: .destructive, action: {
+                    showResetConfirmAlert = true
+                }) {
+                    Text(L10n.tr("quran_reset_khatm", language))
                 }
             }
 
@@ -54,6 +77,38 @@ struct QuranSettingsView: View {
                 }
                 .listRowBackground(Theme.getQuranBackgroundColor(for: quranTheme, systemColorScheme: colorScheme))
             }
+            
+            #if DEBUG
+            Section(header: Text("Lesefront setzen (Debug)")) {
+                Picker("Sure", selection: $debugSelectedSurah) {
+                    ForEach(1...114, id: \.self) { surahNum in
+                        Text("\(surahNum). \(QuranSurah.getName(surahNum))").tag(surahNum)
+                    }
+                }
+                .onChange(of: debugSelectedSurah) { _, _ in
+                    debugSelectedAyah = 1
+                }
+                
+                Stepper("Vers (Ayah): \(debugSelectedAyah)", value: $debugSelectedAyah, in: 1...max(1, maxAyahsForDebugSurah))
+                
+                Button("Lesefront auf Sure \(debugSelectedSurah), Vers \(debugSelectedAyah) setzen") {
+                    if let verseIdx = QuranAPIService.shared.getVerseIndex(surah: debugSelectedSurah, ayah: debugSelectedAyah) {
+                        QuranProgressStore.shared.setReadFrontier(verseIdx, modelContext: modelContext)
+                        NotificationCenter.default.post(name: Notification.Name("ResetQuranStartPage"), object: nil)
+                    }
+                }
+                .foregroundColor(.orange)
+            }
+            #endif
+        }
+        .alert(L10n.tr("quran_reset_khatm", language), isPresented: $showResetConfirmAlert) {
+            Button(L10n.tr("quran_reset_khatm", language), role: .destructive) {
+                QuranProgressStore.shared.resetKhatm(modelContext: modelContext)
+                lastReadVerseId = ""
+            }
+            Button(L10n.tr("cancel", language), role: .cancel) {}
+        } message: {
+            Text(L10n.tr("quran_reset_confirm", language))
         }
         .navigationTitle(L10n.tr("koran_sec", language))
         .navigationBarTitleDisplayMode(.inline)
