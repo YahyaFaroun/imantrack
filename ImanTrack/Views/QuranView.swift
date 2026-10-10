@@ -48,6 +48,11 @@ struct QuranView: View {
     @State private var showGapNoticeBanner: Bool = false
     @State private var gapVerseTarget: Verse? = nil
 
+    #if DEBUG
+    @State private var debugTopPage: Int = 1
+    @State private var debugTopPageGrayCount: Int = 0
+    #endif
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -93,6 +98,12 @@ struct QuranView: View {
                                     },
                                     onCompleteKhatm: {
                                         completeKhatm()
+                                    },
+                                    onPageScrollUpdate: { pageNum, grayCount in
+                                        #if DEBUG
+                                        self.debugTopPage = pageNum
+                                        self.debugTopPageGrayCount = grayCount
+                                        #endif
                                     }
                                 )
                                 .id(pageNum)
@@ -202,6 +213,36 @@ struct QuranView: View {
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
                     .zIndex(100)
                 }
+                
+                #if DEBUG
+                VStack {
+                    Spacer()
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            let unreadVerse = quranAPIService.getVerseAtIndex(progressStore.readFrontier)
+                            let frontierStr = unreadVerse != nil ? "\(unreadVerse!.surah):\(unreadVerse!.ayah) · #\(progressStore.readFrontier)" : "Ende (#\(progressStore.readFrontier))"
+                            let unreadPage = unreadVerse?.pageNumber ?? 1
+                            
+                            Text("Lesefront: \(frontierStr)")
+                                .font(.caption.bold())
+                                .foregroundColor(.white)
+                            
+                            Text("Nächste Seite: S. \(unreadPage) | Top S. \(debugTopPage): \(debugTopPageGrayCount) grau")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.75))
+                    .cornerRadius(10)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 10)
+                }
+                .allowsHitTesting(false)
+                .zIndex(95)
+                #endif
             }
             .navigationTitle(viewModel.navTitle.isEmpty ? L10n.tr("tab_quran", settings.language) : viewModel.navTitle)
             #if os(iOS)
@@ -270,6 +311,7 @@ struct QuranPageView: View {
     let onMarkVersesAsRead: ([Verse]) -> Void
     var onTopVisible: ((String) -> Void)? = nil
     var onCompleteKhatm: (() -> Void)? = nil
+    var onPageScrollUpdate: ((Int, Int) -> Void)? = nil
     
     @AppStorage("quranTheme") var quranTheme: String = "system"
     @AppStorage("quranFontType") var quranFontType: String = "uthmanic"
@@ -502,8 +544,10 @@ struct QuranPageView: View {
         }
         
         if let firstSurah = verses.first?.surah, minY > -300 && minY < 400 {
+            let grayCount = verses.filter { (QuranAPIService.shared.getVerseIndex(id: $0.id) ?? -1) < readFrontier }.count
             DispatchQueue.main.async {
                 onTopVisible?(QuranSurah.getName(firstSurah))
+                onPageScrollUpdate?(pageNumber, grayCount)
             }
         }
     }
@@ -694,20 +738,6 @@ struct JustifiedText: UIViewRepresentable {
     
     func updateUIView(_ uiView: UITextView, context: Context) {
         uiView.backgroundColor = Theme.getQuranUIBackgroundColor(for: theme, systemColorScheme: colorScheme)
-        
-        if let lastOriginal = context.coordinator.lastOriginalText,
-           lastOriginal.string == attributedText.string {
-            // Fast path: text string is unchanged, update foreground colors without layout recomputation
-            uiView.textStorage.beginEditing()
-            attributedText.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: min(attributedText.length, uiView.textStorage.length)), options: []) { value, range, _ in
-                if let color = value as? UIColor {
-                    uiView.textStorage.addAttribute(.foregroundColor, value: color, range: range)
-                }
-            }
-            uiView.textStorage.endEditing()
-            context.coordinator.lastOriginalText = attributedText
-            return
-        }
         
         context.coordinator.lastOriginalText = attributedText
         uiView.attributedText = attributedText

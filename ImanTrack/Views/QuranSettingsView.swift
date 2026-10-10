@@ -46,7 +46,7 @@ struct QuranSettingsView: View {
             }
 
             Section(header: Text(L10n.tr("quran_reading_options", language))) {
-                Toggle(L10n.tr("quran_hide_read_pages", language), isOn: $quranHideReadPages)
+                // Toggle(L10n.tr("quran_hide_read_pages", language), isOn: $quranHideReadPages) // vorerst deaktiviert für Schritt 3
                 
                 Button(role: .destructive, action: {
                     showResetConfirmAlert = true
