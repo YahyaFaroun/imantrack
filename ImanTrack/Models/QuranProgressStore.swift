@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import SwiftData
 import Combine
+import QuartzCore
 
 struct QuranBookmark: Codable, Equatable {
     let page: Int
@@ -135,6 +136,7 @@ class QuranProgressStore: ObservableObject {
         }
         guard newIndex > readFrontier else { return }
         
+        let t0 = CACurrentMediaTime()
         let oldFrontier = readFrontier
         let verseDelta = newIndex - oldFrontier
         
@@ -147,7 +149,7 @@ class QuranProgressStore: ObservableObject {
         
         self.readFrontier = newIndex
         UserDefaults.standard.set(newIndex, forKey: "quranReadFrontier")
-        UserDefaults.standard.synchronize()
+        // KEIN UserDefaults.standard.synchronize() im Scroll-Pfad (verhindert synchrones Disk-I/O Blocking)
         
         let todayRecord = getCachedTodayRecord(in: modelContext, date: date)
         
@@ -158,6 +160,8 @@ class QuranProgressStore: ObservableObject {
         
         let newVerse = QuranAPIService.shared.getVerseAtIndex(newIndex - 1)
         let verseId = newVerse?.id ?? "index:\(newIndex)"
+        let dt = (CACurrentMediaTime() - t0) * 1000.0
+        print("[QURAN_PERF] Store.advance(): \(String(format: "%.2f", dt)) ms (Frontier: \(oldFrontier) -> \(newIndex), verse=\(verseId), SwiftData: debounced)")
         print("[QURAN_STATE] advance: neuer Wert im Speicher = \(self.readFrontier), Wert in UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier")), verse=\(verseId)")
         print("[QURAN_READ] advance to verse: \(verseId) (index \(newIndex)), old \(oldFrontier) -> new \(newIndex), verseDelta: \(verseDelta), pageDelta: \(pageDelta), totalVersesToday: \(todayRecord.quranVersesRead), totalPagesToday: \(todayRecord.quranPagesRead)")
     }
@@ -192,18 +196,15 @@ class QuranProgressStore: ObservableObject {
     }
     
     private func scheduleDebouncedSwiftDataSave(modelContext: ModelContext) {
-        let now = Date()
-        if now.timeIntervalSince(lastSaveTime) >= 2.0 {
-            lastSaveTime = now
+        pendingSaveTask?.cancel()
+        pendingSaveTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard !Task.isCancelled else { return }
+            let saveStart = CACurrentMediaTime()
+            self.lastSaveTime = Date()
             try? modelContext.save()
-        } else {
-            pendingSaveTask?.cancel()
-            pendingSaveTask = Task {
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                guard !Task.isCancelled else { return }
-                self.lastSaveTime = Date()
-                try? modelContext.save()
-            }
+            let saveMs = (CACurrentMediaTime() - saveStart) * 1000.0
+            print("[QURAN_PERF] Debounced SwiftData save abgeschlossen: \(String(format: "%.2f", saveMs)) ms")
         }
     }
     

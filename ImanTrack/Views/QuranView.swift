@@ -55,7 +55,22 @@ struct QuranView: View {
     @State private var uiScrollView: UIScrollView? = nil
     @State private var pageHeights: [Int: CGFloat] = [:]
 
+    // MARK: - Zoom-Konstanten
+    static let zoomStepSize: CGFloat = 1.0                  // 1 pt pro Stufe
+    static let zoomStepMinInterval: TimeInterval = 0.15     // Höchstens 1 Stufe pro 0.15s
+    static let zoomMagnificationThreshold: CGFloat = 0.04   // ~4% Spreizungsänderung für eine Stufe
+    static let minFontSize: CGFloat = 22.0                  // Minimale Schriftgröße
+    static let maxFontSize: CGFloat = 42.0                  // Maximale Schriftgröße
 
+    @State private var isZooming: Bool = false
+    @State private var isZoomLayoutPending: Bool = false
+    @State private var lastZoomStepTime: Date = .distantPast
+    @State private var referenceMagnification: CGFloat = 1.0
+    @State private var zoomLayoutResetTask: Task<Void, Never>? = nil
+
+    private var isZoomActive: Bool {
+        isZooming || isZoomLayoutPending
+    }
 
     private var isCurrentlyUserScrolling: Bool {
         if isUserScrolling { return true }
@@ -131,6 +146,7 @@ struct QuranView: View {
                                             readFrontier: progressStore.readFrontier,
                                             isUserScrolling: isCurrentlyUserScrolling,
                                             hasRestoredInitialPosition: hasRestoredInitialPosition,
+                                            isZoomActive: isZoomActive,
                                             language: settings.language,
                                             useTajweedHarakat: settings.useTajweedHarakat,
                                             onPageBoundsCalculated: { boundsMap, topBoundsMap in
@@ -209,13 +225,10 @@ struct QuranView: View {
                     .simultaneousGesture(
                         MagnificationGesture()
                             .onChanged { value in
-                                let newSize = viewModel.lastFontSize * value
-                                let clamped = min(max(newSize, 22), 42)
-                                viewModel.fontSize = round(clamped / 2.0) * 2.0
+                                handleZoomGestureChange(value: value)
                             }
                             .onEnded { _ in
-                                viewModel.lastFontSize = viewModel.fontSize
-                                UserDefaults.standard.set(Double(viewModel.fontSize), forKey: "quranFontSize")
+                                handleZoomGestureEnded()
                             }
                     )
                     
@@ -513,6 +526,10 @@ struct QuranView: View {
             print("[QURAN_GUARD] advance unterdrückt in markVersesAsRead: Startpositionierung noch nicht abgeschlossen")
             return
         }
+        guard !isZoomActive else {
+            print("[QURAN_ZOOM] advance unterdrückt in markVersesAsRead: Zoom/Layout aktiv")
+            return
+        }
         guard isCurrentlyUserScrolling else {
             print("[QURAN_GUARD] advance unterdrückt in markVersesAsRead: nicht durch Nutzer-Scrollen ausgelöst")
             return
@@ -531,7 +548,79 @@ struct QuranView: View {
         }
     }
     
-
+    // MARK: - Zoom Gesten-Steuerung
+    private func handleZoomGestureChange(value: CGFloat) {
+        if !isZooming {
+            isZooming = true
+            isZoomLayoutPending = true
+            referenceMagnification = value
+            zoomLayoutResetTask?.cancel()
+        }
+        
+        let delta = value - referenceMagnification
+        let now = Date()
+        guard now.timeIntervalSince(lastZoomStepTime) >= QuranView.zoomStepMinInterval else {
+            return
+        }
+        
+        var step: CGFloat = 0
+        if delta >= QuranView.zoomMagnificationThreshold {
+            step = QuranView.zoomStepSize
+        } else if delta <= -QuranView.zoomMagnificationThreshold {
+            step = -QuranView.zoomStepSize
+        }
+        
+        guard step != 0 else { return }
+        
+        let oldSize = viewModel.fontSize
+        let targetSize = min(max(oldSize + step, QuranView.minFontSize), QuranView.maxFontSize)
+        
+        guard targetSize != oldSize else {
+            referenceMagnification = value
+            return
+        }
+        
+        applyZoomStep(from: oldSize, to: targetSize)
+        referenceMagnification = value
+        lastZoomStepTime = now
+    }
+    
+    private func applyZoomStep(from oldSize: CGFloat, to targetSize: CGFloat) {
+        let currentOffset = uiScrollView?.contentOffset.y ?? 0
+        let scaleRatio = targetSize / oldSize
+        let newOffset = max(0, currentOffset * scaleRatio)
+        
+        // 1. Hochscroll-Sperre proportional skalieren
+        self.minAllowedOffsetY = max(0, self.minAllowedOffsetY * scaleRatio)
+        
+        // 2. Schriftgröße aktualisieren
+        viewModel.fontSize = targetSize
+        viewModel.lastFontSize = targetSize
+        
+        // 3. Scroll-Offset so anpassen, dass dieselbe Textstelle oben bleibt
+        uiScrollView?.setContentOffset(CGPoint(x: 0, y: newOffset), animated: false)
+        DispatchQueue.main.async {
+            self.uiScrollView?.setContentOffset(CGPoint(x: 0, y: newOffset), animated: false)
+        }
+        
+        print("[QURAN_ZOOM] Stufe: \(String(format: "%.1f", oldSize))pt -> \(String(format: "%.1f", targetSize))pt (advance blockiert: true, Offset: \(String(format: "%.1f", currentOffset))pt -> \(String(format: "%.1f", newOffset))pt, minAllowedOffsetY: \(String(format: "%.1f", self.minAllowedOffsetY))pt)")
+    }
+    
+    private func handleZoomGestureEnded() {
+        isZooming = false
+        referenceMagnification = 1.0
+        UserDefaults.standard.set(Double(viewModel.fontSize), forKey: "quranFontSize")
+        
+        zoomLayoutResetTask?.cancel()
+        zoomLayoutResetTask = Task { @MainActor in
+            // 0.3s Puffer bis TextKit & SwiftUI Layout komplett abgeschlossen haben
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            self.isZoomLayoutPending = false
+            self.saveCurrentBookmark()
+            print("[QURAN_ZOOM] Zoom-Layout abgeschlossen, advance wieder freigegeben. Lesezeichen aktualisiert (fontSize: \(viewModel.fontSize)).")
+        }
+    }
     
     private func completeKhatm() {
         if progressStore.readFrontier < 6236 {
@@ -563,6 +652,7 @@ struct QuranPageView: View {
     let readFrontier: Int
     let isUserScrolling: Bool
     let hasRestoredInitialPosition: Bool
+    let isZoomActive: Bool
     let language: String
     let useTajweedHarakat: Bool
     var onPageBoundsCalculated: (([String: CGFloat], [String: CGFloat]) -> Void)? = nil
@@ -815,6 +905,10 @@ struct QuranPageView: View {
                 if maxIdx + 1 > readFrontier {
                     guard hasRestoredInitialPosition else {
                         print("[QURAN_GUARD] advance unterdrückt: Startpositionierung noch nicht abgeschlossen (Page \(pageNumber), Ziel: \(maxVerse.surah):\(maxVerse.ayah))")
+                        return
+                    }
+                    guard !isZoomActive else {
+                        print("[QURAN_ZOOM] advance unterdrückt auf Seite \(pageNumber): Zoom/Layout aktiv (Ziel: \(maxVerse.surah):\(maxVerse.ayah))")
                         return
                     }
                     guard isUserScrolling else {
@@ -1110,6 +1204,10 @@ struct JustifiedText: View {
 
 #if os(iOS) && !SKIP
 struct QuranScrollViewTracker: UIViewRepresentable {
+    /// Maximale Nachrutsch-Distanz nach dem Loslassen (Faktor der sichtbaren Bildschirmhöhe)
+    /// 0.5 = maximal eine halbe Bildschirmseite nachrutschen
+    static let maxDecelerationPageRatio: CGFloat = 0.5
+
     @Binding var minAllowedOffsetY: CGFloat
     @Binding var isUserScrolling: Bool
     var onScrollViewFound: ((UIScrollView) -> Void)?
@@ -1129,6 +1227,31 @@ struct QuranScrollViewTracker: UIViewRepresentable {
             parent.isUserScrolling = true
             print("[QURAN_SCROLL] willBeginDragging -> isUserScrolling = true")
             originalDelegate?.scrollViewWillBeginDragging?(scrollView)
+        }
+        
+        func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+            originalDelegate?.scrollViewWillEndDragging?(scrollView, withVelocity: velocity, targetContentOffset: targetContentOffset)
+            
+            let proposedY = targetContentOffset.pointee.y
+            let currentY = scrollView.contentOffset.y
+            let visibleHeight = scrollView.bounds.size.height
+            let maxDistance = visibleHeight * QuranScrollViewTracker.maxDecelerationPageRatio
+            
+            let maxY = currentY + maxDistance
+            let minY = max(parent.minAllowedOffsetY, currentY - maxDistance)
+            
+            var cappedY = proposedY
+            if cappedY > maxY {
+                cappedY = maxY
+            }
+            if cappedY < minY {
+                cappedY = minY
+            }
+            
+            if abs(cappedY - proposedY) > 0.5 {
+                print("[QURAN_SPEED] Nachrutschen begrenzt: \(String(format: "%.1f", proposedY))pt -> \(String(format: "%.1f", cappedY))pt (Max-Distanz: \(String(format: "%.1f", maxDistance))pt, minAllowedOffsetY: \(String(format: "%.1f", parent.minAllowedOffsetY))pt)")
+                targetContentOffset.pointee.y = cappedY
+            }
         }
         
         func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
