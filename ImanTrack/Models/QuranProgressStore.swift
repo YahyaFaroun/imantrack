@@ -3,11 +3,19 @@ import SwiftUI
 import SwiftData
 import Combine
 
+struct QuranBookmark: Codable, Equatable {
+    let page: Int
+    let offsetInPage: CGFloat
+    let fontSize: CGFloat
+}
+
 @MainActor
 class QuranProgressStore: ObservableObject {
     static let shared = QuranProgressStore()
     
-    @Published var readFrontier: Int = 0
+    @Published private(set) var readFrontier: Int = 0
+    private let bookmarkKey = "quranBookmark"
+    @Published private(set) var bookmark: QuranBookmark? = nil
     
     private var lastSaveTime: Date = .distantPast
     private var pendingSaveTask: Task<Void, Never>? = nil
@@ -16,8 +24,27 @@ class QuranProgressStore: ObservableObject {
     private init() {
         let stored = UserDefaults.standard.integer(forKey: "quranReadFrontier")
         self.readFrontier = stored
+        if let data = UserDefaults.standard.data(forKey: bookmarkKey),
+           let bm = try? JSONDecoder().decode(QuranBookmark.self, from: data) {
+            self.bookmark = bm
+        }
+        let bmStr = bookmark != nil ? "S.\(bookmark!.page) +\(String(format: "%.1f", bookmark!.offsetInPage))pt" : "keines"
+        print("[QURAN_STATE] Store-init: readFrontier im Speicher = \(readFrontier), Wert in UserDefaults = \(stored), Lesezeichen=\(bmStr)")
+        // Altlasten endgültig entfernen
+        UserDefaults.standard.removeObject(forKey: "lastReadVerseId")
+        UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
         migrateIfNeeded()
         setupBackgroundSaveObserver()
+    }
+    
+    func saveBookmark(_ bookmark: QuranBookmark) {
+        guard self.bookmark != bookmark else { return }
+        self.bookmark = bookmark
+        if let data = try? JSONEncoder().encode(bookmark) {
+            UserDefaults.standard.set(data, forKey: bookmarkKey)
+            UserDefaults.standard.synchronize()
+        }
+        print("[QURAN_RESUME] Gespeichert: S.\(bookmark.page) +\(String(format: "%.1f", bookmark.offsetInPage))pt (fontSize: \(bookmark.fontSize))")
     }
     
     private func setupBackgroundSaveObserver() {
@@ -37,11 +64,13 @@ class QuranProgressStore: ObservableObject {
         let migrationKey = "hasMigratedToReadFrontier_v1"
         guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
         
-        UserDefaults.standard.set(true, forKey: migrationKey)
-        
         let existingFrontier = UserDefaults.standard.integer(forKey: "quranReadFrontier")
         if existingFrontier > 0 {
-            self.readFrontier = existingFrontier
+            if existingFrontier >= self.readFrontier {
+                self.readFrontier = existingFrontier
+            }
+            UserDefaults.standard.set(true, forKey: migrationKey)
+            UserDefaults.standard.synchronize()
             print("[PROGRESS_STORE_MIGRATION] Migration skipped. Existing quranReadFrontier = \(existingFrontier)")
             return
         }
@@ -62,25 +91,25 @@ class QuranProgressStore: ObservableObject {
         
         if highestIndex >= 0 {
             let migratedFrontier = highestIndex + 1
-            self.readFrontier = migratedFrontier
-            UserDefaults.standard.set(migratedFrontier, forKey: "quranReadFrontier")
-            print("[PROGRESS_STORE_MIGRATION] Migrated from currentKhatmReadVerseIds -> readFrontier = \(migratedFrontier)")
+            if migratedFrontier < self.readFrontier {
+                print("[QURAN_STATE] WARNUNG: migrateIfNeeded mit kleinerem Index (\(migratedFrontier) < \(self.readFrontier)) abgewiesen!")
+            } else {
+                self.readFrontier = migratedFrontier
+                UserDefaults.standard.set(migratedFrontier, forKey: "quranReadFrontier")
+            }
+            UserDefaults.standard.set(true, forKey: migrationKey)
+            UserDefaults.standard.synchronize()
+            print("[PROGRESS_STORE_MIGRATION] Migrated from currentKhatmReadVerseIds -> readFrontier = \(self.readFrontier)")
             return
         }
         
-        // 2. Fallback to lastReadVerseId
-        if let lastId = UserDefaults.standard.string(forKey: "lastReadVerseId"), !lastId.isEmpty,
-           let idx = QuranAPIService.shared.getVerseIndex(id: lastId) {
-            let migratedFrontier = idx + 1
-            self.readFrontier = migratedFrontier
-            UserDefaults.standard.set(migratedFrontier, forKey: "quranReadFrontier")
-            print("[PROGRESS_STORE_MIGRATION] Migrated from lastReadVerseId ('\(lastId)') -> readFrontier = \(migratedFrontier)")
-            return
+        if self.readFrontier == 0 {
+            self.readFrontier = 0
+            UserDefaults.standard.set(0, forKey: "quranReadFrontier")
         }
-        
-        self.readFrontier = 0
-        UserDefaults.standard.set(0, forKey: "quranReadFrontier")
-        print("[PROGRESS_STORE_MIGRATION] Migration completed. Default readFrontier = 0")
+        UserDefaults.standard.set(true, forKey: migrationKey)
+        UserDefaults.standard.synchronize()
+        print("[PROGRESS_STORE_MIGRATION] Migration completed. Default readFrontier = \(self.readFrontier)")
     }
     
     private var cachedTodayRecord: DailyRecord? = nil
@@ -100,6 +129,10 @@ class QuranProgressStore: ObservableObject {
     }
 
     func advance(toIndex newIndex: Int, modelContext: ModelContext, date: Date = Date()) {
+        if newIndex < readFrontier {
+            print("[QURAN_STATE] WARNUNG: advance Versuch mit kleinerem Index (\(newIndex) < \(readFrontier)) abgewiesen!")
+            return
+        }
         guard newIndex > readFrontier else { return }
         
         let oldFrontier = readFrontier
@@ -114,6 +147,7 @@ class QuranProgressStore: ObservableObject {
         
         self.readFrontier = newIndex
         UserDefaults.standard.set(newIndex, forKey: "quranReadFrontier")
+        UserDefaults.standard.synchronize()
         
         let todayRecord = getCachedTodayRecord(in: modelContext, date: date)
         
@@ -124,28 +158,37 @@ class QuranProgressStore: ObservableObject {
         
         let newVerse = QuranAPIService.shared.getVerseAtIndex(newIndex - 1)
         let verseId = newVerse?.id ?? "index:\(newIndex)"
+        print("[QURAN_STATE] advance: neuer Wert im Speicher = \(self.readFrontier), Wert in UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier")), verse=\(verseId)")
         print("[QURAN_READ] advance to verse: \(verseId) (index \(newIndex)), old \(oldFrontier) -> new \(newIndex), verseDelta: \(verseDelta), pageDelta: \(pageDelta), totalVersesToday: \(todayRecord.quranVersesRead), totalPagesToday: \(todayRecord.quranPagesRead)")
     }
     
     func resetKhatm(modelContext: ModelContext) {
         let oldVal = readFrontier
         self.readFrontier = 0
+        self.bookmark = nil
         self.cachedTodayRecord = nil
         self.cachedTrackingDateString = nil
         UserDefaults.standard.set(0, forKey: "quranReadFrontier")
+        UserDefaults.standard.removeObject(forKey: bookmarkKey)
+        UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
+        UserDefaults.standard.synchronize()
         try? modelContext.save()
-        print("[PROGRESS_STORE] Khatm reset: old \(oldVal) -> new 0")
+        print("[QURAN_STATE] resetKhatm: alt \(oldVal) -> neu 0, UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier"))")
     }
     
     func setReadFrontier(_ newIndex: Int, modelContext: ModelContext) {
         let clamped = max(0, min(newIndex, 6236))
         let oldVal = readFrontier
         self.readFrontier = clamped
+        self.bookmark = nil
         self.cachedTodayRecord = nil
         self.cachedTrackingDateString = nil
         UserDefaults.standard.set(clamped, forKey: "quranReadFrontier")
+        UserDefaults.standard.removeObject(forKey: bookmarkKey)
+        UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
+        UserDefaults.standard.synchronize()
         try? modelContext.save()
-        print("[PROGRESS_STORE] setReadFrontier manual debug override: old \(oldVal) -> new \(clamped)")
+        print("[QURAN_STATE] setReadFrontier manual debug override: alt \(oldVal) -> neu \(clamped), UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier"))")
     }
     
     private func scheduleDebouncedSwiftDataSave(modelContext: ModelContext) {
