@@ -362,7 +362,11 @@ struct StatsView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        let (sState, sT0) = QuranPerf.shared.begin("2d_StatsView_body")
+        defer {
+            QuranPerf.shared.end("2d_StatsView_body", state: sState, t0: sT0)
+        }
+        return NavigationStack {
             ZStack {
                 Theme.background.ignoresSafeArea()
                 ScrollView {

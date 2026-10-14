@@ -3,6 +3,7 @@ import SwiftUI
 import SwiftData
 import Combine
 import QuartzCore
+import os
 
 struct QuranBookmark: Codable, Equatable {
     let page: Int
@@ -136,7 +137,7 @@ class QuranProgressStore: ObservableObject {
         }
         guard newIndex > readFrontier else { return }
         
-        let t0 = CACurrentMediaTime()
+        let (advanceState, advanceT0) = QuranPerf.shared.begin("1_advance_total")
         let oldFrontier = readFrontier
         let verseDelta = newIndex - oldFrontier
         
@@ -147,21 +148,27 @@ class QuranProgressStore: ObservableObject {
             }
         }
         
+        // 1a: readFrontier ändern (@Published Nachricht auslösen)
+        let (pubState, pubT0) = QuranPerf.shared.begin("1a_publish_readFrontier")
         self.readFrontier = newIndex
+        QuranPerf.shared.end("1a_publish_readFrontier", state: pubState, t0: pubT0, extra: "\(oldFrontier)->\(newIndex)")
+        
         UserDefaults.standard.set(newIndex, forKey: "quranReadFrontier")
         // KEIN UserDefaults.standard.synchronize() im Scroll-Pfad (verhindert synchrones Disk-I/O Blocking)
         
+        // 1b: DailyRecord Zugriff & SwiftData Mutation
+        let (recState, recT0) = QuranPerf.shared.begin("1b_access_DailyRecord")
         let todayRecord = getCachedTodayRecord(in: modelContext, date: date)
-        
         todayRecord.quranVersesRead += verseDelta
         todayRecord.quranPagesRead += pageDelta
+        QuranPerf.shared.end("1b_access_DailyRecord", state: recState, t0: recT0, extra: "delta: +\(verseDelta)")
         
         scheduleDebouncedSwiftDataSave(modelContext: modelContext)
         
         let newVerse = QuranAPIService.shared.getVerseAtIndex(newIndex - 1)
         let verseId = newVerse?.id ?? "index:\(newIndex)"
-        let dt = (CACurrentMediaTime() - t0) * 1000.0
-        print("[QURAN_PERF] Store.advance(): \(String(format: "%.2f", dt)) ms (Frontier: \(oldFrontier) -> \(newIndex), verse=\(verseId), SwiftData: debounced)")
+        
+        QuranPerf.shared.end("1_advance_total", state: advanceState, t0: advanceT0, extra: "verse=\(verseId)")
         print("[QURAN_STATE] advance: neuer Wert im Speicher = \(self.readFrontier), Wert in UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier")), verse=\(verseId)")
         print("[QURAN_READ] advance to verse: \(verseId) (index \(newIndex)), old \(oldFrontier) -> new \(newIndex), verseDelta: \(verseDelta), pageDelta: \(pageDelta), totalVersesToday: \(todayRecord.quranVersesRead), totalPagesToday: \(todayRecord.quranPagesRead)")
     }
@@ -215,3 +222,60 @@ class QuranProgressStore: ObservableObject {
         print("[PROGRESS_STORE] Flushed pending SwiftData save on app background/inactive")
     }
 }
+
+// MARK: - Performance Instrumentation (OSSignposter)
+public final class QuranPerf {
+    public static let shared = QuranPerf()
+    public let poster = OSSignposter(subsystem: "com.yahyafaroun.ImanTrack", category: "QuranPerf")
+    
+    private init() {}
+    
+    @discardableResult
+    @inline(__always)
+    public func trace<T>(_ name: StaticString, extra: String = "", action: () throws -> T) rethrows -> T {
+        let id = poster.makeSignpostID()
+        let state = poster.beginInterval(name, id: id)
+        let t0 = CACurrentMediaTime()
+        defer {
+            poster.endInterval(name, state)
+            let dt = (CACurrentMediaTime() - t0) * 1000.0
+            if !extra.isEmpty {
+                print("[QURAN_PERF] \(name) [\(extra)]: \(String(format: "%.2f", dt)) ms")
+            } else {
+                print("[QURAN_PERF] \(name): \(String(format: "%.2f", dt)) ms")
+            }
+        }
+        return try action()
+    }
+    
+    @inline(__always)
+    public func begin(_ name: StaticString) -> (OSSignpostIntervalState, Double) {
+        let id = poster.makeSignpostID()
+        let state = poster.beginInterval(name, id: id)
+        let t0 = CACurrentMediaTime()
+        return (state, t0)
+    }
+    
+    @inline(__always)
+    public func end(_ name: StaticString, state: OSSignpostIntervalState, t0: Double, extra: String = "") {
+        poster.endInterval(name, state)
+        let dt = (CACurrentMediaTime() - t0) * 1000.0
+        if !extra.isEmpty {
+            print("[QURAN_PERF] \(name) [\(extra)]: \(String(format: "%.2f", dt)) ms")
+        } else {
+            print("[QURAN_PERF] \(name): \(String(format: "%.2f", dt)) ms")
+        }
+    }
+    
+    @inline(__always)
+    public func event(_ name: StaticString, message: String = "") {
+        let id = poster.makeSignpostID()
+        poster.emitEvent(name, id: id)
+        if !message.isEmpty {
+            print("[QURAN_EVENT] \(name): \(message)")
+        } else {
+            print("[QURAN_EVENT] \(name)")
+        }
+    }
+}
+

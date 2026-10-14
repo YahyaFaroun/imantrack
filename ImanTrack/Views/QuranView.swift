@@ -88,7 +88,11 @@ struct QuranView: View {
     #endif
 
     var body: some View {
-        NavigationStack {
+        let (bodyState, bodyT0) = QuranPerf.shared.begin("2a_QuranView_body")
+        defer {
+            QuranPerf.shared.end("2a_QuranView_body", state: bodyState, t0: bodyT0)
+        }
+        return NavigationStack {
             ZStack {
                 Theme.getQuranBackgroundColor(for: quranTheme, systemColorScheme: colorScheme).ignoresSafeArea()
                 
@@ -543,7 +547,9 @@ struct QuranView: View {
             
             let currentOffset = uiScrollView?.contentOffset.y ?? 0
             if currentOffset > self.minAllowedOffsetY {
+                let (minYState, minYt0) = QuranPerf.shared.begin("4_update_minAllowedOffsetY")
                 self.minAllowedOffsetY = currentOffset
+                QuranPerf.shared.end("4_update_minAllowedOffsetY", state: minYState, t0: minYt0, extra: "\(String(format: "%.1f", currentOffset))pt")
             }
         }
     }
@@ -677,7 +683,11 @@ struct QuranPageView: View {
     @State private var pageMinY: CGFloat = 0
     
     var body: some View {
-        VStack(spacing: 0) {
+        let (pState, pT0) = QuranPerf.shared.begin("2b_QuranPageView_body")
+        defer {
+            QuranPerf.shared.end("2b_QuranPageView_body", state: pState, t0: pT0, extra: "S.\(pageNumber)")
+        }
+        return VStack(spacing: 0) {
             if isLoading {
                 ProgressView()
                     .tint(Theme.accent)
@@ -783,6 +793,10 @@ struct QuranPageView: View {
     }
     
     private func updateVerseBoundsMap() {
+        let (bmState, bmT0) = QuranPerf.shared.begin("5c_updateVerseBoundsMap")
+        defer {
+            QuranPerf.shared.end("5c_updateVerseBoundsMap", state: bmState, t0: bmT0, extra: "S.\(pageNumber)")
+        }
         var updatedMaxY: [String: CGFloat] = [:]
         var updatedMinY: [String: CGFloat] = [:]
         for (segId, relativeMap) in segmentVerseBoundsMap {
@@ -961,6 +975,10 @@ struct QuranPageView: View {
     
     #if os(iOS) && !SKIP
     private func concatenatedString(for versesList: [Verse]) -> (NSAttributedString, [String: NSRange]) {
+        let (csState, csT0) = QuranPerf.shared.begin("3_concatenatedString")
+        defer {
+            QuranPerf.shared.end("3_concatenatedString", state: csState, t0: csT0, extra: "S.\(pageNumber), \(versesList.count) Verse")
+        }
         let result = NSMutableAttributedString()
         var ranges: [String: NSRange] = [:]
         let font = Theme.quranUIFont(type: quranFontType, size: fontSize)
@@ -1117,6 +1135,10 @@ struct JustifiedText: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UITextView, context: Context) {
+        let (ujState, ujT0) = QuranPerf.shared.begin("5a_JustifiedText_updateUIView")
+        defer {
+            QuranPerf.shared.end("5a_JustifiedText_updateUIView", state: ujState, t0: ujT0, extra: "\(verseRanges.count) Verse")
+        }
         uiView.backgroundColor = Theme.getQuranUIBackgroundColor(for: theme, systemColorScheme: colorScheme)
         
         context.coordinator.lastOriginalText = attributedText
@@ -1161,6 +1183,7 @@ struct JustifiedText: UIViewRepresentable {
             context.coordinator.lastModifiedText = attributedText
         }
         
+        let (gbState, gbT0) = QuranPerf.shared.begin("5b_JustifiedText_glyphBounds")
         var boundsMap: [String: CGFloat] = [:]
         var topBoundsMap: [String: CGFloat] = [:]
         for (verseId, charRange) in verseRanges {
@@ -1171,6 +1194,8 @@ struct JustifiedText: UIViewRepresentable {
                 topBoundsMap[verseId] = rect.minY
             }
         }
+        QuranPerf.shared.end("5b_JustifiedText_glyphBounds", state: gbState, t0: gbT0, extra: "\(boundsMap.count) Bounds")
+        
         if !boundsMap.isEmpty {
             let bounds = boundsMap
             let topBounds = topBoundsMap

@@ -21,7 +21,11 @@ struct TasbihView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        let (tsState, tsT0) = QuranPerf.shared.begin("2f_TasbihView_body")
+        defer {
+            QuranPerf.shared.end("2f_TasbihView_body", state: tsState, t0: tsT0)
+        }
+        return NavigationStack {
             ZStack {
                 Theme.background.ignoresSafeArea()
                 

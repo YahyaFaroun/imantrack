@@ -83,8 +83,12 @@ struct TodayView: View {
     }
     
     var body: some View {
+        let (tState, tT0) = QuranPerf.shared.begin("2c_TodayView_body")
+        defer {
+            QuranPerf.shared.end("2c_TodayView_body", state: tState, t0: tT0)
+        }
         let lang = settings.language
-        NavigationStack {
+        return NavigationStack {
             ZStack {
                 Theme.background.ignoresSafeArea()
                 

@@ -49,7 +49,11 @@ struct AdhkarOverviewView: View {
     @State private var showPermissionSheet = false
     
     var body: some View {
-        NavigationStack {
+        let (aState, aT0) = QuranPerf.shared.begin("2e_AdhkarOverviewView_body")
+        defer {
+            QuranPerf.shared.end("2e_AdhkarOverviewView_body", state: aState, t0: aT0)
+        }
+        return NavigationStack {
             ZStack {
                 Theme.background.ignoresSafeArea()
                 
