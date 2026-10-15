@@ -6,8 +6,8 @@ import QuartzCore
 import os
 
 struct QuranBookmark: Codable, Equatable {
-    let page: Int
-    let offsetInPage: CGFloat
+    let verseIndex: Int
+    let delta: CGFloat
     let fontSize: CGFloat
 }
 
@@ -16,7 +16,8 @@ class QuranProgressStore: ObservableObject {
     static let shared = QuranProgressStore()
     
     @Published private(set) var readFrontier: Int = 0
-    private let bookmarkKey = "quranBookmark"
+    private let oldBookmarkKey = "quranBookmark"
+    private let bookmarkKey = "quranFrontierBookmark_v1"
     @Published private(set) var bookmark: QuranBookmark? = nil
     
     private var lastSaveTime: Date = .distantPast
@@ -24,13 +25,16 @@ class QuranProgressStore: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     private init() {
+        // Alten Lesezeichen-Key endgültig löschen
+        UserDefaults.standard.removeObject(forKey: oldBookmarkKey)
+        
         let stored = UserDefaults.standard.integer(forKey: "quranReadFrontier")
         self.readFrontier = stored
         if let data = UserDefaults.standard.data(forKey: bookmarkKey),
            let bm = try? JSONDecoder().decode(QuranBookmark.self, from: data) {
             self.bookmark = bm
         }
-        let bmStr = bookmark != nil ? "S.\(bookmark!.page) +\(String(format: "%.1f", bookmark!.offsetInPage))pt" : "keines"
+        let bmStr = bookmark != nil ? "Vers #\(bookmark!.verseIndex) delta=\(String(format: "%.1f", bookmark!.delta))pt" : "keines"
         print("[QURAN_STATE] Store-init: readFrontier im Speicher = \(readFrontier), Wert in UserDefaults = \(stored), Lesezeichen=\(bmStr)")
         // Altlasten endgültig entfernen
         UserDefaults.standard.removeObject(forKey: "lastReadVerseId")
@@ -46,7 +50,7 @@ class QuranProgressStore: ObservableObject {
             UserDefaults.standard.set(data, forKey: bookmarkKey)
             UserDefaults.standard.synchronize()
         }
-        print("[QURAN_RESUME] Gespeichert: S.\(bookmark.page) +\(String(format: "%.1f", bookmark.offsetInPage))pt (fontSize: \(bookmark.fontSize))")
+        print("[QURAN_RESUME] Gespeichert: Vers #\(bookmark.verseIndex) delta=\(String(format: "%.1f", bookmark.delta))pt (fontSize: \(bookmark.fontSize))")
     }
     
     private func setupBackgroundSaveObserver() {
@@ -231,6 +235,7 @@ class QuranProgressStore: ObservableObject {
         self.cachedTodayRecord = nil
         self.cachedTrackingDateString = nil
         UserDefaults.standard.set(0, forKey: "quranReadFrontier")
+        UserDefaults.standard.removeObject(forKey: oldBookmarkKey)
         UserDefaults.standard.removeObject(forKey: bookmarkKey)
         UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
         UserDefaults.standard.synchronize()
@@ -247,6 +252,7 @@ class QuranProgressStore: ObservableObject {
         self.cachedTodayRecord = nil
         self.cachedTrackingDateString = nil
         UserDefaults.standard.set(clamped, forKey: "quranReadFrontier")
+        UserDefaults.standard.removeObject(forKey: oldBookmarkKey)
         UserDefaults.standard.removeObject(forKey: bookmarkKey)
         UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
         UserDefaults.standard.synchronize()

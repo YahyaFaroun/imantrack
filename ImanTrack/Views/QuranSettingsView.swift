@@ -11,11 +11,11 @@ struct QuranSettingsView: View {
     @AppStorage("quranFontType") private var quranFontType: String = "uthmanic"
     @AppStorage("quranTheme") private var quranTheme: String = "system"
     @AppStorage("quranHideReadPages") private var quranHideReadPages: Bool = false
-    @AppStorage("lastReadVerseId") private var lastReadVerseId: String = ""
     
     @State private var showResetConfirmAlert = false
     
     #if DEBUG
+    @AppStorage("quranShowDebugOverlay") private var quranShowDebugOverlay: Bool = false
     @State private var debugSelectedSurah: Int = 1
     @State private var debugSelectedAyah: Int = 1
     
@@ -79,7 +79,9 @@ struct QuranSettingsView: View {
             }
             
             #if DEBUG
-            Section(header: Text("Lesefront setzen (Debug)")) {
+            Section(header: Text("Entwickler-Optionen (Debug)")) {
+                Toggle("Debug-Anzeige im Quran", isOn: $quranShowDebugOverlay)
+                
                 Picker("Sure", selection: $debugSelectedSurah) {
                     ForEach(1...114, id: \.self) { surahNum in
                         Text("\(surahNum). \(QuranSurah.getName(surahNum))").tag(surahNum)
@@ -104,7 +106,6 @@ struct QuranSettingsView: View {
         .alert(L10n.tr("quran_reset_khatm", language), isPresented: $showResetConfirmAlert) {
             Button(L10n.tr("quran_reset_khatm", language), role: .destructive) {
                 QuranProgressStore.shared.resetKhatm(modelContext: modelContext)
-                lastReadVerseId = ""
             }
             Button(L10n.tr("cancel", language), role: .cancel) {}
         } message: {

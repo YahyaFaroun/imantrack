@@ -53,7 +53,9 @@ struct QuranView: View {
     @State private var isUserScrolling: Bool = false
     @State private var scrollSessionID: UUID = UUID()
     @State private var uiScrollView: UIScrollView? = nil
-    @State private var pageHeights: [Int: CGFloat] = [:]
+    @State private var renderedPageMinY: [Int: CGFloat] = [:]
+    @State private var renderedPageTopBounds: [Int: [String: CGFloat]] = [:]
+    @State private var renderedPageBounds: [Int: [String: CGFloat]] = [:]
 
     // MARK: - Zoom-Konstanten
     static let zoomStepSize: CGFloat = 1.0                  // 1 pt pro Stufe
@@ -83,6 +85,7 @@ struct QuranView: View {
     }
 
     #if DEBUG
+    @AppStorage("quranShowDebugOverlay") private var quranShowDebugOverlay: Bool = false
     @State private var debugTopPage: Int = 1
     @State private var debugTopPageGrayCount: Int = 0
     #endif
@@ -135,6 +138,9 @@ struct QuranView: View {
                                     isUserScrolling: $isUserScrolling,
                                     onScrollViewFound: { sv in
                                         self.uiScrollView = sv
+                                        if !hasRestoredInitialPosition, let s = startPage, self.renderedPageTopBounds[s] != nil {
+                                            restoreInitialPosition()
+                                        }
                                     },
                                     onScrollEnded: {
                                         self.saveCurrentBookmark()
@@ -155,15 +161,22 @@ struct QuranView: View {
                                             language: settings.language,
                                             useTajweedHarakat: settings.useTajweedHarakat,
                                             onPageBoundsCalculated: { boundsMap, topBoundsMap in
+                                                self.renderedPageBounds[pageNum] = boundsMap
+                                                self.renderedPageTopBounds[pageNum] = topBoundsMap
                                                 if pageNum == start && !hasRestoredInitialPosition {
-                                                    restoreInitialPosition(fallbackTopBoundsMap: topBoundsMap)
+                                                    restoreInitialPosition()
                                                 }
                                             },
-                                            onPageHeightCalculated: { pNum, height in
-                                                self.pageHeights[pNum] = height
-                                                if pNum == start && !hasRestoredInitialPosition && progressStore.bookmark != nil {
-                                                    restoreInitialPosition(fallbackTopBoundsMap: nil)
+                                            onPageScrollGeometryChanged: { pNum, minY in
+                                                self.renderedPageMinY[pNum] = minY
+                                                if pNum == start && !hasRestoredInitialPosition && self.renderedPageTopBounds[pNum] != nil {
+                                                    restoreInitialPosition()
                                                 }
+                                            },
+                                            onPageDisappeared: { pNum in
+                                                self.renderedPageMinY.removeValue(forKey: pNum)
+                                                self.renderedPageTopBounds.removeValue(forKey: pNum)
+                                                self.renderedPageBounds.removeValue(forKey: pNum)
                                             },
                                             onMarkVersesAsRead: { verses, maxVerseMaxY in
                                                 markVersesAsRead(verses, maxVerseMaxYInPage: maxVerseMaxY)
@@ -205,26 +218,28 @@ struct QuranView: View {
                         .opacity(hasRestoredInitialPosition ? 1.0 : 0.0)
                         .overlay(alignment: .top) {
                             #if DEBUG
-                            let fontLineHeight = Theme.quranUIFont(type: quranFontType, size: viewModel.fontSize).lineHeight
-                            ZStack(alignment: .topLeading) {
-                                Rectangle()
-                                    .fill(Color.red)
-                                    .frame(height: 1.5)
-                                    .offset(y: fontLineHeight)
-                                
-                                HStack(spacing: 4) {
-                                    Text("Erkennungsschwelle: 1 Zeile (\(Int(fontLineHeight))pt)")
-                                        .font(.system(size: 10, weight: .bold))
-                                        .foregroundColor(.white)
+                            if quranShowDebugOverlay {
+                                let fontLineHeight = Theme.quranUIFont(type: quranFontType, size: viewModel.fontSize).lineHeight
+                                ZStack(alignment: .topLeading) {
+                                    Rectangle()
+                                        .fill(Color.red)
+                                        .frame(height: 1.5)
+                                        .offset(y: fontLineHeight)
+                                    
+                                    HStack(spacing: 4) {
+                                        Text("Erkennungsschwelle: 1 Zeile (\(Int(fontLineHeight))pt)")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.white)
+                                    }
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.red.opacity(0.85))
+                                    .cornerRadius(4)
+                                    .offset(x: 16, y: fontLineHeight + 4)
                                 }
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.red.opacity(0.85))
-                                .cornerRadius(4)
-                                .offset(x: 16, y: fontLineHeight + 4)
+                                .frame(maxWidth: .infinity, alignment: .topLeading)
+                                .allowsHitTesting(false)
                             }
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
-                            .allowsHitTesting(false)
                             #endif
                         }
                     }
@@ -330,50 +345,52 @@ struct QuranView: View {
                 }
                 
                 #if DEBUG
-                VStack {
-                    Spacer()
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            let unreadVerse = quranAPIService.getVerseAtIndex(progressStore.readFrontier)
-                            let frontierStr = unreadVerse != nil ? "\(unreadVerse!.surah):\(unreadVerse!.ayah) · #\(progressStore.readFrontier)" : "Ende (#\(progressStore.readFrontier))"
-                            let unreadPage = unreadVerse?.pageNumber ?? 1
-                            
-                            Text("Lesefront: \(frontierStr)")
-                                .font(.caption.bold())
-                                .foregroundColor(.white)
-                                .accessibilityIdentifier("debug_read_frontier")
-                            
-                            Text("Nächste Seite: S. \(unreadPage) | Top S. \(debugTopPage): \(debugTopPageGrayCount) grau")
-                                .font(.caption2)
-                                .foregroundColor(.white.opacity(0.85))
-                            
-                            let bmStr = progressStore.bookmark != nil ? "S.\(progressStore.bookmark!.page) +\(Int(progressStore.bookmark!.offsetInPage))pt" : "Keines"
-                            Text("Lesezeichen: \(bmStr)")
-                                .font(.caption2)
-                                .foregroundColor(.yellow)
-                                .accessibilityIdentifier("debug_resume_anchor")
-                            
-                            let offsetVal = uiScrollView?.contentOffset.y ?? 0
-                            Text("Offset: \(String(format: "%.1f", offsetVal))pt")
-                                .font(.caption2)
-                                .foregroundColor(.cyan)
-                                .accessibilityIdentifier("debug_scroll_offset")
-                            
-                            Text("Scrollen: \(isCurrentlyUserScrolling ? "Aktiv" : "Inaktiv") | Bereit: \(hasRestoredInitialPosition ? "Ja" : "Nein")")
-                                .font(.caption2)
-                                .foregroundColor(.white.opacity(0.75))
-                        }
+                if quranShowDebugOverlay {
+                    VStack {
                         Spacer()
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                let unreadVerse = quranAPIService.getVerseAtIndex(progressStore.readFrontier)
+                                let frontierStr = unreadVerse != nil ? "\(unreadVerse!.surah):\(unreadVerse!.ayah) · #\(progressStore.readFrontier)" : "Ende (#\(progressStore.readFrontier))"
+                                let unreadPage = unreadVerse?.pageNumber ?? 1
+                                
+                                Text("Lesefront: \(frontierStr)")
+                                    .font(.caption.bold())
+                                    .foregroundColor(.white)
+                                    .accessibilityIdentifier("debug_read_frontier")
+                                
+                                Text("Nächste Seite: S. \(unreadPage) | Top S. \(debugTopPage): \(debugTopPageGrayCount) grau")
+                                    .font(.caption2)
+                                    .foregroundColor(.white.opacity(0.85))
+                                
+                                let bmStr = progressStore.bookmark != nil ? "Vers #\(progressStore.bookmark!.verseIndex) d:\(Int(progressStore.bookmark!.delta))pt" : "Keines"
+                                Text("Lesezeichen: \(bmStr)")
+                                    .font(.caption2)
+                                    .foregroundColor(.yellow)
+                                    .accessibilityIdentifier("debug_resume_anchor")
+                                
+                                let offsetVal = uiScrollView?.contentOffset.y ?? 0
+                                Text("Offset: \(String(format: "%.1f", offsetVal))pt")
+                                    .font(.caption2)
+                                    .foregroundColor(.cyan)
+                                    .accessibilityIdentifier("debug_scroll_offset")
+                                
+                                Text("Scrollen: \(isCurrentlyUserScrolling ? "Aktiv" : "Inaktiv") | Bereit: \(hasRestoredInitialPosition ? "Ja" : "Nein")")
+                                    .font(.caption2)
+                                    .foregroundColor(.white.opacity(0.75))
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color.black.opacity(0.75))
+                        .cornerRadius(10)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 10)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color.black.opacity(0.75))
-                    .cornerRadius(10)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 10)
+                    .allowsHitTesting(false)
+                    .zIndex(95)
                 }
-                .allowsHitTesting(false)
-                .zIndex(95)
                 #endif
             }
             .navigationTitle(viewModel.navTitle.isEmpty ? L10n.tr("tab_quran", settings.language) : viewModel.navTitle)
@@ -388,7 +405,7 @@ struct QuranView: View {
             let target = quranAPIService.getVerseAtIndex(progressStore.readFrontier)
             let targetStr = target != nil ? "\(target!.id) (#\(progressStore.readFrontier))" : "nil"
             let currentOffset = uiScrollView?.contentOffset.y ?? 0
-            let bmStr = progressStore.bookmark != nil ? "S.\(progressStore.bookmark!.page) +\(Int(progressStore.bookmark!.offsetInPage))pt" : "keines"
+            let bmStr = progressStore.bookmark != nil ? "Vers #\(progressStore.bookmark!.verseIndex) d:\(Int(progressStore.bookmark!.delta))pt" : "keines"
             print("[QURAN_STATE] onAppear: Speicher=\(progressStore.readFrontier), UserDefaults=\(storedUD), Zielvers=\(targetStr), startPage=\(startPage ?? -1), offset=\(currentOffset), Lesezeichen=\(bmStr)")
             
             // Tab-Wechsel: NICHTS neu aufbauen! View bleibt exakt wie sie war.
@@ -404,7 +421,7 @@ struct QuranView: View {
             let target = quranAPIService.getVerseAtIndex(progressStore.readFrontier)
             let targetStr = target != nil ? "\(target!.id) (#\(progressStore.readFrontier))" : "nil"
             let currentOffset = uiScrollView?.contentOffset.y ?? 0
-            let bmStr = progressStore.bookmark != nil ? "S.\(progressStore.bookmark!.page) +\(Int(progressStore.bookmark!.offsetInPage))pt" : "keines"
+            let bmStr = progressStore.bookmark != nil ? "Vers #\(progressStore.bookmark!.verseIndex) d:\(Int(progressStore.bookmark!.delta))pt" : "keines"
             print("[QURAN_STATE] onDisappear: Speicher=\(progressStore.readFrontier), UserDefaults=\(storedUD), Zielvers=\(targetStr), offset=\(currentOffset), Lesezeichen=\(bmStr)")
         }
         .onChange(of: selectedTab) { oldTab, newTab in
@@ -426,50 +443,46 @@ struct QuranView: View {
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ResetQuranStartPage"))) { _ in
             self.startPage = nil
             self.hasRestoredInitialPosition = false
-            self.pageHeights = [:]
+            self.renderedPageMinY.removeAll()
+            self.renderedPageTopBounds.removeAll()
+            self.renderedPageBounds.removeAll()
             initStartPageIfNeeded(force: true)
         }
     }
     
     private func saveCurrentBookmark() {
         guard hasRestoredInitialPosition else { return }
-        guard let sv = self.uiScrollView, let start = startPage else { return }
-        let currentOffset = max(0, sv.contentOffset.y)
+        let frontierIndex = progressStore.readFrontier
+        guard let frontierVerse = quranAPIService.getVerseAtIndex(frontierIndex) else { return }
+        let frontierPage = frontierVerse.pageNumber
         
-        var currentPage = start
-        var offsetInCurrentPage = currentOffset
-        
-        while currentPage <= 604 {
-            if let h = pageHeights[currentPage], h > 0 {
-                if offsetInCurrentPage < h || currentPage == 604 {
-                    break
-                } else {
-                    offsetInCurrentPage -= h
-                    currentPage += 1
-                }
-            } else {
-                break
-            }
+        // Ist frontierPage gerade nicht gerendert: NICHT speichern, altes Lesezeichen behalten
+        guard let pageMinY = renderedPageMinY[frontierPage],
+              let topBounds = renderedPageTopBounds[frontierPage],
+              let frontierTop = topBounds[frontierVerse.id] else {
+            print("[QURAN_RESUME] Speichern übersprungen: frontierPage S.\(frontierPage) gerade nicht gerendert oder Bounds fehlen. Altes Lesezeichen behalten.")
+            return
         }
         
+        // Oberkante des sichtbaren Bereichs relativ zur Oberkante von frontierPage:
+        // pageMinY ist der Abstand der Seitenoberkante von der sichtbaren Oberkante (im Scroll-Koordinatenraum)
+        let sichtbareOberkanteInSeite = -pageMinY
+        let delta = sichtbareOberkanteInSeite - frontierTop
+        
         let bookmark = QuranBookmark(
-            page: currentPage,
-            offsetInPage: max(0, offsetInCurrentPage),
+            verseIndex: frontierIndex,
+            delta: delta,
             fontSize: viewModel.fontSize
         )
+        print("[QURAN_RESUME] Speichern: readFrontier=\(frontierIndex) (\(frontierVerse.surah):\(frontierVerse.ayah) auf S.\(frontierPage)), frontierTop=\(String(format: "%.1f", frontierTop))pt, sichtbareOberkante=\(String(format: "%.1f", sichtbareOberkanteInSeite))pt, delta=\(String(format: "%.1f", delta))pt (fontSize: \(bookmark.fontSize))")
         progressStore.saveBookmark(bookmark)
     }
     
     private func initStartPageIfNeeded(force: Bool = false) {
         guard quranAPIService.isLoaded else { return }
         let frontierIndex = progressStore.readFrontier
-        let unreadVerse = quranAPIService.getVerseAtIndex(frontierIndex)
-        let defaultPage = unreadVerse?.pageNumber ?? 1
-        
-        var targetPage = defaultPage
-        if let bm = progressStore.bookmark {
-            targetPage = bm.page
-        }
+        let frontierVerse = quranAPIService.getVerseAtIndex(frontierIndex)
+        let targetPage = frontierVerse?.pageNumber ?? 1
         
         if force || startPage == nil || startPage != targetPage {
             let pageChanged = (startPage != targetPage)
@@ -479,60 +492,92 @@ struct QuranView: View {
                 self.hasRestoredInitialPosition = false
                 self.minAllowedOffsetY = 0
                 self.isUserScrolling = false
+                self.renderedPageMinY.removeAll()
+                self.renderedPageTopBounds.removeAll()
+                self.renderedPageBounds.removeAll()
                 self.uiScrollView?.setContentOffset(.zero, animated: false)
             }
-            let bmStr = progressStore.bookmark != nil ? "S.\(progressStore.bookmark!.page) +\(Int(progressStore.bookmark!.offsetInPage))pt" : "keines"
-            print("[QURAN_VIEW] Session startPage fixed to: \(targetPage) for readFrontier: \(frontierIndex), Lesezeichen: \(bmStr) (sessionID: \(self.scrollSessionID))")
+            let bmStr = progressStore.bookmark != nil ? "Vers #\(progressStore.bookmark!.verseIndex) d:\(Int(progressStore.bookmark!.delta))pt" : "keines"
+            print("[QURAN_VIEW] Session startPage festgelegt auf S.\(targetPage) (Lesefront: Vers #\(frontierIndex), Lesezeichen: \(bmStr), sessionID: \(self.scrollSessionID))")
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            if !self.hasRestoredInitialPosition {
+                self.restoreInitialPosition(forceFallback: true)
+            }
         }
     }
     
-    private func restoreInitialPosition(fallbackTopBoundsMap: [String: CGFloat]? = nil) {
+    private func restoreInitialPosition(forceFallback: Bool = false) {
         guard !hasRestoredInitialPosition, let start = startPage else { return }
         
-        if let bm = progressStore.bookmark, bm.page == start {
+        let frontierIndex = progressStore.readFrontier
+        guard let frontierVerse = quranAPIService.getVerseAtIndex(frontierIndex) else { return }
+        let frontierPage = frontierVerse.pageNumber
+        
+        // Wir benötigen die Bounds der Startseite (= frontierPage)
+        guard let topBounds = renderedPageTopBounds[frontierPage],
+              let bounds = renderedPageBounds[frontierPage] else {
+            if forceFallback {
+                performScrollPositioning(targetOffset: 0, rawTarget: 0, frontierTop: 0)
+            }
+            return
+        }
+        
+        let frontierTop = topBounds[frontierVerse.id] ?? 0
+        let frontierBottom = bounds[frontierVerse.id] ?? frontierTop
+        let fontLineHeight = Theme.quranUIFont(type: quranFontType, size: viewModel.fontSize).lineHeight
+        
+        let targetOffset: CGFloat
+        if let bm = progressStore.bookmark, bm.verseIndex == frontierIndex {
             let scaleFactor: CGFloat = (bm.fontSize > 0) ? (viewModel.fontSize / bm.fontSize) : 1.0
-            let targetOffset = max(0, bm.offsetInPage * scaleFactor)
-            self.minAllowedOffsetY = targetOffset
-            
-            DispatchQueue.main.async {
-                if let sv = self.uiScrollView {
-                    sv.setContentOffset(CGPoint(x: 0, y: targetOffset), animated: false)
-                    self.hasRestoredInitialPosition = true
-                    print("[QURAN_RESUME] Wiederherstellung: Lesezeichen S.\(bm.page) +\(String(format: "%.1f", targetOffset))pt (original: \(String(format: "%.1f", bm.offsetInPage))pt, fontSize: \(bm.fontSize)->\(viewModel.fontSize)), minAllowedOffsetY=\(String(format: "%.1f", targetOffset))")
-                } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        self.uiScrollView?.setContentOffset(CGPoint(x: 0, y: targetOffset), animated: false)
-                        self.hasRestoredInitialPosition = true
-                        print("[QURAN_RESUME] Wiederherstellung (delayed): Lesezeichen S.\(bm.page) +\(String(format: "%.1f", targetOffset))pt (original: \(String(format: "%.1f", bm.offsetInPage))pt, fontSize: \(bm.fontSize)->\(viewModel.fontSize)), minAllowedOffsetY=\(String(format: "%.1f", targetOffset))")
-                    }
-                }
-            }
+            let candidate = frontierTop + (bm.delta * scaleFactor)
+            let lowerBound = max(0, frontierTop - fontLineHeight)
+            let upperBound = max(lowerBound, frontierBottom)
+            targetOffset = min(max(candidate, lowerBound), upperBound)
         } else {
-            guard let topBoundsMap = fallbackTopBoundsMap else { return }
+            targetOffset = frontierTop
+        }
+        
+        performScrollPositioning(targetOffset: targetOffset, rawTarget: targetOffset, frontierTop: frontierTop)
+    }
+    
+    private func performScrollPositioning(targetOffset: CGFloat, rawTarget: CGFloat, frontierTop: CGFloat) {
+        guard !hasRestoredInitialPosition, let sv = self.uiScrollView, let start = startPage else { return }
+        
+        // 1. Positionieren
+        sv.setContentOffset(CGPoint(x: 0, y: targetOffset), animated: false)
+        
+        // 2. EINMAL prüfen im nächsten Runloop-Tick: Liegt die Oberkante des sichtbaren Bereichs
+        // (gemessen wie beim Speichern: sichtbareOberkanteInSeite = -pageMinY) tatsächlich auf Zielposition?
+        DispatchQueue.main.async {
+            guard !self.hasRestoredInitialPosition else { return }
             
-            let frontierIndex = progressStore.readFrontier
-            var frontierMinOffset: CGFloat = 0
-            if let frontierVerse = quranAPIService.getVerseAtIndex(frontierIndex),
-               frontierVerse.pageNumber == start {
-                let frontierMinY = topBoundsMap[frontierVerse.id] ?? 0
-                frontierMinOffset = (frontierVerse.ayah == 1) ? 0 : max(0, frontierMinY)
+            let measuredPosBefore: CGFloat
+            if let pMinY = self.renderedPageMinY[start] {
+                measuredPosBefore = -pMinY
+            } else {
+                measuredPosBefore = sv.contentOffset.y
             }
-            let targetOffset = max(0, frontierMinOffset)
-            self.minAllowedOffsetY = targetOffset
             
-            DispatchQueue.main.async {
-                if let sv = self.uiScrollView {
-                    sv.setContentOffset(CGPoint(x: 0, y: targetOffset), animated: false)
-                    self.hasRestoredInitialPosition = true
-                    print("[QURAN_RESUME] Wiederherstellung: Fallback auf Lesefront #\(frontierIndex), Offset=\(String(format: "%.1f", targetOffset)), minAllowedOffsetY=\(String(format: "%.1f", targetOffset))")
-                } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        self.uiScrollView?.setContentOffset(CGPoint(x: 0, y: targetOffset), animated: false)
-                        self.hasRestoredInitialPosition = true
-                        print("[QURAN_RESUME] Wiederherstellung (delayed): Fallback auf Lesefront #\(frontierIndex), Offset=\(String(format: "%.1f", targetOffset)), minAllowedOffsetY=\(String(format: "%.1f", targetOffset))")
-                    }
-                }
+            var finalOffset = sv.contentOffset.y
+            let discrepancy = rawTarget - measuredPosBefore
+            
+            if abs(discrepancy) > 1.0 {
+                // Bei Abweichung > 1 pt einmal ohne Animation korrigieren
+                let corrected = max(0, sv.contentOffset.y + discrepancy)
+                sv.setContentOffset(CGPoint(x: 0, y: corrected), animated: false)
+                finalOffset = corrected
             }
+            
+            let measuredPosAfter = (self.renderedPageMinY[start] != nil) ? (-self.renderedPageMinY[start]!) : finalOffset
+            
+            // 3. Hochscroll-Sperre startet an der finalen Position
+            self.minAllowedOffsetY = finalOffset
+            self.hasRestoredInitialPosition = true
+            
+            // 4. Log [QURAN_RESUME]
+            print("[QURAN_RESUME] Wiederherstellung: Ziel=\(String(format: "%.1f", rawTarget))pt, vor Korrektur=\(String(format: "%.1f", measuredPosBefore))pt, nach Korrektur=\(String(format: "%.1f", measuredPosAfter))pt, minAllowedOffsetY=\(String(format: "%.1f", finalOffset))pt")
         }
     }
     
@@ -674,6 +719,8 @@ struct QuranPageView: View {
     let useTajweedHarakat: Bool
     var onPageBoundsCalculated: (([String: CGFloat], [String: CGFloat]) -> Void)? = nil
     var onPageHeightCalculated: ((Int, CGFloat) -> Void)? = nil
+    var onPageScrollGeometryChanged: ((Int, CGFloat) -> Void)? = nil
+    var onPageDisappeared: ((Int) -> Void)? = nil
     let onMarkVersesAsRead: ([Verse], CGFloat?) -> Void
     var onTopVisible: ((String) -> Void)? = nil
     var onCompleteKhatm: (() -> Void)? = nil
@@ -734,7 +781,7 @@ struct QuranPageView: View {
         .onGeometryChange(for: CGFloat.self) { geo in
             geo.size.height
         } action: { _, newHeight in
-            if newHeight > 0 {
+            if newHeight > 0 && !isLoading && !verses.isEmpty {
                 onPageHeightCalculated?(pageNumber, newHeight)
             }
         }
@@ -743,8 +790,12 @@ struct QuranPageView: View {
         } action: { _, newMinY in
             self.pageMinY = newMinY
             checkVersesScrollPosition(minY: newMinY)
+            onPageScrollGeometryChanged?(pageNumber, newMinY)
         }
         #endif
+        .onDisappear {
+            onPageDisappeared?(pageNumber)
+        }
         .onAppear {
             loadPage()
         }
