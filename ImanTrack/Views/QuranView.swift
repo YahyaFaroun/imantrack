@@ -138,6 +138,7 @@ struct QuranView: View {
                                     },
                                     onScrollEnded: {
                                         self.saveCurrentBookmark()
+                                        self.progressStore.flushPendingChanges(modelContext: modelContext)
                                     }
                                 )
                                 .frame(width: 0, height: 0)
@@ -197,6 +198,7 @@ struct QuranView: View {
                             }
                             if (oldPhase == .interacting || oldPhase == .decelerating) && newPhase == .idle {
                                 self.saveCurrentBookmark()
+                                self.progressStore.flushPendingChanges(modelContext: modelContext)
                             }
                         }
                         #endif
@@ -397,6 +399,7 @@ struct QuranView: View {
         .onDisappear {
             self.isUserScrolling = false
             saveCurrentBookmark()
+            progressStore.flushPendingChanges(modelContext: modelContext)
             let storedUD = UserDefaults.standard.integer(forKey: "quranReadFrontier")
             let target = quranAPIService.getVerseAtIndex(progressStore.readFrontier)
             let targetStr = target != nil ? "\(target!.id) (#\(progressStore.readFrontier))" : "nil"
@@ -404,12 +407,20 @@ struct QuranView: View {
             let bmStr = progressStore.bookmark != nil ? "S.\(progressStore.bookmark!.page) +\(Int(progressStore.bookmark!.offsetInPage))pt" : "keines"
             print("[QURAN_STATE] onDisappear: Speicher=\(progressStore.readFrontier), UserDefaults=\(storedUD), Zielvers=\(targetStr), offset=\(currentOffset), Lesezeichen=\(bmStr)")
         }
+        .onChange(of: selectedTab) { oldTab, newTab in
+            if oldTab == 3 && newTab != 3 {
+                saveCurrentBookmark()
+                progressStore.flushPendingChanges(modelContext: modelContext)
+            }
+        }
         #if os(iOS)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             saveCurrentBookmark()
+            progressStore.flushPendingChanges(modelContext: modelContext)
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
             saveCurrentBookmark()
+            progressStore.flushPendingChanges(modelContext: modelContext)
         }
         #endif
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ResetQuranStartPage"))) { _ in
@@ -766,6 +777,7 @@ struct QuranPageView: View {
                         JustifiedText(
                             attributedText: attributedText,
                             verseRanges: verseRanges,
+                            fontSize: fontSize,
                             theme: quranTheme,
                             onVerseBoundsCalculated: { bounds, topBounds in
                                 self.segmentVerseBoundsMap[segment.id] = bounds
@@ -1110,6 +1122,7 @@ struct QuranSurah {
 struct JustifiedText: UIViewRepresentable {
     var attributedText: NSAttributedString
     var verseRanges: [String: NSRange] = [:]
+    var fontSize: CGFloat = 30
     var theme: String
     var onVerseBoundsCalculated: (([String: CGFloat], [String: CGFloat]) -> Void)? = nil
     @Environment(\.colorScheme) var colorScheme
@@ -1117,6 +1130,14 @@ struct JustifiedText: UIViewRepresentable {
     class Coordinator: NSObject {
         var lastOriginalText: NSAttributedString?
         var lastModifiedText: NSAttributedString?
+        var lastFontSize: CGFloat = 0
+        var lastTheme: String = ""
+        var lastWidth: CGFloat = 0
+        var lastHasNewlineInserted: Bool = false
+        var lastNewlineLocation: Int = -1
+        var lastLineCharRange: NSRange? = nil
+        var cachedBounds: [String: CGFloat] = [:]
+        var cachedTopBounds: [String: CGFloat] = [:]
     }
     
     func makeCoordinator() -> Coordinator {
@@ -1141,7 +1162,59 @@ struct JustifiedText: UIViewRepresentable {
         }
         uiView.backgroundColor = Theme.getQuranUIBackgroundColor(for: theme, systemColorScheme: colorScheme)
         
-        context.coordinator.lastOriginalText = attributedText
+        let coordinator = context.coordinator
+        let currentWidth = uiView.bounds.width
+        
+        // HEBEL C: Prüfung auf reine Farbänderung (Text, Schriftgröße, Theme, Breite unverändert & Bounds vorhanden)
+        let isSameText = (coordinator.lastOriginalText?.string == attributedText.string)
+        let isSameFontSize = (coordinator.lastFontSize == fontSize)
+        let isSameTheme = (coordinator.lastTheme == theme)
+        let isSameWidth = (currentWidth > 0 && abs(coordinator.lastWidth - currentWidth) < 0.5)
+        let hasCachedBounds = !coordinator.cachedBounds.isEmpty
+        
+        if isSameText && isSameFontSize && isSameTheme && isSameWidth && hasCachedBounds {
+            // FAST PATH: Reine Farbänderung ohne TextKit-Neu-Layout
+            let finalAttributed: NSAttributedString
+            if coordinator.lastHasNewlineInserted,
+               coordinator.lastNewlineLocation >= 0,
+               coordinator.lastNewlineLocation <= attributedText.length {
+                let mutable = NSMutableAttributedString(attributedString: attributedText)
+                let centerParagraphStyle = NSMutableParagraphStyle()
+                centerParagraphStyle.alignment = .center
+                centerParagraphStyle.baseWritingDirection = .rightToLeft
+                mutable.insert(NSAttributedString(string: "\n"), at: coordinator.lastNewlineLocation)
+                if let lineRange = coordinator.lastLineCharRange,
+                   lineRange.location + lineRange.length <= mutable.length {
+                    mutable.addAttribute(.paragraphStyle, value: centerParagraphStyle, range: lineRange)
+                }
+                finalAttributed = mutable
+            } else if let lineRange = coordinator.lastLineCharRange,
+                      lineRange.location + lineRange.length <= attributedText.length {
+                let mutable = NSMutableAttributedString(attributedString: attributedText)
+                let centerParagraphStyle = NSMutableParagraphStyle()
+                centerParagraphStyle.alignment = .center
+                centerParagraphStyle.baseWritingDirection = .rightToLeft
+                mutable.addAttribute(.paragraphStyle, value: centerParagraphStyle, range: lineRange)
+                finalAttributed = mutable
+            } else {
+                finalAttributed = attributedText
+            }
+            
+            coordinator.lastOriginalText = attributedText
+            coordinator.lastModifiedText = finalAttributed
+            uiView.attributedText = finalAttributed
+            uiView.textAlignment = .center
+            
+            // KEIN ensureLayout, KEIN zweites Setzen, KEIN boundingRect, KEIN Callback!
+            return
+        }
+        
+        // FULL PATH: Neue Seite, Schriftgrößenänderung, Zoom, Drehen oder Erstinitialisierung
+        coordinator.lastOriginalText = attributedText
+        coordinator.lastFontSize = fontSize
+        coordinator.lastTheme = theme
+        coordinator.lastWidth = currentWidth
+        
         uiView.attributedText = attributedText
         uiView.textAlignment = .center
         
@@ -1150,7 +1223,12 @@ struct JustifiedText: UIViewRepresentable {
         let layoutManager = uiView.layoutManager
         let numberOfGlyphs = layoutManager.numberOfGlyphs
         guard numberOfGlyphs > 0 else {
-            context.coordinator.lastModifiedText = attributedText
+            coordinator.lastHasNewlineInserted = false
+            coordinator.lastNewlineLocation = -1
+            coordinator.lastLineCharRange = nil
+            coordinator.lastModifiedText = attributedText
+            coordinator.cachedBounds = [:]
+            coordinator.cachedTopBounds = [:]
             return
         }
         
@@ -1171,16 +1249,25 @@ struct JustifiedText: UIViewRepresentable {
             
             if prevChar == 10 { // '\n'
                 mutableAttributed.addAttribute(.paragraphStyle, value: centerParagraphStyle, range: lastLineCharRange)
+                coordinator.lastHasNewlineInserted = false
+                coordinator.lastNewlineLocation = -1
+                coordinator.lastLineCharRange = lastLineCharRange
             } else {
                 mutableAttributed.insert(NSAttributedString(string: "\n"), at: lastLineCharRange.location)
                 let newLastLineRange = NSRange(location: lastLineCharRange.location + 1, length: lastLineCharRange.length)
                 mutableAttributed.addAttribute(.paragraphStyle, value: centerParagraphStyle, range: newLastLineRange)
+                coordinator.lastHasNewlineInserted = true
+                coordinator.lastNewlineLocation = lastLineCharRange.location
+                coordinator.lastLineCharRange = newLastLineRange
             }
             
-            context.coordinator.lastModifiedText = mutableAttributed
+            coordinator.lastModifiedText = mutableAttributed
             uiView.attributedText = mutableAttributed
         } else {
-            context.coordinator.lastModifiedText = attributedText
+            coordinator.lastHasNewlineInserted = false
+            coordinator.lastNewlineLocation = -1
+            coordinator.lastLineCharRange = nil
+            coordinator.lastModifiedText = attributedText
         }
         
         let (gbState, gbT0) = QuranPerf.shared.begin("5b_JustifiedText_glyphBounds")
@@ -1195,6 +1282,9 @@ struct JustifiedText: UIViewRepresentable {
             }
         }
         QuranPerf.shared.end("5b_JustifiedText_glyphBounds", state: gbState, t0: gbT0, extra: "\(boundsMap.count) Bounds")
+        
+        coordinator.cachedBounds = boundsMap
+        coordinator.cachedTopBounds = topBoundsMap
         
         if !boundsMap.isEmpty {
             let bounds = boundsMap
@@ -1214,11 +1304,12 @@ struct JustifiedText: UIViewRepresentable {
 #else
 struct JustifiedText: View {
     var attributedText: String
+    var fontSize: CGFloat = 24
     var theme: String
     
     var body: some View {
         Text(attributedText)
-            .font(Theme.quranFont(type: quranFontType, size: 24))
+            .font(Theme.quranFont(type: quranFontType, size: fontSize))
             .multilineTextAlignment(.trailing)
             .environment(\.layoutDirection, .rightToLeft)
     }

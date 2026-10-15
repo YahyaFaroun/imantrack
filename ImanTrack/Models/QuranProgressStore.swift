@@ -117,6 +117,21 @@ class QuranProgressStore: ObservableObject {
     private var cachedTodayRecord: DailyRecord? = nil
     private var cachedTrackingDateString: String? = nil
     
+    // MARK: - Hebel A: In-Memory Puffer für neu gelesene Verse/Seiten
+    private(set) var pendingVersesDelta: Int = 0
+    private(set) var pendingPagesDelta: Int = 0
+    private var pendingTrackingDate: Date? = nil
+    private weak var lastModelContext: ModelContext? = nil
+    
+    /// Live-Zähler für Anzeige im Quran-Tab (gespeicherter Wert + Puffer)
+    func liveVersesToday(baseCount: Int) -> Int {
+        return baseCount + pendingVersesDelta
+    }
+    
+    func livePagesToday(baseCount: Int) -> Int {
+        return baseCount + pendingPagesDelta
+    }
+    
     private func getCachedTodayRecord(in modelContext: ModelContext, date: Date) -> DailyRecord {
         let trackingDate = LocationAndSolarManager.shared.getTrackingDate(for: date)
         let dateString = getIslamicDateString(for: trackingDate)
@@ -137,6 +152,8 @@ class QuranProgressStore: ObservableObject {
         }
         guard newIndex > readFrontier else { return }
         
+        self.lastModelContext = modelContext
+        
         let (advanceState, advanceT0) = QuranPerf.shared.begin("1_advance_total")
         let oldFrontier = readFrontier
         let verseDelta = newIndex - oldFrontier
@@ -156,24 +173,58 @@ class QuranProgressStore: ObservableObject {
         UserDefaults.standard.set(newIndex, forKey: "quranReadFrontier")
         // KEIN UserDefaults.standard.synchronize() im Scroll-Pfad (verhindert synchrones Disk-I/O Blocking)
         
-        // 1b: DailyRecord Zugriff & SwiftData Mutation
+        // 1b: Hebel A - In-Memory Pufferung statt synchroner DailyRecord/SwiftData Mutation bei jedem Vers!
         let (recState, recT0) = QuranPerf.shared.begin("1b_access_DailyRecord")
-        let todayRecord = getCachedTodayRecord(in: modelContext, date: date)
-        todayRecord.quranVersesRead += verseDelta
-        todayRecord.quranPagesRead += pageDelta
-        QuranPerf.shared.end("1b_access_DailyRecord", state: recState, t0: recT0, extra: "delta: +\(verseDelta)")
+        let currentTrackingDate = LocationAndSolarManager.shared.getTrackingDate(for: date)
+        if let pendingDate = pendingTrackingDate {
+            let pendingDateStr = getIslamicDateString(for: pendingDate)
+            let currentDateStr = getIslamicDateString(for: currentTrackingDate)
+            if pendingDateStr != currentDateStr {
+                print("[QURAN_BUFFER] Maghrib/Tageswechsel erkannt! Flushe vorherigen Tag (\(pendingDateStr)) vor Akkumulation von neuem Tag (\(currentDateStr)).")
+                flushPendingChanges(modelContext: modelContext)
+            }
+        }
         
-        scheduleDebouncedSwiftDataSave(modelContext: modelContext)
+        self.pendingVersesDelta += verseDelta
+        self.pendingPagesDelta += pageDelta
+        self.pendingTrackingDate = currentTrackingDate
+        QuranPerf.shared.end("1b_access_DailyRecord", state: recState, t0: recT0, extra: "delta: +\(verseDelta) (pending: \(pendingVersesDelta)V, \(pendingPagesDelta)S)")
         
         let newVerse = QuranAPIService.shared.getVerseAtIndex(newIndex - 1)
         let verseId = newVerse?.id ?? "index:\(newIndex)"
         
         QuranPerf.shared.end("1_advance_total", state: advanceState, t0: advanceT0, extra: "verse=\(verseId)")
         print("[QURAN_STATE] advance: neuer Wert im Speicher = \(self.readFrontier), Wert in UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier")), verse=\(verseId)")
-        print("[QURAN_READ] advance to verse: \(verseId) (index \(newIndex)), old \(oldFrontier) -> new \(newIndex), verseDelta: \(verseDelta), pageDelta: \(pageDelta), totalVersesToday: \(todayRecord.quranVersesRead), totalPagesToday: \(todayRecord.quranPagesRead)")
+        print("[QURAN_READ] advance to verse: \(verseId) (index \(newIndex)), old \(oldFrontier) -> new \(newIndex), verseDelta: +\(verseDelta), pageDelta: +\(pageDelta), pendingVerses: \(pendingVersesDelta), pendingPages: \(pendingPagesDelta)")
+    }
+    
+    /// Hebel A: Schreibt alle gepufferten Verse und Seiten in SwiftData (todayRecord) und plant das Speichern.
+    func flushPendingChanges(modelContext: ModelContext) {
+        guard pendingVersesDelta > 0 || pendingPagesDelta > 0 else { return }
+        guard let targetDate = pendingTrackingDate else { return }
+        
+        let (flushState, flushT0) = QuranPerf.shared.begin("1c_flush_DailyRecord")
+        let versesToAdd = pendingVersesDelta
+        let pagesToAdd = pendingPagesDelta
+        let dateForFlush = targetDate
+        
+        // Puffer leeren vor Mutation (Schutz vor Reentrancy)
+        self.pendingVersesDelta = 0
+        self.pendingPagesDelta = 0
+        self.pendingTrackingDate = nil
+        
+        let todayRecord = getCachedTodayRecord(in: modelContext, date: dateForFlush)
+        todayRecord.quranVersesRead += versesToAdd
+        todayRecord.quranPagesRead += pagesToAdd
+        
+        scheduleDebouncedSwiftDataSave(modelContext: modelContext)
+        
+        QuranPerf.shared.end("1c_flush_DailyRecord", state: flushState, t0: flushT0, extra: "+\(versesToAdd)V, +\(pagesToAdd)S")
+        print("[QURAN_BUFFER] flushPendingChanges übertragen: +\(versesToAdd) Verse, +\(pagesToAdd) Seiten -> todayRecord(verses=\(todayRecord.quranVersesRead), pages=\(todayRecord.quranPagesRead), tag=\(getIslamicDateString(for: dateForFlush)))")
     }
     
     func resetKhatm(modelContext: ModelContext) {
+        flushPendingChanges(modelContext: modelContext)
         let oldVal = readFrontier
         self.readFrontier = 0
         self.bookmark = nil
@@ -188,6 +239,7 @@ class QuranProgressStore: ObservableObject {
     }
     
     func setReadFrontier(_ newIndex: Int, modelContext: ModelContext) {
+        flushPendingChanges(modelContext: modelContext)
         let clamped = max(0, min(newIndex, 6236))
         let oldVal = readFrontier
         self.readFrontier = clamped
@@ -216,6 +268,10 @@ class QuranProgressStore: ObservableObject {
     }
     
     private func flushPendingSaveImmediately() {
+        if let mc = lastModelContext {
+            flushPendingChanges(modelContext: mc)
+            try? mc.save()
+        }
         pendingSaveTask?.cancel()
         pendingSaveTask = nil
         lastSaveTime = Date()
