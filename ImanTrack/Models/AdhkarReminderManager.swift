@@ -4,7 +4,7 @@ import SwiftData
 import UIKit
 
 @MainActor
-class AdhkarReminderManager: NSObject {
+class AdhkarReminderManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = AdhkarReminderManager()
     
     var hasPromptedNotificationPermissionAfterFirstSession: Bool {
@@ -18,6 +18,15 @@ class AdhkarReminderManager: NSObject {
     
     private override init() {
         super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
+    
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .list])
     }
     
     func getAuthorizationStatus(completion: @escaping (UNAuthorizationStatus) -> Void) {
@@ -47,8 +56,49 @@ class AdhkarReminderManager: NSObject {
             completion(granted)
         }
     }
+
+    func sendTestNotification() {
+        requestAuthorization { granted in
+            guard granted else {
+                print("[LOG] Cannot send test notification: permission not granted")
+                return
+            }
+            let center = UNUserNotificationCenter.current()
+            let content = UNMutableNotificationContent()
+            content.title = "🧪 Test-Erinnerung"
+            content.body = "Die Benachrichtigungen für ImanTrack funktionieren einwandfrei!"
+            content.sound = .default
+            if #available(iOS 15.0, *) {
+                content.interruptionLevel = .timeSensitive
+            }
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+            let request = UNNotificationRequest(identifier: "TestNotification_\(UUID().uuidString)", content: content, trigger: trigger)
+            center.add(request) { error in
+                if let error = error {
+                    print("[LOG] Error sending test notification: \(error)")
+                } else {
+                    print("[LOG] Test notification scheduled in 5 seconds")
+                }
+            }
+        }
+    }
     
     func scheduleReminders(container: ModelContainer? = nil) {
+        getAuthorizationStatus { [weak self] status in
+            guard let self = self else { return }
+            if status == .notDetermined {
+                self.requestAuthorization { granted in
+                    if granted {
+                        self.performScheduleReminders(container: container)
+                    }
+                }
+            } else if status == .authorized || status == .provisional {
+                self.performScheduleReminders(container: container)
+            }
+        }
+    }
+    
+    private func performScheduleReminders(container: ModelContainer? = nil) {
         let isMorningEnabled = UserDefaults.standard.object(forKey: "isMorningAdhkarReminderEnabled") != nil ? UserDefaults.standard.bool(forKey: "isMorningAdhkarReminderEnabled") : true
         let isEveningEnabled = UserDefaults.standard.object(forKey: "isEveningAdhkarReminderEnabled") != nil ? UserDefaults.standard.bool(forKey: "isEveningAdhkarReminderEnabled") : true
         let isSleepEnabled = UserDefaults.standard.object(forKey: "isSleepAdhkarReminderEnabled") != nil ? UserDefaults.standard.bool(forKey: "isSleepAdhkarReminderEnabled") : true
@@ -78,7 +128,14 @@ class AdhkarReminderManager: NSObject {
         
         let now = Date()
         let calendar = Calendar.current
-        let lang = UserDefaults.standard.string(forKey: "language") ?? "de"
+        let lang: String
+        if let container = container {
+            let context = container.mainContext
+            let descriptor = FetchDescriptor<UserSettings>()
+            lang = (try? context.fetch(descriptor).first)?.language ?? UserDefaults.standard.string(forKey: "language") ?? "de"
+        } else {
+            lang = UserDefaults.standard.string(forKey: "language") ?? "de"
+        }
         
         // Schedule for next 7 days (7 days * 4 notifications = ~28 total, well below 64 limit)
         for dayOffset in 0..<7 {
@@ -175,19 +232,18 @@ class AdhkarReminderManager: NSObject {
     
     func cancelReminders() {
         let center = UNUserNotificationCenter.current()
-        center.getPendingNotificationRequests { requests in
-            let identifiersToRemove = requests.compactMap { request -> String? in
-                let id = request.identifier
-                if id.hasPrefix("AdhkarReminder_") || id.hasPrefix("SalawatReminder_") || id.hasPrefix("KahfReminder_") {
-                    return id
-                }
-                return nil
-            }
-            if !identifiersToRemove.isEmpty {
-                center.removePendingNotificationRequests(withIdentifiers: identifiersToRemove)
-                print("[LOG] Cancelled pending Adhkar/Kahf reminders: \(identifiersToRemove.count)")
-            }
+        let knownIdentifiers = (0..<7).flatMap { day -> [String] in
+            [
+                "AdhkarReminder_morning_\(day)",
+                "AdhkarReminder_evening_\(day)",
+                "AdhkarReminder_sleep_\(day)",
+                "KahfReminder_friday_\(day)",
+                "SalawatReminder_daily_\(day)",
+                "SalawatReminder_friday_\(day)"
+            ]
         }
+        center.removePendingNotificationRequests(withIdentifiers: knownIdentifiers)
+        print("[LOG] Synchronously cancelled pending Adhkar/Kahf reminders for known identifiers")
     }
     
     func getPendingReminders(completion: @escaping ([UNNotificationRequest]) -> Void) {

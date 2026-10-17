@@ -78,6 +78,10 @@ final class UserSettings {
     // Quran Tajweed Harakat Option
     var useTajweedHarakat: Bool = false
     
+    // Prayer Calculation Settings
+    var calculationMethodRaw: String = "mwl"
+    var asrSchoolRaw: String = "standard"
+    
     init() {
         let locale = Locale.current.language.languageCode?.identifier ?? "en"
         if ["de", "en", "ar"].contains(locale) {

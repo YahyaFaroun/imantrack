@@ -41,6 +41,7 @@ final class DailyRecord {
     
     var adhkarProgressJSON: String = "{}"
     var customTasbihCountsJSON: String = "{}"
+    var adhkarSnapshotsJSON: String = "{}"
     
     var totalIstighfarCount: Int {
         istighfarCount + istighfarMediumCount + istighfarSayyidCount
@@ -90,6 +91,141 @@ final class DailyRecord {
         if let data = try? JSONEncoder().encode(dict),
            let jsonString = String(data: data, encoding: .utf8) {
             customTasbihCountsJSON = jsonString
+        }
+    }
+    
+    // MARK: - Adhkar Snapshot & Single-Tap Completion / Reversion
+    
+    struct AdhkarCompletionSnapshot: Codable {
+        var previousCounts: [String: Int] = [:]
+        var creditedTasbih: [String: Int] = [:]
+    }
+    
+    func getAdhkarSnapshot(for typeId: String) -> AdhkarCompletionSnapshot? {
+        guard let data = adhkarSnapshotsJSON.data(using: .utf8),
+              let dict = try? JSONDecoder().decode([String: AdhkarCompletionSnapshot].self, from: data) else {
+            return nil
+        }
+        return dict[typeId]
+    }
+    
+    func saveAdhkarSnapshot(for typeId: String, snapshot: AdhkarCompletionSnapshot) {
+        var dict: [String: AdhkarCompletionSnapshot] = [:]
+        if let data = adhkarSnapshotsJSON.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode([String: AdhkarCompletionSnapshot].self, from: data) {
+            dict = decoded
+        }
+        dict[typeId] = snapshot
+        if let data = try? JSONEncoder().encode(dict),
+           let jsonString = String(data: data, encoding: .utf8) {
+            adhkarSnapshotsJSON = jsonString
+        }
+    }
+    
+    func clearAdhkarSnapshot(for typeId: String) {
+        guard let data = adhkarSnapshotsJSON.data(using: .utf8),
+              var dict = try? JSONDecoder().decode([String: AdhkarCompletionSnapshot].self, from: data) else {
+            return
+        }
+        dict.removeValue(forKey: typeId)
+        if let data = try? JSONEncoder().encode(dict),
+           let jsonString = String(data: data, encoding: .utf8) {
+            adhkarSnapshotsJSON = jsonString
+        }
+    }
+    
+    func isAdhkarDone(type: AdhkarSessionType) -> Bool {
+        switch type {
+        case .sleep: return schlafAdhkarDone
+        case .morning: return morgenAdhkarDone
+        case .evening: return abendAdhkarDone
+        }
+    }
+    
+    func markAllAdhkarCompleted(type: AdhkarSessionType) {
+        let items = adhkarItems(for: type)
+        var snapshot = AdhkarCompletionSnapshot()
+        
+        for item in items {
+            let key = safeAdhkarKey(typeId: type.idStr, item: item)
+            let current = getAdhkarCount(for: key)
+            snapshot.previousCounts[key] = current
+            
+            if current < item.count {
+                let diff = item.count - current
+                setAdhkarCount(for: key, count: item.count)
+                
+                if let category = item.linkedTasbihCategory {
+                    snapshot.creditedTasbih[category.rawValue, default: 0] += diff
+                    switch category {
+                    case .istighfar: self.istighfarCount += diff
+                    case .salawat: self.salawatCount += diff
+                    case .subhanAllah: self.subhanAllahCount += diff
+                    case .alhamdulillah: self.alhamdulillahCount += diff
+                    case .allahuAkbar: self.allahuAkbarCount += diff
+                    case .laIlahaIllallah: self.laIlahaIllallahCount += diff
+                    }
+                }
+            }
+        }
+        
+        saveAdhkarSnapshot(for: type.idStr, snapshot: snapshot)
+        
+        let now = Date()
+        switch type {
+        case .sleep:
+            self.schlafAdhkarDone = true
+            self.schlafAdhkarTime = now
+        case .morning:
+            self.morgenAdhkarDone = true
+            self.morgenAdhkarTime = now
+        case .evening:
+            self.abendAdhkarDone = true
+            self.abendAdhkarTime = now
+        }
+    }
+    
+    func markAdhkarUncompleted(type: AdhkarSessionType) {
+        let items = adhkarItems(for: type)
+        let snapshot = getAdhkarSnapshot(for: type.idStr)
+        
+        // 1. Genau die beim Abhaken gutgeschriebene Tasbih-Differenz wieder abziehen
+        if let snapshot = snapshot {
+            for (categoryRaw, creditedAmount) in snapshot.creditedTasbih {
+                if let category = TasbihCategory(rawValue: categoryRaw) {
+                    switch category {
+                    case .istighfar: self.istighfarCount = max(0, self.istighfarCount - creditedAmount)
+                    case .salawat: self.salawatCount = max(0, self.salawatCount - creditedAmount)
+                    case .subhanAllah: self.subhanAllahCount = max(0, self.subhanAllahCount - creditedAmount)
+                    case .alhamdulillah: self.alhamdulillahCount = max(0, self.alhamdulillahCount - creditedAmount)
+                    case .allahuAkbar: self.allahuAkbarCount = max(0, self.allahuAkbarCount - creditedAmount)
+                    case .laIlahaIllallah: self.laIlahaIllallahCount = max(0, self.laIlahaIllallahCount - creditedAmount)
+                    }
+                }
+            }
+        }
+        
+        // 2. Einzelzähler auf den Stand VOR dem Abhaken zurücksetzen
+        for item in items {
+            let key = safeAdhkarKey(typeId: type.idStr, item: item)
+            let prev = snapshot?.previousCounts[key] ?? 0
+            setAdhkarCount(for: key, count: prev)
+        }
+        
+        // 3. Snapshot löschen
+        clearAdhkarSnapshot(for: type.idStr)
+        
+        // 4. Flag zurück auf false, Zeitstempel entfernen
+        switch type {
+        case .sleep:
+            self.schlafAdhkarDone = false
+            self.schlafAdhkarTime = nil
+        case .morning:
+            self.morgenAdhkarDone = false
+            self.morgenAdhkarTime = nil
+        case .evening:
+            self.abendAdhkarDone = false
+            self.abendAdhkarTime = nil
         }
     }
     

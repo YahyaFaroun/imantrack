@@ -241,6 +241,18 @@ struct L10n {
         ],
         "daily_goal_pages": ["de": "Tagesziel: %d Seiten", "en": "Daily goal: %d pages", "ar": "الهدف اليومي: %d صفحات"],
         "surah_alkahf": ["de": "Sure Al-Kahf", "en": "Surah Al-Kahf", "ar": "سورة الكهف"],
+        "night_before_weekday": [
+            "de": "Nacht zum %@",
+            "en": "Night before %@",
+            "ar": "ليلة %@",
+            "tr": "%@ gecesi",
+            "id": "Malam %@",
+            "ms": "Malam %@",
+            "ur": "%@ کی رات",
+            "ru": "Ночь на %@",
+            "fr": "Veille du %@",
+            "es": "Víspera del %@"
+        ],
         "surah_alkahf_desc": ["de": "Freitagslesung (Do Sonnenuntergang bis Fr Sonnenuntergang)", "en": "Recitation on Fridays (Thu sunset to Fri sunset)", "ar": "قراءة الجمعة (من غروب الخميس إلى غروب الجمعة)"],
         "read_now": ["de": "Jetzt lesen", "en": "Read now", "ar": "اقرأ الآن"],
         "done": ["de": "Fertig", "en": "Done", "ar": "تم"],
@@ -268,6 +280,19 @@ struct L10n {
         "salawat_reminder_body": ["de": "Sendest du heute Salawat auf unseren Propheten Muhammad ﷺ?", "en": "Will you send Salawat upon our Prophet Muhammad ﷺ today?", "ar": "هل صليت اليوم على نبينا محمد ﷺ؟"],
         "salawat_reminder_friday_title": ["de": "🕌 Segensreicher Freitag – Salawat Sunnah", "en": "🕌 Blessed Friday – Salawat Sunnah", "ar": "🕌 الجمعة المباركة – سنة الصلاة على النبي ﷺ"],
         "salawat_reminder_friday_body": ["de": "Heute ist Freitag! Es ist eine besondere Sunnah, vermehrt Salawat auf den Propheten ﷺ zu sprechen.", "en": "Today is Friday! It is a special Sunnah to send abundant Salawat upon the Prophet ﷺ.", "ar": "اليوم يوم الجمعة! من السنة المأكورة الإكثار من الصلاة على النبي ﷺ."],
+        "send_test_notification": [
+            "de": "🧪 Test-Erinnerung in 5 Sek. senden",
+            "en": "🧪 Send test reminder in 5 sec",
+            "ar": "🧪 إرسال تذكير تجريبي خلال 5 ثوانٍ",
+            "fr": "🧪 Envoyer un rappel de test dans 5 s",
+            "es": "🧪 Enviar recordatorio de prueba en 5 s",
+            "ur": "🧪 5 سیکنڈ میں ٹیسٹ ریمائنڈر بھیجیں",
+            "id": "🧪 Kirim pengingat tes dalam 5 detik",
+            "tr": "🧪 5 saniye içinde test hatırlatıcısı gönder",
+            "ru": "🧪 Отправить тестовое напоминание через 5 сек",
+            "bn": "🧪 ৫ সেকেন্ডের মধ্যে টেস্ট রিমাইন্ডার পাঠান",
+            "ms": "🧪 Hantar peringatan ujian dalam 5 saat"
+        ],
         "add_custom_dhikr": ["de": "Eigenen Dhikr hinzufügen", "en": "Add Custom Dhikr", "ar": "إضافة ذكر خاص"],
         "dhikr_details": ["de": "Dhikr-Details", "en": "Dhikr Details", "ar": "تفاصيل الذكر"],
         "title_translation": ["de": "Titel / Übersetzung", "en": "Title / Translation", "ar": "العنوان / الترجمة"],
@@ -317,6 +342,92 @@ struct L10n {
         ],
         "stats_this_month": ["de": "Gesamt diesen Monat: %d Verse", "en": "Total this month: %d verses", "ar": "المجموع هذا الشهر: %d آيات"],
         "stats_this_month_pages": ["de": "Diesen Monat: %d von %d Seiten", "en": "This month: %d of %d pages", "ar": "هذا الشهر: %d من %d صفحات"],
+        "prayer_settings_sec": [
+            "de": "Gebetszeiten-Berechnung", "en": "Prayer Time Calculation", "ar": "حساب أوقات الصلاة", "fr": "Calcul des heures de prière",
+            "es": "Cálculo de horas de oración", "ur": "نماز کے اوقات کا حساب", "id": "Perhitungan Waktu Shalat", "tr": "Namaz Vakti Hesaplama",
+            "ru": "Расчет времени молитвы", "bn": "নামাজের সময় গণনা", "ms": "Pengiraan Waktu Solat"
+        ],
+        "calculation_method": [
+            "de": "Berechnungsmethode", "en": "Calculation Method", "ar": "طريقة الحساب", "fr": "Méthode de calcul",
+            "es": "Método de cálculo", "ur": "حساب کا طریقہ", "id": "Metode Perhitungan", "tr": "Hesaplama Yöntemi",
+            "ru": "Метод расчета", "bn": "গণনা পদ্ধতি", "ms": "Kaedah Pengiraan"
+        ],
+        "method_mwl": [
+            "de": "Muslim World League (MWL - 18°/17°)", "en": "Muslim World League (MWL - 18°/17°)", "ar": "رابطة العالم الإسلامي (18°/17°)",
+            "fr": "Ligue Islamique Mondiale (MWL - 18°/17°)", "es": "Liga Mundial Musulmana (MWL - 18°/17°)", "ur": "رابطہ عالم اسلامی (18°/17°)",
+            "id": "Liga Dunia Muslim (MWL - 18°/17°)", "tr": "Müslüman Dünya Ligi (MWL - 18°/17°)", "ru": "Всемирная исламская лига (MWL - 18°/17°)",
+            "bn": "মুসলিম ওয়ার্ল্ড লিগ (MWL - 18°/17°)", "ms": "Liga Dunia Muslim (MWL - 18°/17°)"
+        ],
+        "method_isna": [
+            "de": "ISNA (Nordamerika - 15°/15°)", "en": "ISNA (North America - 15°/15°)", "ar": "الجمعية الإسلامية لشمال أمريكا (15°/15°)",
+            "fr": "ISNA (Amérique du Nord - 15°/15°)", "es": "ISNA (Norteamérica - 15°/15°)", "ur": "اسلامک سوسائٹی آف نارتھ امریکہ (15°/15°)",
+            "id": "ISNA (Amerika Utara - 15°/15°)", "tr": "ISNA (Kuzey Amerika - 15°/15°)", "ru": "ISNA (Северная Америка - 15°/15°)",
+            "bn": "আইএসএনএ (উত্তর আমেরিকা - 15°/15°)", "ms": "ISNA (Amerika Utara - 15°/15°)"
+        ],
+        "method_umm_al_qura": [
+            "de": "Umm Al-Qura (Mekka - 18.5°/+90m)", "en": "Umm Al-Qura (Makkah - 18.5°/+90m)", "ar": "أم القرى (مكة المكرمة - 18.5°/+90د)",
+            "fr": "Umm Al-Qura (La Mecque - 18.5°/+90m)", "es": "Umm Al-Qura (Meca - 18.5°/+90m)", "ur": "ام القرى (مکہ - 18.5°/+90m)",
+            "id": "Umm Al-Qura (Mekkah - 18.5°/+90m)", "tr": "Ümmü'l-Kurâ (Mekke - 18.5°/+90dk)", "ru": "Умм аль-Кура (Мекка - 18.5°/+90мин)",
+            "bn": "উম্ম আল-কুরা (মক্কা - 18.5°/+90মি)", "ms": "Umm Al-Qura (Mekah - 18.5°/+90m)"
+        ],
+        "method_karachi": [
+            "de": "Karachi (Südasien - 18°/18°)", "en": "Karachi (South Asia - 18°/18°)", "ar": "جامعة العلوم الإسلامية بكراتشي (18°/18°)",
+            "fr": "Université de Karachi (Asie du Sud - 18°/18°)", "es": "Karachi (Asia del Sur - 18°/18°)", "ur": "جامعہ علوم اسلامیہ کراچی (18°/18°)",
+            "id": "Karachi (Asia Selatan - 18°/18°)", "tr": "Karaçi (Güney Asya - 18°/18°)", "ru": "Карачи (Южная Азия - 18°/18°)",
+            "bn": "করাচি (দক্ষিণ এশিয়া - 18°/18°)", "ms": "Karachi (Asia Selatan - 18°/18°)"
+        ],
+        "method_egyptian": [
+            "de": "Ägyptische Behörde (19.5°/17.5°)", "en": "Egyptian General Authority (19.5°/17.5°)", "ar": "الهيئة المصرية العامة للمساحة (19.5°/17.5°)",
+            "fr": "Autorité Égyptienne (19.5°/17.5°)", "es": "Autoridad Egipcia (19.5°/17.5°)", "ur": "مصری جنرل اتھارٹی (19.5°/17.5°)",
+            "id": "Otoritas Mesir (19.5°/17.5°)", "tr": "Mısır Genel Heyeti (19.5°/17.5°)", "ru": "Египетский комитет (19.5°/17.5°)",
+            "bn": "মিশরীয় জেনারেল অথরিটি (19.5°/17.5°)", "ms": "Pihak Berkuasa Mesir (19.5°/17.5°)"
+        ],
+        "method_uoif": [
+            "de": "UOIF (Frankreich - 12°/12°)", "en": "UOIF (France - 12°/12°)", "ar": "اتحاد المنظمات الإسلامية في فرنسا (12°/12°)",
+            "fr": "UOIF (France - 12°/12°)", "es": "UOIF (Francia - 12°/12°)", "ur": "یو او آئی ایف (فرانس - 12°/12°)",
+            "id": "UOIF (Prancis - 12°/12°)", "tr": "UOIF (Fransa - 12°/12°)", "ru": "UOIF (Франция - 12°/12°)",
+            "bn": "ইউওআইএফ (ফ্রান্স - 12°/12°)", "ms": "UOIF (Perancis - 12°/12°)"
+        ],
+        "asr_school": [
+            "de": "Asr Schulrichtung", "en": "Asr Juristic Method", "ar": "المذهب في صلاة العصر", "fr": "Méthode pour l'Asr",
+            "es": "Método jurídico de Asr", "ur": "عصر کا فقہی طریقہ", "id": "Metode Fiqih Asar", "tr": "İkindi Hesabi Yöntemi",
+            "ru": "Юридический метод Аср", "bn": "আসরের ফিকহি পদ্ধতি", "ms": "Kaedah Fikah Asar"
+        ],
+        "asr_standard": [
+            "de": "Standard (Schafi'i, Maliki, Hanbali)", "en": "Standard (Shafi'i, Maliki, Hanbali)", "ar": "الجمهور (شافعي، مالكي، حنبلي)",
+            "fr": "Standard (Chafi'i, Maliki, Hanbali)", "es": "Estándar (Shafi'i, Maliki, Hanbali)", "ur": "شافعی، مالکی، حنبلی",
+            "id": "Standar (Syafi'i, Maliki, Hanbali)", "tr": "Standart (Şafii, Maliki, Hanbeli)", "ru": "Стандарт (Шафии, Малики, Ханбали)",
+            "bn": "স্ট্যান্ডার্ড (শাফেয়ী, মালেকী, হাম্বলী)", "ms": "Standard (Syafi'i, Maliki, Hanbali)"
+        ],
+        "asr_hanafi": [
+            "de": "Hanafi", "en": "Hanafi", "ar": "الحنفي", "fr": "Hanafi", "es": "Hanafí", "ur": "حنفی", "id": "Hanafi", "tr": "Hanefi", "ru": "Ханафи", "bn": "হানাফী", "ms": "Hanafi"
+        ],
+        "prayer_preview_header": [
+            "de": "Heutige Gebetszeiten (Exakt)", "en": "Today's Prayer Times (Exact)", "ar": "أوقات الصلاة اليوم (دقيقة)",
+            "fr": "Heures de prière d'aujourd'hui (Exactes)", "es": "Horarios de oración de hoy (Exactos)", "ur": "آج کے نماز کے اوقات (بالکل درست)",
+            "id": "Waktu Shalat Hari Ini (Eksak)", "tr": "Bugünün Namaz Vakitleri (Kesin)", "ru": "Сегодняшнее время молитв (Точное)",
+            "bn": "আজকের নামাজের সময় (সঠিক)", "ms": "Waktu Solat Hari Ini (Tepat)"
+        ],
+        "prayer_fajr": [
+            "de": "Fajr (Morgendämmerung)", "en": "Fajr (Dawn)", "ar": "الفجر", "fr": "Fajr (Aube)", "es": "Fajr (Alba)",
+            "ur": "فجر", "id": "Subuh", "tr": "İmsak", "ru": "Фаджр", "bn": "ফজর", "ms": "Subuh"
+        ],
+        "prayer_dhuhr": [
+            "de": "Dhuhr (Mittag)", "en": "Dhuhr (Noon)", "ar": "الظهر", "fr": "Dhuhr (Midi)", "es": "Dhuhr (Mediodía)",
+            "ur": "ظہر", "id": "Dzuhur", "tr": "Öğle", "ru": "Зухр", "bn": "জোহর", "ms": "Zohor"
+        ],
+        "prayer_asr": [
+            "de": "Asr (Nachmittag)", "en": "Asr (Afternoon)", "ar": "العصر", "fr": "Asr (Après-midi)", "es": "Asr (Tarde)",
+            "ur": "عصر", "id": "Ashar", "tr": "İkindi", "ru": "Аср", "bn": "আসর", "ms": "Asar"
+        ],
+        "prayer_maghrib": [
+            "de": "Maghrib (Sonnenuntergang)", "en": "Maghrib (Sunset)", "ar": "المغرب", "fr": "Maghrib (Coucher du soleil)", "es": "Maghrib (Puesta de sol)",
+            "ur": "مغرب", "id": "Maghrib", "tr": "Akşam", "ru": "Магриб", "bn": "মাগরিব", "ms": "Maghrib"
+        ],
+        "prayer_isha": [
+            "de": "Isha (Nacht)", "en": "Isha (Night)", "ar": "العشاء", "fr": "Isha (Nuit)", "es": "Isha (Noche)",
+            "ur": "عشاء", "id": "Isya", "tr": "Yatsı", "ru": "Иша", "bn": "এشا", "ms": "Isyak"
+        ],
         "stats_avg": ["de": "Ø %.1f Verse/Tag", "en": "Avg %.1f verses/day", "ar": "معدل %.1f آيات/يوم"],
         "stats_avg_pages": ["de": "Ø %.1f Seiten/Tag", "en": "Avg %.1f pages/day", "ar": "معدل %.1f صفحات/يوم"],
         "stats_avg_dhikr": ["de": "Ø %d/Tag", "en": "Avg %d/day", "ar": "معدل %d/يوم"],
@@ -325,6 +436,21 @@ struct L10n {
         "quran_warning": ["de": "⚠️ Aktuell: Al-Fatiha + Al-Baqarah geladen. Vollständiger Quran wird in nächstem Update hinzugefügt.", "en": "⚠️ Currently: Al-Fatiha + Al-Baqarah loaded. Complete Quran will be added in the next update.", "ar": "⚠️ حالياً: سورة الفاتحة + البقرة محملة. سيتم إضافة القرآن كاملاً في التحديث القادم."],
         "last_read": ["de": "Letzte Lesung", "en": "Last read", "ar": "آخر قراءة"],
         "koran_sec": ["de": "Quran", "en": "Quran", "ar": "القرآن"],
+        "quran_reading_options": [
+            "de": "Lese-Optionen", "en": "Reading Options", "ar": "خيارات القراءة", "fr": "Options de lecture", "es": "Opciones de lectura",
+            "ur": "پڑھنے کے اختیارات", "id": "Opsi Membaca", "tr": "Okuma Seçenekleri", "ru": "Параметры чтения", "bn": "পড়ার বিকল্প", "ms": "Pilihan Membaca"
+        ],
+        "quran_hide_read_pages": [
+            "de": "Gelesene Seiten ausblenden", "en": "Hide read pages", "ar": "إخفاء الصفحات المقروءة", "fr": "Masquer les pages lues", "es": "Ocultar páginas leídas",
+            "ur": "پڑھے ہوئے صفحات چھپائیں", "id": "Sembunyikan halaman terbaca", "tr": "Okunan sayfaları gizle", "ru": "Скрыть прочитанные страницы", "bn": "পঠিত পৃষ্ঠাগুলি লুকান", "ms": "Sembunyikan halaman dibaca"
+        ],
+        "quran_reset_khatm": [
+            "de": "Aktuellen Khatm-Fortschritt zurücksetzen", "en": "Reset current Khatm progress", "ar": "إعادة ضبط تقدم الختمة الحالية", "fr": "Réinitialiser la progression du Khatm", "es": "Restablecer progreso del Khatm",
+            "ur": "موجودہ ختم کی پیشرفت ری سیٹ کریں", "id": "Reset kemajuan Khatam saat ini", "tr": "Mevcut Hatim ilerlemesini sıfırla", "ru": "Сбросить прогресс текущего Хатам", "bn": "বর্তমান খতমের অগ্রগতি রিসেট করুন", "ms": "Sembunyikan kemajuan Khatam semasa"
+        ],
+        "quran_reset_confirm": [
+            "de": "Möchtest du die gelesenen Verse der aktuellen Khatm zurücksetzen?", "en": "Do you want to reset read verses for the current Khatm?", "ar": "هل تريد إعادة ضبط الآيات المقروءة للختمة الحالية؟"
+        ],
         "tasbih_sec": ["de": "Tasbih", "en": "Tasbih", "ar": "تسبيح"],
         "completed_today_ar": ["de": "Heute erledigt ✓", "en": "Completed today ✓", "ar": "تم اليوم ✓"],
         "tasbih_type_istighfar": ["de": "Istighfar", "en": "Istighfar", "ar": "الاستغفار"],
@@ -586,6 +712,78 @@ struct L10n {
             "ha": "An gama karatu", "jv": "Rampung moco", "ku": "Xwendin bi dawî bû",
             "pa": "ਪੜ੍ਹਨਾ ਪੂਰਾ ਹੋਇਆ", "ps": "لوستل پای ته ورسېدل", "so": "Akhrisku waa dhamaaday",
             "sw": "Umesoma tayari", "uz": "O'qish yakunlandi"
+        ],
+        "adhkar_mark_read_confirm": [
+            "de": "%@ als auswendig gelesen markieren?", "en": "Mark %@ as recited from memory?", "ar": "تحديد %@ كمقروء غيباً؟",
+            "tr": "%@ ezberden okundu olarak işaretlensin mi?", "id": "Tandai %@ sebagai telah dibaca dari hafalan?", "ms": "Tanda %@ sebagai telah dibaca dari hafalan?",
+            "fr": "Marquer %@ comme récité de mémoire ?", "es": "¿Marcar %@ como recitado de memoria?", "ur": "کیا %@ کو زبانی پڑھا ہوا نشان زد کریں؟",
+            "ru": "Отметить %@ как прочитанное наизусть?", "bn": "%@ কি মুখস্থ পঠিত হিসেবে চিহ্নিত করবেন?"
+        ],
+        "adhkar_mark_unread_confirm": [
+            "de": "%@ als nicht gelesen markieren?", "en": "Mark %@ as not read?", "ar": "تحديد %@ كغير مقروء؟",
+            "tr": "%@ okunmadı olarak işaretlensin mi?", "id": "Tandai %@ sebagai belum dibaca?", "ms": "Tanda %@ sebagai belum dibaca?",
+            "fr": "Marquer %@ comme non lu ?", "es": "¿Marcar %@ como no leído?", "ur": "کیا %@ کو بغیر پڑھا نشان زد کریں؟",
+            "ru": "Отметить %@ как непрочитанное?", "bn": "%@ কি অপঠিত হিসেবে চিহ্নিত করবেন?"
+        ],
+        "adhkar_mark_all_read": [
+            "de": "Auswendig gelesen", "en": "Recited from memory", "ar": "قراءة غيباً",
+            "tr": "Ezberden okundu", "id": "Dibaca dari hafalan", "ms": "Dibaca dari hafalan",
+            "fr": "Récité de mémoire", "es": "Recitado de memoria", "ur": "زبانی پڑھا گیا",
+            "ru": "Прочитано наизусть", "bn": "মুখস্থ পড়া হয়েছে"
+        ],
+        "adhkar_mark_as_unread": [
+            "de": "Nicht gelesen", "en": "Not read", "ar": "غير مقروء",
+            "tr": "Okunmadı", "id": "Belum dibaca", "ms": "Belum dibaca",
+            "fr": "Non lu", "es": "No leído", "ur": "نہیں پڑھا گیا",
+            "ru": "Не прочитано", "bn": "পড়া হয়নি"
+        ],
+        "adhkar_recited_from_memory": [
+            "de": "Auswendig gelesen", "en": "Recited from memory", "ar": "قراءة غيباً",
+            "tr": "Ezberden okundu", "id": "Dibaca dari hafalan", "ms": "Dibaca dari hafalan",
+            "fr": "Récité de mémoire", "es": "Recitado de memoria", "ur": "زبانی پڑھا گیا",
+            "ru": "Прочитано наизусть", "bn": "মুখস্থ পড়া হয়েছে"
+        ],
+        "adhkar_not_read": [
+            "de": "Nicht gelesen", "en": "Not read", "ar": "غير مقروء",
+            "tr": "Okunmadı", "id": "Belum dibaca", "ms": "Belum dibaca",
+            "fr": "Non lu", "es": "No leído", "ur": "نہیں پڑھا گیا",
+            "ru": "Не прочитано", "bn": "পড়া হয়নি"
+        ],
+        "mark_read": [
+            "de": "Auswendig gelesen", "en": "Recited from memory", "ar": "قراءة غيباً",
+            "tr": "Ezberden okundu", "id": "Dibaca dari hafalan", "ms": "Dibaca dari hafalan",
+            "fr": "Récité de mémoire", "es": "Recitado de memoria", "ur": "زبانی پڑھا گیا",
+            "ru": "Прочитано наизусть", "bn": "মুখস্থ পড়া হয়েছে"
+        ],
+        "mark_unread": [
+            "de": "Nicht gelesen", "en": "Not read", "ar": "غير مقروء",
+            "tr": "Okunmadı", "id": "Belum dibaca", "ms": "Belum dibaca",
+            "fr": "Non lu", "es": "No leído", "ur": "نہیں پڑھا گیا",
+            "ru": "Не прочитано", "bn": "পড়া হয়নি"
+        ],
+        "adhkar_confirm_memorized_read": [
+            "de": "Bestätigung bei „Auswendig gelesen“", "en": "Confirmation for \"Recited from memory\"", "ar": "تأكيد عند \"قراءة غيباً\"",
+            "tr": "\"Ezberden okundu\" için onay", "id": "Konfirmasi untuk \"Dibaca dari hafalan\"", "ms": "Pengesahan untuk \"Dibaca dari hafalan\"",
+            "fr": "Confirmation pour « Récité de mémoire »", "es": "Confirmación para \"Recitado de memoria\"", "ur": "\"زبانی پڑھا گیا\" کی تصدیق",
+            "ru": "Подтверждение для «Прочитано наизусть»", "bn": "\"মুখস্থ পড়া হয়েছে\"-র জন্য নিশ্চিতকরণ"
+        ],
+        "adhkar_memorized_prompt": [
+            "de": "Schon auswendig gelesen? Hier antippen", "en": "Already recited from memory? Tap here", "ar": "قرأتها غيباً؟ اضغط هنا",
+            "tr": "Ezberden okudunuz mu? Buraya dokunun", "id": "Sudah dibaca dari hafalan? Ketuk di sini", "ms": "Sudah dibaca dari hafalan? Ketuk di sini",
+            "fr": "Déjà récité de mémoire ? Appuyez ici", "es": "¿Ya lo recitaste de memoria? Toca aquí", "ur": "کیا زبانی پڑھ چکے ہیں؟ یہاں دبائیں",
+            "ru": "Уже прочитали наизусть? Нажмите здесь", "bn": "ইতিমধ্যে মুখস্থ পড়েছেন? এখানে ট্যাপ করুন"
+        ],
+        "adhkar_memorized_done": [
+            "de": "Auswendig gelesen ✓", "en": "Recited from memory ✓", "ar": "قراءة غيباً ✓",
+            "tr": "Ezberden okundu ✓", "id": "Dibaca dari hafalan ✓", "ms": "Dibaca dari hafalan ✓",
+            "fr": "Récité de mémoire ✓", "es": "Recitado de memoria ✓", "ur": "زبانی پڑھا گیا ✓",
+            "ru": "Прочитано наизусть ✓", "bn": "মুখস্থ পড়া হয়েছে ✓"
+        ],
+        "adhkar_tap_to_undo": [
+            "de": "Tippen zum Rückgängigmachen", "en": "Tap to undo", "ar": "اضغط للتراجع",
+            "tr": "Geri almak için dokunun", "id": "Ketuk untuk membatalkan", "ms": "Ketuk untuk membatalkan",
+            "fr": "Appuyez pour annuler", "es": "Toca para deshacer", "ur": "واپس کرنے کے لیے دبائیں",
+            "ru": "Нажмите, чтобы отменить", "bn": "পূর্বাবস্থায় ফেরাতে ট্যাপ করুন"
         ]
     ]
 

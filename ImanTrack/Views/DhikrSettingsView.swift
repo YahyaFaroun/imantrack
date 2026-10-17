@@ -14,6 +14,7 @@ struct DhikrSettingsView: View {
     @State private var isSleepAdhkarReminderEnabled: Bool = true
     @State private var isKahfReminderEnabled: Bool = true
     @State private var isPermissionDenied: Bool = false
+    @AppStorage("adhkarConfirmMemorizedRead") private var confirmMemorizedRead: Bool = true
     
     private var language: String {
         settingsList.first?.language ?? "de"
@@ -69,6 +70,18 @@ struct DhikrSettingsView: View {
                     .onChange(of: isKahfReminderEnabled) { _, newValue in
                         handleReminderToggle(newValue)
                     }
+                
+                Button(action: {
+                    AdhkarReminderManager.shared.sendTestNotification()
+                }) {
+                    HStack {
+                        Image(systemName: "bell.badge.fill")
+                            .foregroundColor(Theme.islamicGreen)
+                        Text(L10n.tr("send_test_notification", language))
+                            .foregroundColor(Theme.islamicGreen)
+                            .fontWeight(.medium)
+                    }
+                }
             }
 
             Section(header: Text(L10n.tr("adhkar_count_mode", language))) {
@@ -112,6 +125,10 @@ struct DhikrSettingsView: View {
                     .onChange(of: adhkarAutoAdvance) { _, _ in saveSettings() }
                 }
             }
+            
+            Section {
+                Toggle(L10n.tr("adhkar_confirm_memorized_read", language), isOn: $confirmMemorizedRead)
+            }
         }
         .navigationTitle(L10n.tr("adhkar_sec", language))
         .navigationBarTitleDisplayMode(.inline)
@@ -139,7 +156,16 @@ struct DhikrSettingsView: View {
     
     private func handleReminderToggle(_ enabled: Bool) {
         saveSettings()
-        AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
+        if enabled {
+            AdhkarReminderManager.shared.requestAuthorization { granted in
+                checkPermissionStatus()
+                if granted {
+                    AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
+                }
+            }
+        } else {
+            AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
+        }
     }
 
     private func saveSettings() {

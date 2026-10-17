@@ -39,6 +39,7 @@ struct DhikrDetailView: View {
     @State var showResetToast = false
     @State var isPulsing = false
     @State var flashGreen = false
+    @State var flashToken = 0
     
     @State var showStopSessionSheet = false
     @State var showManualAddAlert = false
@@ -439,11 +440,11 @@ struct DhikrDetailView: View {
                         .stroke(ringColor, style: StrokeStyle(lineWidth: 15, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                     
-                    if flashGreen {
-                        Circle()
-                            .fill(Theme.islamicGreen.opacity(0.25))
-                            .transition(.opacity)
-                    }
+                    Circle()
+                        .fill(Theme.islamicGreen.opacity(0.25))
+                        .padding(7.5)
+                        .opacity(flashGreen ? 1.0 : 0.0)
+                        .allowsHitTesting(false)
                     
                     // Numerische Fortschrittszahl und Tagesziel im Kreis
                     VStack(spacing: 6) {
@@ -919,19 +920,26 @@ struct DhikrDetailView: View {
         
         if isAuto {
             sessionCount += 1
-            
-            withAnimation(.easeIn(duration: 0.08)) {
-                flashGreen = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                withAnimation(.easeOut(duration: 0.12)) {
-                    flashGreen = false
-                }
-            }
         }
+        
+        triggerGreenFlash()
         
         checkCompletion()
         try? modelContext.save()
+    }
+    
+    private func triggerGreenFlash() {
+        flashToken &+= 1
+        let currentToken = flashToken
+        withAnimation(.easeIn(duration: 0.08)) {
+            flashGreen = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            guard self.flashToken == currentToken else { return }
+            withAnimation(.easeOut(duration: 0.12)) {
+                self.flashGreen = false
+            }
+        }
     }
     
     private func checkCompletion() {

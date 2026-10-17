@@ -214,6 +214,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Es gibt keinen Gott außer Allah, dem Einzigen, der keinen Teilhaber hat. Ihm gehört die Herrschaft und Ihm gebührt das Lob, und Er ist über alle Dinge mächtig.",
         english: "None has the right to be worshipped but Allah alone, Who has no partner. His is the dominion and His is the praise and He is Able to do all things.",
         count: 10,
+        linkedTasbihCategory: .laIlahaIllallah,
         quickInterval: 4.67, normalInterval: 6.1, slowInterval: 7.52),
     // 21. Subhanallahi wa bihamdihi 'adada
     AdhkarItem(
@@ -420,6 +421,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Es gibt keinen Gott außer Allah, dem Einzigen, der keinen Teilhaber hat. Ihm gehört die Herrschaft und Ihm gebührt das Lob, und Er ist über alle Dinge mächtig.",
         english: "None has the right to be worshipped but Allah alone, Who has no partner. His is the dominion and His is the praise and He is Able to do all things.",
         count: 10,
+        linkedTasbihCategory: .laIlahaIllallah,
         quickInterval: 4.67, normalInterval: 6.1, slowInterval: 7.52),
     // 21. Astaghfirullah (Abend)
     AdhkarItem(
@@ -456,56 +458,49 @@ let schlafAdhkar: [AdhkarItem] = [
         transliteration: "Yajma'u kaffayhi thumma yanfuthu fihima fayaqra'u fihima: Bismillahir-Rahmanir-Rahim: Qul Huwallahu Ahad... Qul a'udhu bi Rabbil-falaq... Qul a'udhu bi Rabbin-nas... thumma yamsahu bihima ma-stata'a min jasadihi, yabda'u bihima 'ala ra'sihi wa wajhihi wa ma aqbala min jasadihi.",
         german: "Er führt seine Handflächen zusammen, pustet hinein und rezitiert: Im Namen Allahs, des Allerbarmers, des Barmherzigen: Sprich: Er ist Allah, ein Einziger... Sprich: Ich nehme Zuflucht beim Herrn des Frühlichts... Sprich: Ich nehme Zuflucht beim Herrn der Menschen... Dann streicht er mit ihnen über so viel von seinem Körper, wie er kann, beginnend mit seinem Kopf, seinem Gesicht und der Vorderseite seines Körpers.",
         english: "He would join his hands together, blow into them and recite: In the Name of Allah, the Most Gracious, the Most Merciful: Say: He is Allah, (who is) One... Say: I seek refuge in the Lord of daybreak... Say: I seek refuge in the Lord of mankind... Then he would wipe as much of his body as he could with them, starting with his head, his face, and the front of his body.",
-        count: 3,
-        quickInterval: 7.47, normalInterval: 8.88, slowInterval: 10.3),
+        count: 3),
     // 2. Ayat al-Kursi
     AdhkarItem(
         arabic: "اللَّهُ لاَ إِلَهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ لاَ تَأْخُذُهُ سِنَةٌ وَلاَ نَوْمٌ لَّهُ مَا فِي السَّمَوَاتِ وَمَا فِي الأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلاَّ بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلاَ يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلاَّ بِمَا شَاء وَسِعَ كُرْسِيُّهُ السَّمَوَاتِ وَالْأَرْضَ وَلاَ يَؤُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ",
         transliteration: "Allahu la ilaha illa Huwal-Hayyul-Qayyum. La ta'khudhuhu sinatun wa la nawm. Lahu ma fis-samawati wa ma fil-ard. Man dhal-ladhi yashfa'u 'indahu illa bi-idhnih. Ya'lamu ma bayna aydihim wa ma khalfahum. Wa la yuhituna bi-shay'im-min 'ilmihi illa bima sha'. Wasi'a kursiyyuhus-samawati wal-ard, wa la ya'uduhu hifdhuhuma, wa Huwal-'Aliyyul-'Adheem.",
         german: "Allah – es gibt keinen Gott außer Ihm, dem Lebendigen und Beständigen. Ihn überkommt weder Schlummer noch Schlaf. Ihm gehört, was in den Himmeln und was auf der Erde ist. Wer ist es, der bei Ihm Fürsprache einlegen könnte außer mit Seiner Erlaubnis? Er weiß, was vor ihnen und was hinter ihnen liegt; sie aber begreifen nichts von Seinem Wissen, es sei denn das, was Er will. Sein Thronschemel umfasst die Himmel und die Erde, und ihre Bewahrung beschwert Ihn nicht. Und Er ist der Erhabene, der Allgewaltige.",
         english: "Allah! There is no deity except Him, the Ever-Living, the Sustainer of all existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is presently before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursi extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.",
-        count: 1,
-        quickInterval: 7.4, normalInterval: 9.48, slowInterval: 11.57),
+        count: 1),
     // 3. Die letzten 2 Verse von Surah Al-Baqarah (Aamanar-Rasoolu)
     AdhkarItem(
         arabic: "آمَنَ الرَّسُولُ بِمَا أُنْزِلَ إِلَيْهِ مِنْ رَبِّهِ وَالْمُؤْمِنُونَ ۚ كُلٌّ آمَنَ بِاللَّهِ وَمَلَائِكَتِهِ وَكُتُبِهِ وَرُسُلِهِ لَا نُفَرِّقُ بَيْنَ أَحَدٍ مِنْ رُسُلِهِ ۚ وَقَالُوا سَمِعْنَا وَأَطَعْنَا ۖ غُفْرَانَكَ رَبَّنَا وَإِلَيْكَ الْمَصِيرُ ﴿٢٨٥﴾ لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا ۚ لَهَا مَا كَسَبَتْ وَعَلَيْهَا مَا اكْتَسَبَتْ ۗ رَبَّنَا لَا تُؤَاخِذْنَا إِنْ نَسِينَا أَوْ أَخْطَأْنَا ۚ رَبَّنَا وَلَا تَحْمِلْ عَلَيْنَا إِصْرًا كَمَا حَمَلْتَهُ عَلَى الَّذِينَ مِنْ قَبْلِنَا ۚ رَبَّنَا وَلَا تُحَمِّلْنَا مَا لَا طَاقَةَ لَنَا بِهِ ۖ وَاعْفُ عَنَّا وَاغْفِرْ لَنَا وَارْحَمْنَا ۚ أَنْتَ مَوْلَانَا فَانْصُرْنَا عَلَى الْقَوْمِ الْكَافِرِينَ ﴿٢٨٦﴾",
         transliteration: "Aamanar-Rasoolu bimaa unzila ilayhi mir-Rabbihi wal-mu'minoon. Kullun aamana billahi wa malaa'ikatihi wa kutubhi wa rusulih, laa nufarriqu bayna ahadim-mir-rusulih. Wa qaaloo sami'naa wa ata'naa, ghufranaka Rabbanaa wa ilaykal-maseer. Laa yukallifullahu nafsan illa wus'ahaa, lahaa maa kasabat wa 'alayhaa mak-tasabat. Rabbanaa laa tu'aakhidhnaa in-naseenaa aw akhta'naa. Rabbanaa wa laa tahmil 'alaynaa isran kamaa hamaltahu 'alal-ladheena min qablinaa. Rabbanaa wa laa tuhammilnaa maa laa taaqata lanaa bih, wa'fu 'annaa waghfir lanaa warhamnaa, Anta Mawlaanaa fansurnaa 'alal-qawmil-kaafireen.",
         german: "Der Gesandte glaubt an das, was ihm von seinem Herrn herabgesandt worden ist, und ebenso die Gläubigen; sie alle glauben an Allah, Seine Engel, Seine Bücher und Seine Gesandten: „Wir machen keinen Unterschied bei keinem Seiner Gesandten.“ Und sie sagen: „Wir hören und gehorchen. Deine Vergebung, unser Herr! Und zu Dir ist die Heimkehr.“ Allah erlegt keiner Seele mehr auf, als sie zu leisten vermag. Ihr kommt zu Gute, was sie erworben hat, und angerechnet wird ihr, was sie begangen hat. „Unser Herr, belange uns nicht, wenn wir vergessen oder Fehler begehen! Unser Herr, erlege uns keine Bürde auf, wie Du sie denjenigen vor uns auferlegt hast! Unser Herr, bürde uns nichts auf, wozu wir keine Kraft haben! Und verzeih uns, vergib uns und erbarme Dich unser! Du bist unser Schutzherr, so hilf uns gegen das ungläubige Volk!“",
         english: "The Messenger has believed in what was revealed to him from his Lord, and [so have] the believers. All of them have believed in Allah and His angels and His books and His messengers, [saying], \"We make no distinction between any of His messengers.\" And they said, \"We hear and we obey. [We seek] Your forgiveness, our Lord, and to You is the final destination.\" Allah does not charge a soul except [with that within] its capacity. It will have [the consequence of] what [good] it has gained, and it will bear [the consequence of] what [evil] it has earned. \"Our Lord, do not impose blame upon us if we have forgotten or errored. Our Lord, and lay not upon us a burden like that which You laid upon those before us. Our Lord, and burden us not with that which we have no ability to bear. And pardon us; and forgive us; and have mercy upon us. You are our protector, so give us victory over the disbelieving people.\"",
-        count: 1,
-        quickInterval: 2.73, normalInterval: 2.9, slowInterval: 3.07),
+        count: 1),
     // 4. Bismika rabbi wada'tu janbi
     AdhkarItem(
         arabic: "بِاسْمِكَ رَبِّي وَضَعْتُ جَنْبِي، وَبِكَ أَرْفَعُهُ، فَإِن أَمْسَكْتَ نَفْسِي فارْحَمْهَا، وَإِنْ أَرْسَلْتَهَا فَاحْفَظْهَا، بِمَا تَحْفَظُ بِهِ عِبَادَكَ الصَّالِحِينَ",
         transliteration: "Bismika Rabbi wada'tu janbi, wa bika arfa'uh. Fa-in amsakta nafsi farhamha, wa in arsaltaha fahfazha bima tahfazu bihi 'ibadakas-salihin.",
         german: "In Deinem Namen, mein Herr, lege ich mich auf die Seite, und durch Dich erhebe ich mich wieder. Wenn Du meine Seele zurückhältst, erbarme Dich ihrer, und wenn Du sie zurücksendest, beschütze sie, womit Du Deine rechtschaffenen Diener beschützt.",
         english: "In Your Name, my Lord, I lay my side down, and in Your Name I raise it. If You take my soul, have mercy on it, and if You send it back, protect it as You protect Your righteous slaves.",
-        count: 1,
-        quickInterval: 2.07, normalInterval: 2.3, slowInterval: 2.53),
+        count: 1),
     // 5. Allahumma innaka khalaqta nafsi
     AdhkarItem(
         arabic: "اللَّهُمَّ إِنَّكَ خَلَقْتَ نَفْسِي وَأَنْتَ تَوَفَّاهَا، لَكَ مَمَاتُهَا وَمَحْياهَا، إِنْ أَحْيَيْتَهَا فَاحْفَظْهَا، وَإِنْ أَمَتَّهَا فَاغْفِرْ لَهَا. اللَّهُمَّ إِنِّي أَسْأَلُكَ العَافِيَةَ",
         transliteration: "Allahumma innaka khalaqta nafsi wa Anta tawaffaha. Laka mamatuha wa mahyaha. In ahyaytaha fahfazha, wa in amattaha faghfir laha. Allahumma inni as'alukal-'afiyah.",
         german: "O Allah, Du hast meine Seele erschaffen und Du nimmst sie zu Dir. Dir gehört ihr Tod und ihr Leben. Wenn Du sie am Leben lässt, beschütze sie, und wenn Du sie sterben lässt, vergib ihr. O Allah, ich bitte Dich um Wohlergehen.",
         english: "O Allah, You created my soul and You take it back. To You belongs its death and its life. If You keep it alive, protect it, and if You cause it to die, forgive it. O Allah, I ask You for well-being.",
-        count: 1,
-        quickInterval: 6.0, normalInterval: 7.28, slowInterval: 8.57),
+        count: 1),
     // 6. Allahumma qini 'adhabaka
     AdhkarItem(
         arabic: "اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ",
         transliteration: "Allahumma qini 'adhabaka yawma tab'athu 'ibadak.",
         german: "O Allah, bewahre mich vor Deiner Strafe an dem Tag, an dem Du Deine Diener auferweckst.",
         english: "O Allah, protect me from Your punishment on the day You resurrect Your slaves.",
-        count: 3,
-        quickInterval: 10.67, normalInterval: 12.83, slowInterval: 15.0),
+        count: 3),
     // 7. Bismika Allahumma amutu wa ahya
     AdhkarItem(
         arabic: "بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا",
         transliteration: "Bismika Allahumma amutu wa ahya.",
         german: "In Deinem Namen, O Allah, sterbe ich und lebe ich.",
         english: "In Your Name, O Allah, I die and I live.",
-        count: 1,
-        quickInterval: 12.3, normalInterval: 16.0, slowInterval: 19.69),
+        count: 1),
     // 8. Tasbih vor dem Schlafen
     AdhkarItem(
         arabic: "سُبْحَانَ اللَّهِ (ثلاثاً وثلاثين) وَالْحَمْدُ لِلَّهِ (ثلاثاً وثلاثين) وَاللَّهُ أَكْبَرُ (أربعاً وثلاثينَ)",
@@ -516,44 +511,39 @@ let schlafAdhkar: [AdhkarItem] = [
         quickInterval: 1.7, normalInterval: 2.25, slowInterval: 2.8),
     // 9. Allahumma rabbi as-samawatis-sab'i
     AdhkarItem(
-        arabic: "اللَّهُمَّ رَبَّ السَّمَوَاتِ السَّبْعِ وَرَبَّ الْعَرْشِ الْعَظِيمِ، رَبَّنَا وَرَبَّ كُلِّ شَيْءٍ، فَالِقَ الْحَبِّ وَالنَّوَى، وَمُنْزِلَ التَّوْرَاةِ وَالإِنْجِيلِ وَالْفُرْقَانِ، أَعُوذُ بِكَ مِنْ شَرِّ كُلِّ شَيْءٍ أَنْتَ آخِذٌ بِنَاصِيَتِهِ. اللَّهُمَّ أَنْتَ الأَوَّلُ فَلَيْسَ قَبْلَكَ شَيْءٌ، وَأَنْتَ الآخِرُ فَلَيْسَ بَعْدَكَ شَيْءٌ، وَأَنْتَ الظَّاهِرُ فَلَيْسَ فَوْقَكَ شَيْءٌ، وَأَنْتَ الْبَاطِنُ فَلَيْسَ دُونَكَ شَيْءٌ، اقْضِ عَنَّا الدَّيْنَ وَأَغْنِنَا مِنَ الْفَقْرِ",
+        arabic: "اللَّهُمَّ رَبَّ السَّمَوَاتِ السَّبْعِ وَرَبَّ الْعَرْشِ الْعَظِيمِ، رَبَّنَا وَرَبَّ كُلِّ شَيْءٍ، فَالِقَ الْحَبِّ وَالنَّوَى، وَمُنْزِلَ التَّوْرَاةِ وَالإِنْجِيلِ وَالْفُرْقَانِ، أَعُوذُ بِكَ مِنْ شَرِّ كُلِّ شَيْءٍ أَنْتَ آخِذٌ بِنَاصِيَتِهِ. اللَّهُمَّ أَنْتَ الأَوَّلُ فَلَيْسَ قَبْلَكَ شَيْءٌ، وَأَنْتَ الآخِرُ فَلَيْسَ بَعْدَكَ شَيْءٌ، وَأَنْتَ الظَّاهِرُ فَلَيْسَ فَوْقَكَ شَيْءٌ، وَأَنْتَ الْبَاطِنُ فَلَيْسَ دُونَكَ شَيْءٌ، اقْضِ عَنَّا الدَّيْنَ وَأَغْنينا مِنَ الْفَقْرِ",
         transliteration: "Allahumma Rabbas-samawatis-sab'i wa Rabbal-'Arshil-'Azim, Rabbana wa Rabba kulli shay'in, Faliqal-habbi wan-nawa, wa Munzilat-Tawrati wal-Injili wal-Furqan, a'udhu bika min sharri kulli shay'in Anta akhidhum bi-nasiyatih. Allahumma Antal-Awwalu falaysa qablaka shay'un, wa Antal-Akhiru falaysa ba'daka shay'un, wa Antadh-Dhahiru falaysa fawqaka shay'un, wa Antal-Batinu falaysa dunaka shay'un, iqdi 'annad-dayna wa aghnina minal-faqr.",
         german: "O Allah, Herr der sieben Himmel und Herr des gewaltigen Throns, unser Herr und Herr von allem, Der das Korn und den Kern spaltet, Der die Thora, das Evangelium und den Koran herabgesandt hat. Ich suche Zuflucht bei Dir vor dem Übel jedes Dinges, dessen Stirnlocke Du hältst. O Allah, Du bist der Erste, und vor Dir gibt es nichts; Du bist der Letzte, und nach Dir gibt es nichts; Du bist der Offenbare, und über Dir gibt es nichts; Du bist der Verborgene, und unter Dir gibt es nichts. Begleiche für uns unsere Schulden und befreie uns von der Armut.",
         english: "O Allah, Lord of the seven heavens and Lord of the Magnificent Throne, our Lord and the Lord of everything, Splitter of the grain and date-stone, Revealer of the Torah, the Gospel, and the Criterion, I seek refuge in You from the evil of everything whose forelock You hold. O Allah, You are the First and there is nothing before You; You are the Last and there is nothing after You; You are the Manifest and there is nothing above You; You are the Hidden and there is nothing beneath You. Relieve us of debt and enrich us against poverty.",
-        count: 1,
-        quickInterval: 6.88, normalInterval: 18.19, slowInterval: 29.5),
+        count: 1),
     // 10. Alhamdulillahil-ladhi at'amana
     AdhkarItem(
         arabic: "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا، وَكَفَانَا، وَآوَانَا، فَكَمْ مِمَّنْ لاَ كَافِيَ لَهُ وَلاَ مُؤْوِيَ",
         transliteration: "Alhamdulillahil-ladhi at'amana wa saqana, wa kafana wa awana. Fakam mimman la kafiya lahu wa la mu'wi.",
         german: "Alles Lob gebührt Allah, Der uns zu essen und zu trinken gab, uns genügen ließ und uns Obdach gab. Denn wie viele gibt es, für die niemand genügt und die kein Obdach haben!",
         english: "All praise is for Allah, Who fed us and gave us drink, and Who is sufficient for us and has sheltered us. For how many have none to suffice them or shelter them!",
-        count: 1,
-        quickInterval: 18.13, normalInterval: 13.65, slowInterval: 9.17),
+        count: 1),
     // 11. Allahumma 'alimal-ghaybi
     AdhkarItem(
         arabic: "اللَّهُمَّ عَالِمَ الغَيْبِ وَالشَّهَادَةِ فَاطِرَ السَّمَوَاتِ وَالْأَرْضِ، رَبَّ كُلِّ شَيْءٍ وَمَلِيكَهُ، أَشْهَدُ أَنْ لاَ إِلَهَ إِلاَّ أَنْتَ، أَعُوذُ بِكَ مِنْ شَرِّ نَفْسِي، وَمِنْ شَرِّ الشَّيْطانِ وَشِرْكِهِ، وَأَنْ أَقْتَرِفَ عَلَى نَفْسِي سُوءاً، أَوْ أَجُرَّهُ إِلَى مُسْلِمٍ",
         transliteration: "Allahumma 'Alimal-ghaybi wash-shahadati Fatiras-samawati wal-ard, Rabba kulli shay'in wa Malikah. Ash-hadu an la ilaha illa Ant. A'udhu bika min sharri nafsi, wa min sharrish-shaytani wa shirkihi, wa an aqtarifa 'ala nafsi su'an, aw ajurrahu ila Muslim.",
         german: "O Allah, Kenner des Verborgenen und des Offenbaren, Schöpfer der Himmel und der Erde, Herr und König von allem. Ich bezeuge, dass es keinen Gott gibt außer Dir. Ich suche Zuflucht bei Dir vor dem Übel meiner eigenen Seele, vor dem Übel des Satans und seiner Verführung zur Beigesellung (Schirk), und davor, dass ich mir selbst Böses antue oder es über einen Muslim bringe.",
         english: "O Allah, Knower of the unseen and the evident, Maker of the heavens and the earth, Lord of all things and their Sovereign, I bear witness that there is none worthy of worship but You. I seek refuge in You from the evil of my soul and from the evil of Satan and his helpers, and (I seek refuge in You) from bringing evil upon my soul or from harming a Muslim.",
-        count: 1,
-        quickInterval: 0.0, normalInterval: 0.0, slowInterval: 0.0),
+        count: 1),
     // 12. Sure Al-Mulk
     AdhkarItem(
         arabic: "سُورَةُ الْمُلْكِ",
         transliteration: "Surah Al-Mulk",
         german: "Sure Al-Mulk",
         english: "Surah Al-Mulk",
-        count: 1,
-        quickInterval: 0.0, normalInterval: 0.0),
+        count: 1),
     // 13. Allahumma aslamtu nafsi ilayk
     AdhkarItem(
         arabic: "اللَّهُمَّ أَسْلَمْتُ نَفْسِي إِلَيْكَ، وَفَوَّضْتُ أَمْرِي إِلَيْكَ، وَوَجَّهْتُ وَجْهِي إِلَيْكَ، وَأَلْجَأْتُ ظَهْرِي إِلَيْكَ، رَغْبَةً وَرَهْبَةً إِلَيْكَ، لاَ مَلْجَأَ وَلاَ مَنْجَا مِنْكَ إِلاَّ إِلَيْكَ، آمَنْتُ بِكِتَابِكَ الَّذِي أَنْزَلْتَ، وَبِنَبِيِّكَ الَّذِي أَرْسَلْتَ",
         transliteration: "Allahumma aslamtu nafsi ilayk, wa fawwadtu amri ilayk, wa wajjahtu wajhi ilayk, wa alja'tu dhahri ilayk, raghbatan wa rahbatan ilayk. La malja'a wa la manja minka illa ilayk. Amantu bikitabikal-ladhi anzalt, wa bi-nabiyyikal-ladhi arsalt.",
         german: "O Allah, ich ergebe mich Dir, übergebe meine Angelegenheit an Dich, wende mein Gesicht Dir zu und lehne meinen Rücken an Dich, aus Verlangen nach Dir und aus Furcht vor Dir. Es gibt keine Zuflucht und keine Rettung vor Dir außer bei Dir. Ich glaube an Dein Buch, das Du herabgesandt hast, und an Deinen Propheten, den Du gesandt hast.",
         english: "O Allah, I submit myself to You, entrust my affairs to You, turn my face to You, and lay my back upon You, out of hope in You and fear of You. There is no refuge or escape from You except in You. I believe in Your Book which You have revealed, and in Your Prophet whom You have sent.",
-        count: 1,
-        quickInterval: 12.0, normalInterval: 19.8)
+        count: 1)
 ]
 
 extension AdhkarItem {
@@ -953,3 +943,19 @@ struct AdhkarTranslations {
         "اللَّهُ لاَ إِلَهَ إ": "Ayat al-Kursi (The Throne Verse, Surah 2:255). Whoever recites this before sleeping will remain under Allah's protection, and no devil will approach him until morning."
     ]
 }
+
+func adhkarItems(for type: AdhkarSessionType) -> [AdhkarItem] {
+    switch type {
+    case .sleep: return schlafAdhkar
+    case .morning: return morgenAdhkar
+    case .evening: return abendAdhkar
+    }
+}
+
+func safeAdhkarKey(typeId: String, item: AdhkarItem) -> String {
+    let germanClean = item.german.components(separatedBy: CharacterSet.alphanumerics.inverted).joined()
+    let transClean = item.transliteration.components(separatedBy: CharacterSet.alphanumerics.inverted).joined()
+    let combined = String((germanClean + transClean).prefix(60))
+    return "\(typeId)_\(item.count)_\(combined)"
+}
+

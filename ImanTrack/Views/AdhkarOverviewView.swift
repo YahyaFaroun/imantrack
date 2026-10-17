@@ -71,7 +71,7 @@ struct AdhkarOverviewView: View {
                             )
                         }
                         .disabled(sleepState == .future)
-
+                        
                         Button {
                             showFajrDialog = true
                         } label: {
@@ -175,17 +175,6 @@ struct AdhkarOverviewView: View {
             .sheet(isPresented: $showPermissionSheet) {
                 NotificationPermissionSheet()
             }
-            .onChange(of: activeSessionType) { oldValue, newValue in
-                if oldValue != nil && newValue == nil {
-                    AdhkarReminderManager.shared.shouldPromptPermissionAfterFirstSession { shouldPrompt in
-                        if shouldPrompt {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                                showPermissionSheet = true
-                            }
-                        }
-                    }
-                }
-            }
             .alert(L10n.tr("fajr_option_title", language), isPresented: $showFajrDialog) {
                 Button(L10n.tr("fajr_option_ontime", language)) {
                     todayRecord.fajrPrayerStatus = "onTime"
@@ -198,6 +187,17 @@ struct AdhkarOverviewView: View {
                     try? modelContext.save()
                 }
                 Button(L10n.tr("cancel", language), role: .cancel) {}
+            }
+            .onChange(of: activeSessionType) { oldValue, newValue in
+                if oldValue != nil && newValue == nil {
+                    AdhkarReminderManager.shared.shouldPromptPermissionAfterFirstSession { shouldPrompt in
+                        if shouldPrompt {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                showPermissionSheet = true
+                            }
+                        }
+                    }
+                }
             }
             .onAppear {
                 if isSessionActive, !lastActiveSessionId.isEmpty {
@@ -239,6 +239,7 @@ func getAdhkarState(type: AdhkarSessionType) -> AdhkarState {
     
     let fajrCurrent = solarManager.getFajrDate(for: trackingDate) ?? trackingDate
     let dhuhrCurrent = solarManager.getDhuhrDate(for: trackingDate) ?? trackingDate
+    let asrCurrent = solarManager.getAsrDate(for: trackingDate) ?? trackingDate
     let maghribCurrent = solarManager.getMaghribDate(for: trackingDate) ?? trackingDate
     
     let prevTrackingDate = Calendar.current.date(byAdding: .day, value: -1, to: trackingDate) ?? trackingDate
@@ -251,18 +252,18 @@ func getAdhkarState(type: AdhkarSessionType) -> AdhkarState {
         return .expired
         
     case .evening:
-        let end = maghribCurrent.addingTimeInterval(3600)
-        if now < dhuhrCurrent { return .future }
-        if now >= dhuhrCurrent && now < end { return .active }
+        if now < asrCurrent { return .future }
+        if now >= asrCurrent && now < maghribCurrent { return .active }
         return .expired
         
     case .sleep:
         let sleepStart = maghribPrev
-        let sleepEnd = fajrCurrent.addingTimeInterval(-3600)
-        
-        if now < sleepStart { return .future }
-        if now >= sleepStart && now < sleepEnd { return .active }
-        return .expired
+        let sleepEnd = Calendar.current.date(bySettingHour: 1, minute: 0, second: 0, of: trackingDate) ?? fajrCurrent
+        let res: AdhkarState
+        if now < sleepStart { res = .future }
+        else if now >= sleepStart && now < sleepEnd { res = .active }
+        else { res = .expired }
+        return res
     }
 }
 

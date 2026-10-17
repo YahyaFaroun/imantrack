@@ -14,6 +14,7 @@ struct AdhkarSessionView: View {
     @AppStorage("lastActiveDhikrIndex") var lastActiveDhikrIndex: Int = 0
     @AppStorage("lastActiveDhikrCount") var lastActiveDhikrCount: Int = 0
     @AppStorage("isSessionActive") var isSessionActive: Bool = false
+    @AppStorage("adhkarConfirmMemorizedRead") private var confirmMemorizedRead: Bool = true
     
     let type: AdhkarSessionType
     @State var counts: [UUID: Int] = [:]
@@ -26,6 +27,8 @@ struct AdhkarSessionView: View {
     @State var mulkItemToComplete: AdhkarItem? = nil
     @State var localAdhkarList: [AdhkarItem]
     @State var isEditMode: Bool = false
+    @State private var showMarkAllReadDialog = false
+    @State private var showMarkUnreadDialog = false
     
     init(type: AdhkarSessionType) {
         self.type = type
@@ -178,38 +181,61 @@ struct AdhkarSessionView: View {
                                 .transition(.move(edge: .top).combined(with: .opacity))
                             }
                             
-                            if adhkarState == .expired && !isSessionAlreadyDone {
-                                VStack(alignment: .leading, spacing: 12) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "info.circle.fill")
-                                            .font(.title3)
-                                            .foregroundColor(.orange)
-                                        Text(L10n.tr("adhkar_time_expired", language))
-                                            .font(.subheadline)
-                                            .foregroundColor(.primary)
+                            if adhkarState != .future {
+                                Button(action: {
+                                    #if os(iOS) && !SKIP
+                                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                                    impact.impactOccurred()
+                                    #endif
+                                    if confirmMemorizedRead {
+                                        if isSessionAlreadyDone {
+                                            showMarkUnreadDialog = true
+                                        } else {
+                                            showMarkAllReadDialog = true
+                                        }
+                                    } else {
+                                        withAnimation(.easeInOut(duration: 0.25)) {
+                                            if isSessionAlreadyDone {
+                                                markAsUncompleted()
+                                            } else {
+                                                markAllAsCompleted()
+                                            }
+                                        }
                                     }
-                                    
-                                    Button(action: {
-                                        #if os(iOS) && !SKIP
-                                        let impact = UIImpactFeedbackGenerator(style: .medium)
-                                        impact.impactOccurred()
-                                        #endif
-                                        markAllAsCompleted()
-                                    }) {
-                                        Text(L10n.tr("mark_as_read_retro", language))
-                                            .font(.subheadline)
-                                            .bold()
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 8)
-                                            .background(Theme.islamicGreen.opacity(0.15))
-                                            .foregroundColor(Theme.islamicGreen)
-                                            .cornerRadius(8)
+                                }) {
+                                    if isSessionAlreadyDone {
+                                        VStack(spacing: 3) {
+                                            Text(L10n.tr("adhkar_memorized_done", language))
+                                                .font(.subheadline)
+                                                .fontWeight(.bold)
+                                            Text(L10n.tr("adhkar_tap_to_undo", language))
+                                                .font(.caption2)
+                                                .fontWeight(.medium)
+                                                .opacity(0.9)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 10)
+                                        .background(Theme.islamicGreen)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(12)
+                                    } else {
+                                        Text(L10n.tr("adhkar_memorized_prompt", language))
+                                            .font(.footnote)
+                                            .foregroundColor(.secondary)
+                                            .multilineTextAlignment(.center)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 7)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(Color.gray.opacity(0.08))
+                                            )
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .stroke(Color.gray.opacity(0.2), lineWidth: 0.8)
+                                            )
                                     }
                                 }
-                                .padding()
-                                .background(Color.orange.opacity(0.12))
-                                .cornerRadius(12)
-                                .padding(.horizontal, 4)
+                                .buttonStyle(.plain)
                             }
                             
                             ForEach(Array(adhkarList.enumerated()), id: \.element.id) { index, item in
@@ -372,6 +398,28 @@ struct AdhkarSessionView: View {
                     }
                 })
             }
+            .alert(
+                String(format: L10n.tr("adhkar_mark_read_confirm", language), sessionTitle),
+                isPresented: $showMarkAllReadDialog
+            ) {
+                Button(L10n.tr("mark_read", language)) {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        markAllAsCompleted()
+                    }
+                }
+                Button(L10n.tr("cancel", language), role: .cancel) {}
+            }
+            .alert(
+                String(format: L10n.tr("adhkar_mark_unread_confirm", language), sessionTitle),
+                isPresented: $showMarkUnreadDialog
+            ) {
+                Button(L10n.tr("mark_unread", language), role: .destructive) {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        markAsUncompleted()
+                    }
+                }
+                Button(L10n.tr("cancel", language), role: .cancel) {}
+            }
             .onDisappear {
                 stopAutoCount()
             }
@@ -515,14 +563,14 @@ struct AdhkarSessionView: View {
     }
     
     private func autoCountInterval(for item: AdhkarItem) -> TimeInterval {
-        let slowVal = item.slowInterval ?? ((item.normalInterval ?? 2.0) * 1.35)
-        let normalVal = item.normalInterval ?? 2.0
-        let quickVal = item.quickInterval ?? ((item.normalInterval ?? 2.0) * 0.70)
+        let normalVal = item.normalInterval ?? item.defaultInterval
+        let slowVal = item.slowInterval ?? (normalVal * 1.35)
+        let quickVal = item.quickInterval ?? (normalVal * 0.70)
         
         switch item.customSpeedStep {
-        case 0: return slowVal                          // Langsam (Spalte J)
-        case 1: return normalVal                        // Normal (Spalte K)
-        case 2: return quickVal                         // Schnell (Spalte L)
+        case 0: return slowVal                          // Langsam
+        case 1: return normalVal                        // Normal
+        case 2: return quickVal                         // Schnell
         default: return normalVal
         }
     }
@@ -542,9 +590,21 @@ struct AdhkarSessionView: View {
             
             if interval <= 0.0 {
                 // Sonderfall: Sofort erledigt, keine Verzögerung, Auto-Advance greift hier sofort bei Trigger
+                let current = counts[item.id] ?? 0
+                let diff = item.count - current
                 counts[item.id] = item.count
                 todayRecord.setAdhkarCount(for: safeKey(for: item), count: item.count)
                 completedItems.insert(item.id)
+                if let category = item.linkedTasbihCategory {
+                    switch category {
+                    case .istighfar: todayRecord.istighfarCount += diff
+                    case .salawat: todayRecord.salawatCount += diff
+                    case .subhanAllah: todayRecord.subhanAllahCount += diff
+                    case .alhamdulillah: todayRecord.alhamdulillahCount += diff
+                    case .allahuAkbar: todayRecord.allahuAkbarCount += diff
+                    case .laIlahaIllallah: todayRecord.laIlahaIllallahCount += diff
+                    }
+                }
                 try? modelContext.save()
                 
                 stopAutoCount()
@@ -629,30 +689,48 @@ struct AdhkarSessionView: View {
     }
     
     private func markAllAsCompleted() {
-        let record = todayRecord
+        #if os(iOS) && !SKIP
+        let impact = UIImpactFeedbackGenerator(style: .medium)
+        impact.impactOccurred()
+        #endif
+        todayRecord.markAllAdhkarCompleted(type: type)
+        try? modelContext.save()
+        AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
+        clearSessionState()
         
+        let record = todayRecord
+        var newCompleted = Set<UUID>()
         for item in adhkarList {
-            let current = counts[item.id] ?? 0
-            if current < item.count {
-                let diff = item.count - current
-                counts[item.id] = item.count
-                record.setAdhkarCount(for: safeKey(for: item), count: item.count)
-                completedItems.insert(item.id)
-                
-                if let category = item.linkedTasbihCategory {
-                    switch category {
-                    case .istighfar: record.istighfarCount += diff
-                    case .salawat: record.salawatCount += diff
-                    case .subhanAllah: record.subhanAllahCount += diff
-                    case .alhamdulillah: record.alhamdulillahCount += diff
-                    case .allahuAkbar: record.allahuAkbarCount += diff
-                    case .laIlahaIllallah: record.laIlahaIllallahCount += diff
-                    }
-                }
+            let key = safeKey(for: item)
+            let dbCount = record.getAdhkarCount(for: key)
+            counts[item.id] = dbCount
+            if dbCount >= item.count {
+                newCompleted.insert(item.id)
             }
         }
+        completedItems = newCompleted
+    }
+    
+    private func markAsUncompleted() {
+        #if os(iOS) && !SKIP
+        let impact = UIImpactFeedbackGenerator(style: .medium)
+        impact.impactOccurred()
+        #endif
+        todayRecord.markAdhkarUncompleted(type: type)
+        try? modelContext.save()
+        AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
         
-        finishSession()
+        let record = todayRecord
+        var newCompleted = Set<UUID>()
+        for item in adhkarList {
+            let key = safeKey(for: item)
+            let dbCount = record.getAdhkarCount(for: key)
+            counts[item.id] = dbCount
+            if dbCount >= item.count {
+                newCompleted.insert(item.id)
+            }
+        }
+        completedItems = newCompleted
     }
     
     private func cancelSession() {
