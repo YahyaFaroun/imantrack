@@ -67,19 +67,7 @@ struct TodayView: View {
     }
     
     func formattedDate(for lang: String) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: lang)
-        
-        if lang.lowercased() == "en" {
-            formatter.dateFormat = "EEEE, MMMM d"
-        } else if lang.lowercased() == "ar" {
-            formatter.dateFormat = "EEEE, d MMMM"
-        } else if lang.lowercased() == "de" {
-            formatter.dateFormat = "EEEE, d. MMMM"
-        } else {
-            formatter.setLocalizedDateFormatFromTemplate("EEEE d MMMM")
-        }
-        return formatter.string(from: solarManager.currentTrackingDate)
+        return solarManager.formattedDisplayDate(for: solarManager.currentTrackingDate, language: lang)
     }
     
     var body: some View {

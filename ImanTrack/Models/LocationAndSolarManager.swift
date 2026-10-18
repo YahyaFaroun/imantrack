@@ -1,6 +1,9 @@
 import Foundation
 import CoreLocation
 import Combine
+#if canImport(UIKit)
+import UIKit
+#endif
 
 @MainActor
 class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLocationManagerDelegate {
@@ -19,8 +22,11 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
     
     // Das aktuelle spirituelle Datum (immer 00:00 Uhr des Ziel-Tages)
     @Published var currentTrackingDate: Date
+    @Published var hasLocationPermission: Bool
+    @Published var isNightTime: Bool = false
     
     private var checkTimer: Timer?
+    private var cancellables = Set<AnyCancellable>()
     
     override init() {
         // Cache aus UserDefaults laden
@@ -32,10 +38,40 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         let initialTrackingDate = LocationAndSolarManager.getTrackingDateStatic(for: Date(), location: loc)
         self.currentTrackingDate = Calendar.current.startOfDay(for: initialTrackingDate)
         
+        let isAuth: Bool
+        #if os(macOS)
+        isAuth = (locationManager.authorizationStatus == .authorizedAlways)
+        #else
+        let status = locationManager.authorizationStatus
+        isAuth = (status == .authorizedWhenInUse || status == .authorizedAlways)
+        #endif
+        self.hasLocationPermission = isAuth
+        self.isNightTime = false
+        
         super.init()
+        
+        let initialNight = calculateIsNightTime(now: Date())
+        self.isNightTime = initialNight
+        let timeFmt = DateFormatter()
+        timeFmt.dateFormat = "HH:mm:ss"
+        let now = Date()
+        let nowStr = timeFmt.string(from: now)
+        let fajrStr = getFajrDate(for: now).map { timeFmt.string(from: $0) } ?? "nil"
+        let maghribStr = getMaghribDate(for: now).map { timeFmt.string(from: $0) } ?? "nil"
+        print("[DAY_LABEL] Init: isNightTime = \(initialNight) (Zeit: \(nowStr), Fajr: \(fajrStr), Maghrib: \(maghribStr), Ergebnis: \(initialNight ? "Nacht" : "Tag"))")
         
         self.locationManager.delegate = self
         self.locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
+        
+        #if os(iOS)
+        NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.updateTrackingDate()
+                }
+            }
+            .store(in: &cancellables)
+        #endif
         
         // Timer zur regelmäßigen Überprüfung
         startTimer()
@@ -80,9 +116,11 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         isAuthorized = (status == .authorizedWhenInUse || status == .authorizedAlways)
         #endif
         
+        self.hasLocationPermission = isAuthorized
         if isAuthorized {
             locationManager.startUpdatingLocation()
         }
+        self.updateTrackingDate()
     }
     
     private func startTimer() {
@@ -97,13 +135,89 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
     }
     
     func updateTrackingDate() {
-        let newDate = getTrackingDate(for: Date())
+        let now = Date()
+        let newDate = getTrackingDate(for: now)
         let startOfNewDate = Calendar.current.startOfDay(for: newDate)
         if currentTrackingDate != startOfNewDate {
             self.currentTrackingDate = startOfNewDate
             // Fajr Alarm & Adhkar Reminders automatisch bei spirituellem Datumswechsel neu planen
             FajrAlarmManager.shared.scheduleFajrAlarm()
             AdhkarReminderManager.shared.scheduleReminders()
+        }
+        
+        let newNight = calculateIsNightTime(now: now)
+        if isNightTime != newNight {
+            let timeFmt = DateFormatter()
+            timeFmt.dateFormat = "HH:mm:ss"
+            let nowStr = timeFmt.string(from: now)
+            let fajrStr = getFajrDate(for: now).map { timeFmt.string(from: $0) } ?? "nil"
+            let maghribStr = getMaghribDate(for: now).map { timeFmt.string(from: $0) } ?? "nil"
+            print("[DAY_LABEL] Statuswechsel: isNightTime: \(self.isNightTime) -> \(newNight) (Zeit: \(nowStr), Fajr: \(fajrStr), Maghrib: \(maghribStr), Ergebnis: \(newNight ? "Nacht" : "Tag"))")
+            self.isNightTime = newNight
+        }
+    }
+    
+    func calculateIsNightTime(now: Date = Date()) -> Bool {
+        guard hasLocationPermission else { return false }
+        guard let fajrToday = getFajrDate(for: now),
+              let maghribToday = getMaghribDate(for: now) else {
+            return false
+        }
+        return now >= maghribToday || now < fajrToday
+    }
+    
+    // MARK: - Wochentags- und Datumsanzeige (Islamischer Tagesbeginn)
+    
+    /// Formatiert den Wochentag für die Anzeige unter Berücksichtigung von Maghrib und Fajr.
+    /// Von Maghrib bis Fajr: "Nacht zum <Wochentag>" (z. B. "Nacht zum Freitag", "ليلة الجمعة", "Night before Friday")
+    /// Ab Fajr bis Maghrib: "<Wochentag>"
+    /// Ohne Standortfreigabe: normaler Wochentag
+    func displayWeekdayTitle(for weekdayName: String, language: String) -> String {
+        guard isNightTime else { return weekdayName }
+        
+        let lang = language.lowercased()
+        let format = L10n.tr("night_before_weekday", lang)
+        
+        var formattedWeekday = weekdayName
+        if lang == "fr" || lang == "es" {
+            // Französisch & Spanisch: Wochentag klein (z. B. "vendredi", "viernes")
+            formattedWeekday = formattedWeekday.lowercased()
+        } else if lang == "ru" {
+            // Russisch: Wochentag im Akkusativ ("Ночь на пятницу", "Ночь на среду", "Ночь на субботу")
+            let lower = formattedWeekday.lowercased()
+            if lower.hasSuffix("а") {
+                formattedWeekday = String(lower.dropLast()) + "у"
+            } else {
+                formattedWeekday = lower
+            }
+        }
+        
+        return String(format: format, formattedWeekday)
+    }
+    
+    /// Formatiert das Gregorianische Datum für die Anzeige mit Wochentag ("Nacht zum <Wochentag>, <Tag>. <Monat>")
+    func formattedDisplayDate(for date: Date, language: String) -> String {
+        let lang = language.lowercased()
+        let weekdayFormatter = DateFormatter()
+        weekdayFormatter.locale = Locale(identifier: lang)
+        weekdayFormatter.dateFormat = "EEEE"
+        let rawWeekday = weekdayFormatter.string(from: date)
+        let displayWeekday = displayWeekdayTitle(for: rawWeekday, language: lang)
+        
+        let restFormatter = DateFormatter()
+        restFormatter.locale = Locale(identifier: lang)
+        if lang == "en" {
+            restFormatter.dateFormat = "MMMM d"
+            return "\(displayWeekday), \(restFormatter.string(from: date))"
+        } else if lang == "ar" {
+            restFormatter.dateFormat = "d MMMM"
+            return "\(displayWeekday)، \(restFormatter.string(from: date))"
+        } else if lang == "de" {
+            restFormatter.dateFormat = "d. MMMM"
+            return "\(displayWeekday), \(restFormatter.string(from: date))"
+        } else {
+            restFormatter.setLocalizedDateFormatFromTemplate("d MMMM")
+            return "\(displayWeekday), \(restFormatter.string(from: date))"
         }
     }
     
