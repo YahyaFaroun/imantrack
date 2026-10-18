@@ -73,7 +73,7 @@ struct ContentView: View {
                 }
                 .tag(3)
             
-            StatsView()
+            StatsView(selectedTab: $selectedTab)
                 .tabItem {
                     Label(L10n.tr("tab_stats", language), systemImage: "chart.bar.fill")
                 }

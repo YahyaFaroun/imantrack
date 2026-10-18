@@ -85,51 +85,70 @@ struct TrendInfo {
 
 
 
+struct TasbihRowData: Identifiable {
+    var id: String { type.rawValue }
+    let type: TasbihCategory
+    let totalCount: Double
+    let safeGoal: Double
+    let progress: Double
+    let percentage: Int
+    let pColor: Color
+}
+
+struct ComputedStats {
+    var periodString: String = ""
+    var daysSinceStart: Int = 1
+    var daysGoalReached: Int = 0
+    
+    // Koran
+    var quranPoints: [ChartDataPoint] = []
+    var quranHasNoData: Bool = true
+    var quranTrend: TrendInfo? = nil
+    var currentQuranGoalValue: Double = 1.0
+    var khatmCount: Int = 0
+    
+    // Adhkar
+    var morningCount: Int = 0
+    var eveningCount: Int = 0
+    var sleepCount: Int = 0
+    var fridaysCount: Int = 0
+    var fajrCount: Int = 0
+    var totalDaysInPeriod: Int = 7
+    var totalFridaysInPeriod: Int = 1
+    
+    // Tasbih
+    var tasbihTrend: TrendInfo? = nil
+    var tasbihRows: [TasbihRowData] = []
+}
+
 struct StatsView: View {
+    @Binding var selectedTab: Int
     @Query(sort: \DailyRecord.date, order: .forward) private var allDailyRecords: [DailyRecord]
     @Query private var allSettings: [UserSettings]
     
     @State private var selectedPeriod: PeriodFilter = .week
-    @State private var selectedDhikrType: TasbihCategory = .istighfar
     @StateObject private var solarManager = LocationAndSolarManager.shared
+    
+    @State private var computedData = ComputedStats()
+    @State private var isDirty: Bool = true
+    @State private var hasComputedOnce: Bool = false
+    
+    init(selectedTab: Binding<Int> = .constant(4)) {
+        self._selectedTab = selectedTab
+    }
     
     private var settings: UserSettings {
         allSettings.first ?? UserSettings()
     }
     
-    private var currentPeriodString: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: settings.language)
-        
-        switch selectedPeriod {
-        case .week:
-            formatter.dateFormat = "w"
-            let weekNum = formatter.string(from: solarManager.currentTrackingDate)
-            return String(format: L10n.tr("calendar_week", settings.language), weekNum)
-        case .month:
-            formatter.dateFormat = "yyyy"
-            return formatter.string(from: solarManager.currentTrackingDate)
-        }
-    }
-    
-    private var daysSinceStart: Int {
-        let calendar = Calendar.current
-        guard let firstRecord = allDailyRecords.min(by: { $0.date < $1.date }) else { return 1 }
-        let components = calendar.dateComponents([.day], from: calendar.startOfDay(for: firstRecord.date), to: calendar.startOfDay(for: solarManager.currentTrackingDate))
-        return max(1, (components.day ?? 0) + 1)
-    }
-    
     private var headerSummaryView: some View {
-        let currentRecords = filteredRecordsForCurrentPeriod
-        let daysGoalReached = currentRecords.filter { $0.quranPagesRead >= settings.quranDailyGoal }.count
-        
-        return VStack(spacing: 4) {
-            Text(String(format: L10n.tr("today_day_counter", settings.language), "\(daysSinceStart)"))
+        VStack(spacing: 4) {
+            Text(String(format: L10n.tr("today_day_counter", settings.language), "\(computedData.daysSinceStart)"))
                 .font(.subheadline)
                 .fontWeight(.bold)
                 .foregroundColor(Theme.islamicGreen)
             
-            Text(String(format: L10n.tr("stats_days_goal_reached", settings.language), daysGoalReached))
+            Text(String(format: L10n.tr("stats_days_goal_reached", settings.language), computedData.daysGoalReached))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -236,31 +255,6 @@ struct StatsView: View {
         )
     }
     
-    private var filteredRecordsForCurrentPeriod: [DailyRecord] {
-        let calendar = Calendar.current
-        let now = solarManager.currentTrackingDate
-        
-        switch selectedPeriod {
-        case .week:
-            var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)
-            components.weekday = 2
-            guard let monday = calendar.date(from: components) else { return [] }
-            
-            return allDailyRecords.filter { record in
-                if let diff = calendar.dateComponents([.day], from: monday, to: record.date).day {
-                    return diff >= 0 && diff < 7
-                }
-                return false
-            }
-            
-        case .month:
-            let currentYear = calendar.component(.year, from: now)
-            return allDailyRecords.filter { record in
-                return calendar.component(.year, from: record.date) == currentYear
-            }
-        }
-    }
-    
     private func chartDataPoints(for valueExtractor: @escaping (DailyRecord) -> Double) -> [ChartDataPoint] {
         let calendar = Calendar.current
         let now = solarManager.currentTrackingDate
@@ -306,59 +300,153 @@ struct StatsView: View {
         }
     }
     
-    private var totalDaysInPeriod: Int {
+    private func recomputeData() {
         let calendar = Calendar.current
         let now = solarManager.currentTrackingDate
-        switch selectedPeriod {
-        case .week: return 7
-        case .month: return calendar.range(of: .day, in: .month, for: now)?.count ?? 30
+        let lang = settings.language
 
+        // 1. Period String
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: lang)
+        let periodStr: String
+        switch selectedPeriod {
+        case .week:
+            formatter.dateFormat = "w"
+            let weekNum = formatter.string(from: now)
+            periodStr = String(format: L10n.tr("calendar_week", lang), weekNum)
+        case .month:
+            formatter.dateFormat = "yyyy"
+            periodStr = formatter.string(from: now)
         }
-    }
-    
-    private var totalFridaysInPeriod: Int {
-        let calendar = Calendar.current
-        let now = solarManager.currentTrackingDate
-        var start = solarManager.currentTrackingDate
-        var count = 0
-        
+
+        // 2. Days since start
+        let daysSince: Int
+        if let firstRecord = allDailyRecords.min(by: { $0.date < $1.date }) {
+            let components = calendar.dateComponents([.day], from: calendar.startOfDay(for: firstRecord.date), to: calendar.startOfDay(for: now))
+            daysSince = max(1, (components.day ?? 0) + 1)
+        } else {
+            daysSince = 1
+        }
+
+        // 3. Filtered records for current period
+        let currentRecords: [DailyRecord]
         switch selectedPeriod {
         case .week:
             var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)
             components.weekday = 2
-            if let monday = calendar.date(from: components) { start = monday; count = 7 }
+            if let monday = calendar.date(from: components) {
+                currentRecords = allDailyRecords.filter { record in
+                    if let diff = calendar.dateComponents([.day], from: monday, to: record.date).day {
+                        return diff >= 0 && diff < 7
+                    }
+                    return false
+                }
+            } else {
+                currentRecords = []
+            }
+        case .month:
+            let currentYear = calendar.component(.year, from: now)
+            currentRecords = allDailyRecords.filter { record in
+                calendar.component(.year, from: record.date) == currentYear
+            }
+        }
+
+        // 4. Days goal reached
+        let daysGoal = currentRecords.filter { $0.quranPagesRead >= settings.quranDailyGoal }.count
+
+        // 5. Quran Goal Value & Points & Trend
+        let quranGoalVal: Double
+        switch selectedPeriod {
+        case .week: quranGoalVal = Double(max(1, settings.quranDailyGoal))
+        case .month: quranGoalVal = Double(max(1, settings.quranDailyGoal * 30))
+        }
+
+        let qPoints = chartDataPoints(for: { Double($0.quranPagesRead) })
+        let qNoData = qPoints.allSatisfy { $0.value == 0 }
+        let qTrend = computeTrend(for: { Double($0.quranPagesRead) })
+        let khatm = UserDefaults.standard.integer(forKey: "quranKhatmCount")
+
+        // 6. Adhkar
+        let mCount = currentRecords.filter { $0.morgenAdhkarDone }.count
+        let eCount = currentRecords.filter { $0.abendAdhkarDone }.count
+        let sCount = currentRecords.filter { $0.schlafAdhkarDone }.count
+        let frCount = currentRecords.filter { record in
+            calendar.component(.weekday, from: record.date) == 6 && record.surahAlKahfDone
+        }.count
+        let fCount = currentRecords.filter { $0.fajrPrayerStatus == "onTime" || $0.fajrPrayerStatus == "late" || $0.isFajrPrayed }.count
+
+        let totalDays: Int
+        switch selectedPeriod {
+        case .week: totalDays = 7
+        case .month: totalDays = calendar.range(of: .day, in: .month, for: now)?.count ?? 30
+        }
+
+        var fridaysStart = now
+        var fridaysCountTotal = 0
+        switch selectedPeriod {
+        case .week:
+            var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)
+            components.weekday = 2
+            if let monday = calendar.date(from: components) { fridaysStart = monday; fridaysCountTotal = 7 }
         case .month:
             var components = calendar.dateComponents([.year], from: now)
             components.month = 1; components.day = 1
             if let firstOfYear = calendar.date(from: components) {
-                start = firstOfYear
+                fridaysStart = firstOfYear
                 let isLeapYear = (components.year! % 4 == 0 && components.year! % 100 != 0) || (components.year! % 400 == 0)
-                count = isLeapYear ? 366 : 365
+                fridaysCountTotal = isLeapYear ? 366 : 365
             }
         }
-        
         var fridays = 0
-        for i in 0..<count {
-            if let d = calendar.date(byAdding: .day, value: i, to: start), calendar.component(.weekday, from: d) == 6 {
+        for i in 0..<fridaysCountTotal {
+            if let d = calendar.date(byAdding: .day, value: i, to: fridaysStart), calendar.component(.weekday, from: d) == 6 {
                 fridays += 1
             }
         }
-        return max(1, fridays)
-    }
-    
-    private var currentQuranGoalValue: Double {
-        switch selectedPeriod {
-        case .week: return Double(max(1, settings.quranDailyGoal))
-        case .month: return Double(max(1, settings.quranDailyGoal * 30))
-        }
-    }
-    
-    private var currentTasbihGoalValue: Double {
-        let dailyGoal = Double(max(1, selectedDhikrType.getGoal(from: settings)))
-        switch selectedPeriod {
-        case .week, .month: return dailyGoal
+        let totalFridays = max(1, fridays)
 
+        // 7. Tasbih
+        let tTrend = computeTrend(for: { record in
+            TasbihCategory.allCases.map { $0.getValue(from: record) }.reduce(0, +)
+        })
+
+        var tRows: [TasbihRowData] = []
+        for type in TasbihCategory.allCases {
+            let totalCount = currentRecords.map { type.getValue(from: $0) }.reduce(0, +)
+            let dailyGoal = Double(max(1, type.getGoal(from: settings)))
+            let periodGoal: Double
+            switch selectedPeriod {
+            case .week: periodGoal = dailyGoal * 7
+            case .month: periodGoal = dailyGoal * Double(totalDays)
+            }
+            let safeGoal = max(1, periodGoal)
+            let progress = min(totalCount / safeGoal, 1.0)
+            let percentage = Int(round(progress * 100))
+            let pColor = progressColor(percentage: progress)
+            tRows.append(TasbihRowData(type: type, totalCount: totalCount, safeGoal: safeGoal, progress: progress, percentage: percentage, pColor: pColor))
         }
+
+        self.computedData = ComputedStats(
+            periodString: periodStr,
+            daysSinceStart: daysSince,
+            daysGoalReached: daysGoal,
+            quranPoints: qPoints,
+            quranHasNoData: qNoData,
+            quranTrend: qTrend,
+            currentQuranGoalValue: quranGoalVal,
+            khatmCount: khatm,
+            morningCount: mCount,
+            eveningCount: eCount,
+            sleepCount: sCount,
+            fridaysCount: frCount,
+            fajrCount: fCount,
+            totalDaysInPeriod: totalDays,
+            totalFridaysInPeriod: totalFridays,
+            tasbihTrend: tTrend,
+            tasbihRows: tRows
+        )
+        self.isDirty = false
+        self.hasComputedOnce = true
     }
     
     var body: some View {
@@ -381,7 +469,7 @@ struct StatsView: View {
                         .padding(.top, 8)
                         
                         VStack(spacing: 2) {
-                            Text(currentPeriodString)
+                            Text(computedData.periodString)
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                                 .foregroundColor(.primary)
@@ -399,17 +487,40 @@ struct StatsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Theme.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            .onAppear {
+                if selectedTab == 4 && (isDirty || !hasComputedOnce) {
+                    recomputeData()
+                }
+            }
+            .onChange(of: selectedTab) { oldTab, newTab in
+                if newTab == 4 && (isDirty || !hasComputedOnce) {
+                    recomputeData()
+                }
+            }
+            .onChange(of: selectedPeriod) { _, _ in
+                recomputeData()
+            }
+            .onChange(of: allDailyRecords) { _, _ in
+                if selectedTab == 4 {
+                    recomputeData()
+                } else {
+                    isDirty = true
+                }
+            }
+            .onChange(of: allSettings) { _, _ in
+                if selectedTab == 4 {
+                    recomputeData()
+                } else {
+                    isDirty = true
+                }
+            }
         }
     }
     
     // MARK: - Subviews
     
     private var quranCardView: some View {
-        let dataPoints = chartDataPoints(for: { Double($0.quranPagesRead) })
-        let hasNoData = dataPoints.allSatisfy { $0.value == 0 }
-        let trend = computeTrend(for: { Double($0.quranPagesRead) })
-        
-        return VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 8) {
                 Image(systemName: "book.fill")
                     .foregroundColor(Theme.islamicGreen)
@@ -420,36 +531,36 @@ struct StatsView: View {
                 Spacer()
             }
             
-            trendRow(for: trend)
+            trendRow(for: computedData.quranTrend)
             
-            if hasNoData {
+            if computedData.quranHasNoData {
                 emptyStateView
             } else {
                 Chart {
-                    ForEach(dataPoints) { point in
+                    ForEach(computedData.quranPoints) { point in
                         BarMark(
                             x: .value("Day", point.label),
                             y: .value("Pages", point.value)
                         )
-                        .foregroundStyle(progressColor(percentage: point.value / currentQuranGoalValue).gradient)
+                        .foregroundStyle(progressColor(percentage: point.value / computedData.currentQuranGoalValue).gradient)
                         .cornerRadius(4)
                         .annotation(position: .top, alignment: .center) {
                             if point.value > 0 {
                                 Text("\(Int(point.value))")
                                     .font(.caption2)
                                     .fontWeight(.bold)
-                                    .foregroundColor(progressColor(percentage: point.value / currentQuranGoalValue))
+                                    .foregroundColor(progressColor(percentage: point.value / computedData.currentQuranGoalValue))
                             }
                         }
                     }
                     
                     RuleMark(
-                        y: .value("Goal", currentQuranGoalValue)
+                        y: .value("Goal", computedData.currentQuranGoalValue)
                     )
                     .lineStyle(StrokeStyle(lineWidth: 1.5, lineCap: .round, dash: [4, 4]))
                     .foregroundStyle(.orange)
                     .annotation(position: .top, alignment: .trailing) {
-                        Text(L10n.tr("stats_goal", settings.language) + ": \(Int(currentQuranGoalValue))")
+                        Text(L10n.tr("stats_goal", settings.language) + ": \(Int(computedData.currentQuranGoalValue))")
                             .font(.caption2)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
@@ -471,8 +582,7 @@ struct StatsView: View {
                 .animation(.spring(), value: selectedPeriod)
             }
             
-            let khatmCount = UserDefaults.standard.integer(forKey: "quranKhatmCount")
-            if khatmCount > 0 {
+            if computedData.khatmCount > 0 {
                 Divider()
                     .background(Color.gray.opacity(0.2))
                 HStack {
@@ -480,7 +590,7 @@ struct StatsView: View {
                         .font(.subheadline)
                         .foregroundColor(.primary)
                     Spacer()
-                    Text("\(khatmCount)")
+                    Text("\(computedData.khatmCount)")
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundColor(Theme.islamicGreen)
@@ -493,16 +603,7 @@ struct StatsView: View {
     }
     
     private var adhkarCardView: some View {
-        let currentRecords = filteredRecordsForCurrentPeriod
-        let morningCount = currentRecords.filter { $0.morgenAdhkarDone }.count
-        let eveningCount = currentRecords.filter { $0.abendAdhkarDone }.count
-        let sleepCount = currentRecords.filter { $0.schlafAdhkarDone }.count
-        let fridaysCount = currentRecords.filter { record in
-            Calendar.current.component(.weekday, from: record.date) == 6 && record.surahAlKahfDone
-        }.count
-        let fajrCount = currentRecords.filter { $0.fajrPrayerStatus == "onTime" || $0.fajrPrayerStatus == "late" || $0.isFajrPrayed }.count
-        
-        return VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 8) {
                 Image(systemName: "book.closed.fill")
                     .foregroundColor(Theme.islamicGreen)
@@ -516,32 +617,32 @@ struct StatsView: View {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
                 adhkarStatRing(
                     title: L10n.tr("adhkar_sleep", settings.language),
-                    count: sleepCount,
-                    total: totalDaysInPeriod
+                    count: computedData.sleepCount,
+                    total: computedData.totalDaysInPeriod
                 )
                 
                 adhkarStatRing(
                     title: L10n.tr("adhkar_morning", settings.language),
-                    count: morningCount,
-                    total: totalDaysInPeriod
+                    count: computedData.morningCount,
+                    total: computedData.totalDaysInPeriod
                 )
                 
                 adhkarStatRing(
                     title: L10n.tr("adhkar_evening", settings.language),
-                    count: eveningCount,
-                    total: totalDaysInPeriod
+                    count: computedData.eveningCount,
+                    total: computedData.totalDaysInPeriod
                 )
                 
                 adhkarStatRing(
                     title: L10n.tr("surah_alkahf", settings.language),
-                    count: fridaysCount,
-                    total: totalFridaysInPeriod
+                    count: computedData.fridaysCount,
+                    total: computedData.totalFridaysInPeriod
                 )
                 
                 adhkarStatRing(
                     title: L10n.tr("fajr_prayer", settings.language),
-                    count: fajrCount,
-                    total: totalDaysInPeriod
+                    count: computedData.fajrCount,
+                    total: computedData.totalDaysInPeriod
                 )
             }
             
@@ -552,11 +653,7 @@ struct StatsView: View {
     }
     
     private var tasbihCardView: some View {
-        let trend = computeTrend(for: { record in
-            TasbihCategory.allCases.map { $0.getValue(from: record) }.reduce(0, +)
-        })
-        
-        return VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Image(systemName: "circle.hexagongrid.fill")
@@ -567,12 +664,12 @@ struct StatsView: View {
                         .foregroundColor(.primary)
                     Spacer()
                 }
-                trendRow(for: trend)
+                trendRow(for: computedData.tasbihTrend)
             }
             
             VStack(spacing: 20) {
-                ForEach(TasbihCategory.allCases) { type in
-                    tasbihRow(for: type)
+                ForEach(computedData.tasbihRows) { row in
+                    tasbihRowView(for: row)
                 }
             }
             .padding(.top, 8)
@@ -582,34 +679,18 @@ struct StatsView: View {
         .cornerRadius(16)
     }
 
-    private func tasbihRow(for type: TasbihCategory) -> some View {
-        let currentRecords = filteredRecordsForCurrentPeriod
-        let totalCount = currentRecords.map { type.getValue(from: $0) }.reduce(0, +)
-        
-        let dailyGoal = Double(max(1, type.getGoal(from: settings)))
-        let periodGoal: Double
-        switch selectedPeriod {
-        case .week: periodGoal = dailyGoal * 7
-        case .month: periodGoal = dailyGoal * Double(totalDaysInPeriod)
-
-        }
-        
-        let safeGoal = max(1, periodGoal)
-        let progress = min(totalCount / safeGoal, 1.0)
-        let percentage = Int(round(progress * 100))
-        let pColor = progressColor(percentage: progress)
-        
-        return VStack(alignment: .leading, spacing: 6) {
+    private func tasbihRowView(for row: TasbihRowData) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(type.shortLocalizedName(for: settings.language))
+                Text(row.type.shortLocalizedName(for: settings.language))
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundColor(.primary)
                 Spacer()
-                Text("\(percentage)%")
+                Text("\(row.percentage)%")
                     .font(.subheadline)
                     .fontWeight(.bold)
-                    .foregroundColor(pColor)
+                    .foregroundColor(row.pColor)
             }
             
             GeometryReader { geometry in
@@ -619,14 +700,14 @@ struct StatsView: View {
                         .frame(height: 6)
                     
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(pColor)
-                        .frame(width: geometry.size.width * CGFloat(progress), height: 6)
-                        .animation(.easeOut, value: progress)
+                        .fill(row.pColor)
+                        .frame(width: geometry.size.width * CGFloat(row.progress), height: 6)
+                        .animation(.easeOut, value: row.progress)
                 }
             }
             .frame(height: 6)
             
-            Text("\(Int(totalCount))/\(Int(safeGoal))")
+            Text("\(Int(row.totalCount))/\(Int(row.safeGoal))")
                 .font(.caption2)
                 .foregroundColor(.secondary)
         }
