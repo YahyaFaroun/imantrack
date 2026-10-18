@@ -23,7 +23,6 @@ struct QuranView: View {
     @Binding var selectedTab: Int
 
     @Environment(\.modelContext) var modelContext
-    @Query var allDailyRecords: [DailyRecord]
     @Query var allSettings: [UserSettings]
     @Environment(\.colorScheme) var colorScheme
     
@@ -38,10 +37,6 @@ struct QuranView: View {
     }
     
     @StateObject var solarManager = LocationAndSolarManager.shared
-    
-    private var todayRecord: DailyRecord {
-        DailyRecord.current(in: modelContext, allRecords: allDailyRecords, date: solarManager.currentTrackingDate)
-    }
     
     @State private var startPage: Int? = nil
     @State private var showKhatmCelebrationAnimation: Bool = false

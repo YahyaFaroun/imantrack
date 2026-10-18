@@ -18,7 +18,7 @@ class QuranProgressStore: ObservableObject {
     @Published private(set) var readFrontier: Int = 0
     private let oldBookmarkKey = "quranBookmark"
     private let bookmarkKey = "quranFrontierBookmark_v1"
-    @Published private(set) var bookmark: QuranBookmark? = nil
+    private(set) var bookmark: QuranBookmark? = nil
     
     private var lastSaveTime: Date = .distantPast
     private var pendingSaveTask: Task<Void, Never>? = nil
