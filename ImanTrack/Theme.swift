@@ -33,6 +33,34 @@ struct Theme {
         return islamicGreen
     }
     
+    // MARK: - Tasbih Flash Konfiguration
+    /// Grundstärke der Deckkraft für den Tasbih-Blitz (bei ruhigem Tempo >= 2,0s)
+    static let tasbihFlashBaseOpacity: Double = 0.3
+    
+    /// Schwellenwert für langsames/ruhiges Tempo in Sekunden (ab hier 100% Grundstärke & Standard-Dauer)
+    static let tasbihFlashSlowIntervalThreshold: Double = 2.0
+    
+    /// Schwellenwert für sehr schnellen Takt in Sekunden (ca. 0,5s)
+    static let tasbihFlashFastIntervalThreshold: Double = 0.5
+    
+    /// Minimale Stärke im Verhältnis zur Grundstärke bei schnellem Takt (ca. 30–40%, hier 35%)
+    static let tasbihFlashMinStrengthFactor: Double = 0.35
+    
+    /// Minimaler Dauer-Faktor bei schnellem Takt (50% der Standard-Dauer)
+    static let tasbihFlashMinDurationFactor: Double = 0.50
+    
+    /// Standard-Dauer für easeIn bei ruhigem Tempo
+    static let tasbihFlashBaseFadeInDuration: Double = 0.08
+    
+    /// Standard-Haltezeit bis easeOut bei ruhigem Tempo
+    static let tasbihFlashBaseHoldDuration: Double = 0.12
+    
+    /// Standard-Dauer für easeOut bei ruhigem Tempo
+    static let tasbihFlashBaseFadeOutDuration: Double = 0.12
+    
+    /// Maximale Gesamtdauer des Blitzes im Verhältnis zum Intervall (max. 40% des Abstands)
+    static let tasbihFlashMaxDurationRatio: Double = 0.40
+    
     static func uthmaniFont(size: CGFloat) -> Font {
         if UIFont(name: "KFGQPCHAFSUthmanicScript-Regula", size: size) != nil {
             return .custom("KFGQPCHAFSUthmanicScript-Regula", size: size)

@@ -39,7 +39,9 @@ struct DhikrDetailView: View {
     @State var showResetToast = false
     @State var isPulsing = false
     @State var flashGreen = false
+    @State var flashOpacity: Double = 1.0
     @State var flashToken = 0
+    @State private var lastIncrementTime: Double = 0
     
     @State var showStopSessionSheet = false
     @State var showManualAddAlert = false
@@ -313,22 +315,6 @@ struct DhikrDetailView: View {
         }
     }
     
-    private var threeStepSliderBinding: Binding<Double> {
-        Binding<Double>(
-            get: {
-                Double(min(max(currentSpeedStep, 0), 2))
-            },
-            set: { newValue in
-                let step = Int(round(newValue))
-                UserDefaults.standard.set(step, forKey: currentTasbihKey)
-                if counterState == .running {
-                    pauseTimer()
-                    startTimer()
-                }
-            }
-        )
-    }
-    
     private var ringColor: Color {
         switch counterState {
         case .idle: return .gray.opacity(0.5)
@@ -441,9 +427,9 @@ struct DhikrDetailView: View {
                         .rotationEffect(.degrees(-90))
                     
                     Circle()
-                        .fill(Theme.islamicGreen.opacity(0.25))
+                        .fill(Theme.islamicGreen.opacity(Theme.tasbihFlashBaseOpacity))
                         .padding(7.5)
-                        .opacity(flashGreen ? 1.0 : 0.0)
+                        .opacity(flashGreen ? flashOpacity : 0.0)
                         .allowsHitTesting(false)
                     
                     // Numerische Fortschrittszahl und Tagesziel im Kreis
@@ -677,13 +663,32 @@ struct DhikrDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: {
-                    showInfoSheet = true
-                }) {
-                    Image(systemName: "info.circle")
-                        .foregroundColor(Theme.islamicGreen)
-                        .font(.title3)
+            if #available(iOS 26.0, *) {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        showInfoSheet = true
+                    }) {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(Theme.islamicGreen)
+                            .font(.title3)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        showInfoSheet = true
+                    }) {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(Theme.islamicGreen)
+                            .font(.title3)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -716,7 +721,14 @@ struct DhikrDetailView: View {
                 language: settings.language,
                 title: localizedTitle,
                 translation: currentTranslation,
-                sliderValue: threeStepSliderBinding
+                initialStep: currentSpeedStep,
+                onSaveStep: { newStep in
+                    UserDefaults.standard.set(newStep, forKey: currentTasbihKey)
+                    if counterState == .running {
+                        pauseTimer()
+                        startTimer()
+                    }
+                }
             )
         }
     }
@@ -929,14 +941,57 @@ struct DhikrDetailView: View {
     }
     
     private func triggerGreenFlash() {
+        let now = CACurrentMediaTime()
+        let interval: Double
+        if lastIncrementTime > 0 {
+            interval = max(0.01, now - lastIncrementTime)
+        } else {
+            interval = Theme.tasbihFlashSlowIntervalThreshold
+        }
+        lastIncrementTime = now
+        
+        // 1. Stärke proportional zum Intervall berechnen (bei ruhigem Tempo >= 2.0s 100%, bei 0,5s ca. 35%)
+        let strengthFactor: Double
+        if interval >= Theme.tasbihFlashSlowIntervalThreshold {
+            strengthFactor = 1.0
+        } else if interval <= Theme.tasbihFlashFastIntervalThreshold {
+            strengthFactor = Theme.tasbihFlashMinStrengthFactor
+        } else {
+            let progress = (interval - Theme.tasbihFlashFastIntervalThreshold) /
+                           (Theme.tasbihFlashSlowIntervalThreshold - Theme.tasbihFlashFastIntervalThreshold)
+            strengthFactor = Theme.tasbihFlashMinStrengthFactor + progress * (1.0 - Theme.tasbihFlashMinStrengthFactor)
+        }
+        
+        // 2. Dauer proportional berechnen und auf max. 40% des Abstands begrenzen
+        let baseTotalDuration = Theme.tasbihFlashBaseHoldDuration + Theme.tasbihFlashBaseFadeOutDuration
+        let durationFactor: Double
+        if interval >= Theme.tasbihFlashSlowIntervalThreshold {
+            durationFactor = 1.0
+        } else if interval <= Theme.tasbihFlashFastIntervalThreshold {
+            durationFactor = Theme.tasbihFlashMinDurationFactor
+        } else {
+            let progress = (interval - Theme.tasbihFlashFastIntervalThreshold) /
+                           (Theme.tasbihFlashSlowIntervalThreshold - Theme.tasbihFlashFastIntervalThreshold)
+            durationFactor = Theme.tasbihFlashMinDurationFactor + progress * (1.0 - Theme.tasbihFlashMinDurationFactor)
+        }
+        
+        let targetTotalDuration = baseTotalDuration * durationFactor
+        let maxAllowedDuration = interval * Theme.tasbihFlashMaxDurationRatio
+        let finalTotalDuration = min(targetTotalDuration, maxAllowedDuration)
+        
+        let holdDelay = finalTotalDuration * (Theme.tasbihFlashBaseHoldDuration / baseTotalDuration)
+        let fadeOutDuration = finalTotalDuration * (Theme.tasbihFlashBaseFadeOutDuration / baseTotalDuration)
+        let fadeInDuration = finalTotalDuration * (Theme.tasbihFlashBaseFadeInDuration / baseTotalDuration)
+        
+        flashOpacity = strengthFactor
         flashToken &+= 1
         let currentToken = flashToken
-        withAnimation(.easeIn(duration: 0.08)) {
+        withAnimation(.easeIn(duration: fadeInDuration)) {
             flashGreen = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + holdDelay) {
             guard self.flashToken == currentToken else { return }
-            withAnimation(.easeOut(duration: 0.12)) {
+            withAnimation(.easeOut(duration: fadeOutDuration)) {
                 self.flashGreen = false
             }
         }
@@ -1008,7 +1063,35 @@ struct TranslationSheet: View {
     let language: String
     let title: String
     let translation: String
-    let sliderValue: Binding<Double>
+    let initialStep: Int
+    let onSaveStep: (Int) -> Void
+    
+    @State private var localStep: Double
+    @State private var isDragging: Bool = false
+    @State private var lastSavedStep: Int
+    @State private var lastHapticStep: Int
+    
+    init(language: String, title: String, translation: String, initialStep: Int, onSaveStep: @escaping (Int) -> Void) {
+        self.language = language
+        self.title = title
+        self.translation = translation
+        let clamped = min(max(initialStep, 0), 2)
+        self.initialStep = clamped
+        self.onSaveStep = onSaveStep
+        _localStep = State(initialValue: Double(clamped))
+        _lastSavedStep = State(initialValue: clamped)
+        _lastHapticStep = State(initialValue: clamped)
+    }
+    
+    private func triggerHaptic(for step: Int) {
+        #if os(iOS) && !SKIP
+        if step != lastHapticStep {
+            lastHapticStep = step
+            let feedback = UISelectionFeedbackGenerator()
+            feedback.selectionChanged()
+        }
+        #endif
+    }
     
     var body: some View {
         NavigationStack {
@@ -1042,7 +1125,7 @@ struct TranslationSheet: View {
                                     .font(.footnote)
                                     .foregroundColor(.gray)
                                 Spacer()
-                                let stepVal = Int(round(sliderValue.wrappedValue))
+                                let stepVal = min(max(Int(round(localStep)), 0), 2)
                                 Text(
                                     stepVal == 0 ? (language == "de" ? "Langsam" : (language == "ar" ? "بطيء" : "Slow")) :
                                     stepVal == 1 ? (language == "de" ? "Normal" : (language == "ar" ? "عادي" : "Normal")) :
@@ -1056,32 +1139,54 @@ struct TranslationSheet: View {
                             
                             HStack(spacing: 16) {
                                 Button(action: {
-                                    if sliderValue.wrappedValue > 0 {
-                                        sliderValue.wrappedValue = sliderValue.wrappedValue - 1
+                                    let current = Int(round(localStep))
+                                    if current > 0 {
+                                        let newStep = current - 1
+                                        localStep = Double(newStep)
+                                        lastSavedStep = newStep
+                                        triggerHaptic(for: newStep)
+                                        onSaveStep(newStep)
                                     }
                                 }) {
                                     Image(systemName: "tortoise.fill")
-                                        .foregroundColor(sliderValue.wrappedValue <= 0 ? .gray.opacity(0.3) : .gray)
+                                        .foregroundColor(Int(round(localStep)) <= 0 ? .gray.opacity(0.3) : .gray)
                                         .font(.body)
                                         .frame(width: 32, height: 32)
                                 }
                                 
                                 Slider(
-                                    value: sliderValue,
+                                    value: $localStep,
                                     in: 0...2,
-                                    step: 1
+                                    step: 1,
+                                    onEditingChanged: { editing in
+                                        isDragging = editing
+                                        if !editing {
+                                            let step = min(max(Int(round(localStep)), 0), 2)
+                                            localStep = Double(step)
+                                            lastHapticStep = step
+                                            if step != lastSavedStep {
+                                                lastSavedStep = step
+                                                onSaveStep(step)
+                                            }
+                                        }
+                                    }
                                 )
                                 .tint(Theme.islamicGreen)
                                 .accentColor(Theme.islamicGreen)
                                 .padding(.vertical, 8)
                                 
                                 Button(action: {
-                                    if sliderValue.wrappedValue < 2 {
-                                        sliderValue.wrappedValue = sliderValue.wrappedValue + 1
+                                    let current = Int(round(localStep))
+                                    if current < 2 {
+                                        let newStep = current + 1
+                                        localStep = Double(newStep)
+                                        lastSavedStep = newStep
+                                        triggerHaptic(for: newStep)
+                                        onSaveStep(newStep)
                                     }
                                 }) {
                                     Image(systemName: "hare.fill")
-                                        .foregroundColor(sliderValue.wrappedValue >= 2 ? .gray.opacity(0.3) : .gray)
+                                        .foregroundColor(Int(round(localStep)) >= 2 ? .gray.opacity(0.3) : .gray)
                                         .font(.body)
                                         .frame(width: 32, height: 32)
                                 }
@@ -1098,9 +1203,15 @@ struct TranslationSheet: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            .interactiveDismissDisabled(isDragging)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(L10n.tr("done", language)) {
+                        let step = min(max(Int(round(localStep)), 0), 2)
+                        if step != lastSavedStep {
+                            lastSavedStep = step
+                            onSaveStep(step)
+                        }
                         dismiss()
                     }
                     .foregroundColor(Theme.islamicGreen)
@@ -1111,7 +1222,7 @@ struct TranslationSheet: View {
             .toolbarBackground(.visible, for: .navigationBar)
             #endif
         }
-}
+    }
 }
 
 struct ManualAddTextField: View {

@@ -996,7 +996,8 @@ struct AdhkarCard: View {
                 Image(systemName: "info.circle")
                     .font(.system(size: 20))
                     .foregroundColor(.gray)
-                    .padding(14)
+                    .frame(width: 48, height: 48)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle()),
             alignment: .topTrailing
