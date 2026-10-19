@@ -1,8 +1,14 @@
 import SwiftUI
+import SwiftData
 import UserNotifications
 
 struct NotificationPermissionSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Query private var settingsList: [UserSettings]
+    
+    private var language: String {
+        settingsList.first?.language ?? "de"
+    }
     
     var onComplete: (() -> Void)? = nil
     
@@ -21,13 +27,13 @@ struct NotificationPermissionSheet: View {
             }
             
             VStack(spacing: 12) {
-                Text("Adhkar- & Salawat-Erinnerungen")
+                Text(L10n.tr("notif_sheet_title", language))
                     .font(.title2)
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.primary)
                 
-                Text("Bleibe regelmäßig mit deinen täglichen Adhkar und Salawat verbunden. Aktiviere Mitteilungen, um sanfte Erinnerungen zu den passenden Gebetszeiten zu erhalten.")
+                Text(L10n.tr("notif_sheet_desc", language))
                     .font(.body)
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
@@ -48,7 +54,7 @@ struct NotificationPermissionSheet: View {
                         }
                     }
                 }) {
-                    Text("Mitteilungen erlauben")
+                    Text(L10n.tr("notif_sheet_enable", language))
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -62,7 +68,7 @@ struct NotificationPermissionSheet: View {
                     onComplete?()
                     dismiss()
                 }) {
-                    Text("Später")
+                    Text(L10n.tr("notif_sheet_later", language))
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.gray)

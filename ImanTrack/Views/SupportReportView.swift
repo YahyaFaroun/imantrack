@@ -12,11 +12,11 @@ enum SupportCategory: String, CaseIterable, Identifiable {
     func localizedTitle(for lang: String) -> String {
         switch self {
         case .fehler:
-            return lang == "de" ? "Fehler melden" : (lang == "ar" ? "الإبلاغ عن مشكلة" : "Report a Bug")
+            return L10n.tr("support_category_bug", lang)
         case .vorschlag:
-            return lang == "de" ? "Verbesserung" : (lang == "ar" ? "اقتراح تحسين" : "Improvement")
+            return L10n.tr("support_category_feature", lang)
         case .feedback:
-            return lang == "de" ? "Feedback" : (lang == "ar" ? "ملاحظات" : "Feedback")
+            return L10n.tr("support_category_feedback", lang)
         }
     }
 }
@@ -53,12 +53,12 @@ struct SupportReportView: View {
                     VStack(spacing: 20) {
                         // Card 1: Kategorie
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(language == "de" ? "Kategorie" : (language == "ar" ? "الفئة" : "Category"))
+                            Text(L10n.tr("support_category", language))
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(.secondary)
                             
-                            Picker(language == "de" ? "Thema wählen" : (language == "ar" ? "اختر الموضوع" : "Select Topic"), selection: $selectedCategory) {
+                            Picker(L10n.tr("support_select_topic", language), selection: $selectedCategory) {
                                 ForEach(SupportCategory.allCases) { category in
                                     Text(category.localizedTitle(for: language)).tag(category)
                                 }
@@ -73,7 +73,7 @@ struct SupportReportView: View {
                         
                         // Card 2: E-Mail für Rückfragen (Optional)
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(language == "de" ? "Deine E-Mail (Optional für Antworten)" : (language == "ar" ? "بريدك الإلكتروني (اختياري للرد)" : "Your Email (Optional for reply)"))
+                            Text(L10n.tr("support_email_label", language))
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(.secondary)
@@ -81,7 +81,7 @@ struct SupportReportView: View {
                             HStack(spacing: 10) {
                                 Image(systemName: "envelope")
                                     .foregroundColor(Theme.islamicGreen)
-                                TextField(language == "de" ? "name@example.com" : "name@example.com", text: $userEmailText)
+                                TextField("name@example.com", text: $userEmailText)
                                     .keyboardType(.emailAddress)
                                     .textInputAutocapitalization(.never)
                                     .autocorrectionDisabled(true)
@@ -95,14 +95,14 @@ struct SupportReportView: View {
                         
                         // Card 3: Deine Nachricht
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(language == "de" ? "Deine Nachricht" : (language == "ar" ? "رسالتك" : "Your Message"))
+                            Text(L10n.tr("support_message_label", language))
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(.secondary)
                             
                             ZStack(alignment: .topLeading) {
                                 if messageText.isEmpty {
-                                    Text(language == "de" ? "Wie können wir dir helfen? Beschreibe dein Anliegen möglichst genau..." : (language == "ar" ? "كيف يمكننا مساعدتك؟ اشرح طلبك بالتفصيل..." : "How can we help you? Describe your request as clearly as possible..."))
+                                    Text(L10n.tr("support_message_placeholder", language))
                                         .font(.body)
                                         .foregroundColor(.gray.opacity(0.5))
                                         .padding(.top, 8)
@@ -121,9 +121,9 @@ struct SupportReportView: View {
                         .background(Theme.cardBackground)
                         .cornerRadius(16)
                         
-                        // Card 3: Anhang (Optional)
+                        // Card 4: Anhang (Optional)
                         VStack(alignment: .leading, spacing: 12) {
-                            Text(language == "de" ? "Screenshot oder Bild (Optional)" : (language == "ar" ? "لقطة شاشة (اختياري)" : "Screenshot (Optional)"))
+                            Text(L10n.tr("support_image_label", language))
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(.secondary)
@@ -132,7 +132,7 @@ struct SupportReportView: View {
                                 HStack {
                                     Image(systemName: "paperclip")
                                         .foregroundColor(Theme.islamicGreen)
-                                    Text(selectedImageData == nil ? (language == "de" ? "Bild oder Screenshot anhängen" : (language == "ar" ? "إرفاق صورة أو لقطة شاشة" : "Attach Image or Screenshot")) : (language == "de" ? "Bild ändern" : (language == "ar" ? "تغيير الصورة" : "Change Image")))
+                                    Text(selectedImageData == nil ? L10n.tr("support_attach_image", language) : L10n.tr("support_change_image", language))
                                         .foregroundColor(Theme.islamicGreen)
                                         .fontWeight(.medium)
                                     Spacer()
@@ -161,7 +161,7 @@ struct SupportReportView: View {
                                         selectedImageData = nil
                                         selectedPhotoItem = nil
                                     }) {
-                                        Label(language == "de" ? "Entfernen" : (language == "ar" ? "إزالة" : "Remove"), systemImage: "trash")
+                                        Label(L10n.tr("support_remove_image", language), systemImage: "trash")
                                             .font(.subheadline)
                                     }
                                 }
@@ -182,7 +182,7 @@ struct SupportReportView: View {
                                         ProgressView()
                                             .tint(.white)
                                     } else {
-                                        Text(language == "de" ? "Nachricht senden" : (language == "ar" ? "إرسال الرسالة" : "Send Message"))
+                                        Text(L10n.tr("support_send_button", language))
                                             .font(.headline)
                                             .foregroundColor(.white)
                                     }
@@ -194,7 +194,7 @@ struct SupportReportView: View {
                             }
                             .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSubmitting)
                             
-                            Text(language == "de" ? "Deine Nachricht wird direkt an unser Support-Team gesendet." : (language == "ar" ? "سيتم إرسال رسالتك مباشرة إلى فريق الدعم." : "Your message will be sent directly to our support team."))
+                            Text(L10n.tr("support_footer_info", language))
                                 .font(.caption2)
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.center)
@@ -203,11 +203,11 @@ struct SupportReportView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Support")
+            .navigationTitle(L10n.tr("settings_support_header", language))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(language == "de" ? "Schließen" : (language == "ar" ? "إغلاق" : "Close")) {
+                    Button(L10n.tr("close", language)) {
                         dismiss()
                     }
                 }
@@ -293,7 +293,7 @@ struct SupportReportView: View {
             request.httpBody = try JSONSerialization.data(withJSONObject: jsonBody)
         } catch {
             self.isSubmitting = false
-            self.alertTitle = language == "de" ? "Fehler" : "Error"
+            self.alertTitle = L10n.tr("error", language)
             self.alertMessage = error.localizedDescription
             self.showAlert = true
             return
@@ -306,8 +306,8 @@ struct SupportReportView: View {
                     await MainActor.run {
                         self.isSubmitting = false
                         self.isSuccess = true
-                        self.alertTitle = language == "de" ? "Erfolgreich gesendet" : (language == "ar" ? "تم الإرسال بنجاح" : "Successfully Sent")
-                        self.alertMessage = language == "de" ? "Vielen Dank! Deine Nachricht wurde erfolgreich an unseren Support gesendet." : "Thank you! Your message was successfully sent to our support team."
+                        self.alertTitle = L10n.tr("support_sent_success_title", language)
+                        self.alertMessage = L10n.tr("support_sent_success_desc", language)
                         self.showAlert = true
                     }
                 } else {
@@ -315,8 +315,8 @@ struct SupportReportView: View {
                     await MainActor.run {
                         self.isSubmitting = false
                         self.isSuccess = false
-                        self.alertTitle = language == "de" ? "Fehler beim Senden" : (language == "ar" ? "خطأ في الإرسال" : "Sending Error")
-                        self.alertMessage = language == "de" ? "Nachricht konnte nicht übermittelt werden (\(responseStr)). Bitte überprüfe die EmailJS Konfiguration." : "Could not send message (\(responseStr)). Please check setup."
+                        self.alertTitle = L10n.tr("support_sent_error_title", language)
+                        self.alertMessage = String(format: L10n.tr("support_sent_error_desc", language), responseStr)
                         self.showAlert = true
                     }
                 }
@@ -324,7 +324,7 @@ struct SupportReportView: View {
                 await MainActor.run {
                     self.isSubmitting = false
                     self.isSuccess = false
-                    self.alertTitle = language == "de" ? "Verbindungsfehler" : "Connection Error"
+                    self.alertTitle = L10n.tr("support_connection_error", language)
                     self.alertMessage = error.localizedDescription
                     self.showAlert = true
                 }

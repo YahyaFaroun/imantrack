@@ -22,7 +22,7 @@ class QuranAPIService: ObservableObject {
     func preloadDataAsync() {
         guard !isLoaded else { return }
         Task.detached(priority: .userInitiated) {
-            self.loadOfflineDataSync()
+            await self.loadOfflineDataSync()
         }
     }
     

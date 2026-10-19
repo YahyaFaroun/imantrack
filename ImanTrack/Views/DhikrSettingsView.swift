@@ -14,7 +14,6 @@ struct DhikrSettingsView: View {
     @State private var isSleepAdhkarReminderEnabled: Bool = true
     @State private var isKahfReminderEnabled: Bool = true
     @State private var isPermissionDenied: Bool = false
-    @AppStorage("adhkarConfirmMemorizedRead") private var confirmMemorizedRead: Bool = true
     
     private var language: String {
         settingsList.first?.language ?? "de"
@@ -29,7 +28,7 @@ struct DhikrSettingsView: View {
                             Image(systemName: "bell.slash.fill")
                                 .font(.title3)
                                 .foregroundColor(.orange)
-                            Text("Mitteilungen sind in den iOS-Einstellungen deaktiviert.")
+                            Text(L10n.tr("notif_disabled_ios", language))
                                 .font(.subheadline)
                                 .foregroundColor(.primary)
                         }
@@ -39,7 +38,7 @@ struct DhikrSettingsView: View {
                                 UIApplication.shared.open(url)
                             }
                         }) {
-                            Text("Einstellungen öffnen")
+                            Text(L10n.tr("open_settings", language))
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .foregroundColor(Theme.islamicGreen)
@@ -70,18 +69,6 @@ struct DhikrSettingsView: View {
                     .onChange(of: isKahfReminderEnabled) { _, newValue in
                         handleReminderToggle(newValue)
                     }
-                
-                Button(action: {
-                    AdhkarReminderManager.shared.sendTestNotification()
-                }) {
-                    HStack {
-                        Image(systemName: "bell.badge.fill")
-                            .foregroundColor(Theme.islamicGreen)
-                        Text(L10n.tr("send_test_notification", language))
-                            .foregroundColor(Theme.islamicGreen)
-                            .fontWeight(.medium)
-                    }
-                }
             }
 
             Section(header: Text(L10n.tr("adhkar_count_mode", language))) {
@@ -91,27 +78,15 @@ struct DhikrSettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: adhkarAutoCount) { _, newValue in
-                    withAnimation {
+                    withAnimation(.easeInOut(duration: 0.25)) {
                         if !newValue {
                             adhkarAutoAdvance = false
                         }
                     }
                     saveSettings()
                 }
-            }
-            
-            Section(header: Text(L10n.tr("playback_tempo", language))) {
-                Picker(L10n.tr("playback_tempo", language), selection: $defaultAdhkarSpeedStep) {
-                    Text(L10n.tr("tempo_slow", language)).tag(0)
-                    Text(L10n.tr("tempo_normal", language)).tag(1)
-                    Text(L10n.tr("tempo_fast", language)).tag(2)
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: defaultAdhkarSpeedStep) { _, _ in saveSettings() }
-            }
-            
-            if adhkarAutoCount {
-                Section {
+                
+                if adhkarAutoCount {
                     Toggle(isOn: $adhkarAutoAdvance) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(L10n.tr("adhkar_auto_advance", language))
@@ -126,10 +101,19 @@ struct DhikrSettingsView: View {
                 }
             }
             
-            Section {
-                Toggle(L10n.tr("adhkar_confirm_memorized_read", language), isOn: $confirmMemorizedRead)
+            if adhkarAutoCount {
+                Section(header: Text(L10n.tr("playback_tempo", language))) {
+                    Picker(L10n.tr("playback_tempo", language), selection: $defaultAdhkarSpeedStep) {
+                        Text(L10n.tr("tempo_slow", language)).tag(0)
+                        Text(L10n.tr("tempo_normal", language)).tag(1)
+                        Text(L10n.tr("tempo_fast", language)).tag(2)
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: defaultAdhkarSpeedStep) { _, _ in saveSettings() }
+                }
             }
         }
+        .animation(.easeInOut(duration: 0.25), value: adhkarAutoCount)
         .navigationTitle(L10n.tr("adhkar_sec", language))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

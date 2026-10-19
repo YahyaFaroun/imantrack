@@ -459,7 +459,7 @@ struct StatsView: View {
                 Theme.background.ignoresSafeArea()
                 ScrollView {
                     VStack(spacing: 24) {
-                        Picker("Period", selection: $selectedPeriod) {
+                        Picker(L10n.tr("stats_period_picker", settings.language), selection: $selectedPeriod) {
                             ForEach(PeriodFilter.allCases) { period in
                                 Text(period.localizedName(for: settings.language)).tag(period)
                             }
