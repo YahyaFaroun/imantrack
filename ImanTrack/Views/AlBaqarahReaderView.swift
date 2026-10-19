@@ -36,9 +36,9 @@ struct AlBaqarahReaderView: View {
                         .tint(Theme.islamicGreen)
                 } else if hasError {
                     VStack(spacing: 12) {
-                        Text("Fehler beim Laden von Sure Al-Baqarah")
+                        Text(L10n.tr("surah_baqarah_load_error", settings.language))
                             .foregroundColor(.secondary)
-                        Button("Erneut versuchen") {
+                        Button(L10n.tr("retry", settings.language)) {
                             loadSurah()
                         }
                         .tint(Theme.islamicGreen)
@@ -109,7 +109,7 @@ struct AlBaqarahReaderView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Schließen") {
+                    Button(L10n.tr("close", settings.language)) {
                         dismiss()
                     }
                     .foregroundColor(Theme.getQuranTextColor(for: quranTheme, systemColorScheme: colorScheme))

@@ -11,6 +11,10 @@ struct AlMulkReaderView: View {
     @Query var allSettings: [UserSettings]
     #endif
     
+    private var settings: UserSettings {
+        allSettings.first ?? UserSettings()
+    }
+    
     var onComplete: (() -> Void)? = nil
     
     @State var verses: [Verse] = []
@@ -34,9 +38,9 @@ struct AlMulkReaderView: View {
                         .tint(Theme.islamicGreen)
                 } else if hasError {
                     VStack(spacing: 12) {
-                        Text("Fehler beim Laden von Sure Al-Mulk")
+                        Text(L10n.tr("surah_mulk_load_error", settings.language))
                             .foregroundColor(.secondary)
-                        Button("Erneut versuchen") {
+                        Button(L10n.tr("retry", settings.language)) {
                             loadSurah()
                         }
                         .tint(Theme.islamicGreen)
@@ -69,7 +73,7 @@ struct AlMulkReaderView: View {
                                 onComplete?()
                                 dismiss()
                             }) {
-                                Text("Als gelesen markieren")
+                                Text(L10n.tr("mark_as_read", settings.language))
                                     .font(.headline)
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
@@ -95,7 +99,7 @@ struct AlMulkReaderView: View {
                     )
                 }
             }
-            .navigationTitle("Sure Al-Mulk")
+            .navigationTitle(L10n.tr("surah_almulk", settings.language))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -105,7 +109,7 @@ struct AlMulkReaderView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Schließen") {
+                    Button(L10n.tr("close", settings.language)) {
                         dismiss()
                     }
                     .foregroundColor(Theme.getQuranTextColor(for: quranTheme, systemColorScheme: colorScheme))

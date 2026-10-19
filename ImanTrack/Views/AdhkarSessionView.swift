@@ -14,8 +14,6 @@ struct AdhkarSessionView: View {
     @AppStorage("lastActiveDhikrIndex") var lastActiveDhikrIndex: Int = 0
     @AppStorage("lastActiveDhikrCount") var lastActiveDhikrCount: Int = 0
     @AppStorage("isSessionActive") var isSessionActive: Bool = false
-    @AppStorage("adhkarConfirmMemorizedRead") private var confirmMemorizedRead: Bool = true
-    
     let type: AdhkarSessionType
     @State var counts: [UUID: Int] = [:]
     @State var completedItems: Set<UUID> = []
@@ -27,8 +25,6 @@ struct AdhkarSessionView: View {
     @State var mulkItemToComplete: AdhkarItem? = nil
     @State var localAdhkarList: [AdhkarItem]
     @State var isEditMode: Bool = false
-    @State private var showMarkAllReadDialog = false
-    @State private var showMarkUnreadDialog = false
     
     init(type: AdhkarSessionType) {
         self.type = type
@@ -169,7 +165,7 @@ struct AdhkarSessionView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: "arrow.up.arrow.down.circle.fill")
                                         .foregroundColor(Theme.islamicGreen)
-                                    Text(language == "de" ? "Bearbeitungsmodus aktiv – Reihenfolge anpassen" : "Edit Mode Active – Reorder Adhkar")
+                                    Text(L10n.tr("adhkar_edit_mode_active", language))
                                         .font(.caption)
                                         .fontWeight(.bold)
                                         .foregroundColor(Theme.islamicGreen)
@@ -183,17 +179,10 @@ struct AdhkarSessionView: View {
                             
                             if adhkarState != .future {
                                 Button(action: {
-                                    #if os(iOS) && !SKIP
-                                    let impact = UIImpactFeedbackGenerator(style: .medium)
-                                    impact.impactOccurred()
-                                    #endif
-                                    if confirmMemorizedRead {
-                                        if isSessionAlreadyDone {
-                                            showMarkUnreadDialog = true
-                                        } else {
-                                            showMarkAllReadDialog = true
-                                        }
-                                    } else {
+                                        #if os(iOS) && !SKIP
+                                        let impact = UIImpactFeedbackGenerator(style: .medium)
+                                        impact.impactOccurred()
+                                        #endif
                                         withAnimation(.easeInOut(duration: 0.25)) {
                                             if isSessionAlreadyDone {
                                                 markAsUncompleted()
@@ -201,41 +190,42 @@ struct AdhkarSessionView: View {
                                                 markAllAsCompleted()
                                             }
                                         }
-                                    }
-                                }) {
-                                    if isSessionAlreadyDone {
-                                        VStack(spacing: 3) {
-                                            Text(L10n.tr("adhkar_memorized_done", language))
-                                                .font(.subheadline)
-                                                .fontWeight(.bold)
-                                            Text(L10n.tr("adhkar_tap_to_undo", language))
-                                                .font(.caption2)
-                                                .fontWeight(.medium)
-                                                .opacity(0.9)
-                                        }
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 10)
-                                        .background(Theme.islamicGreen)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(12)
-                                    } else {
-                                        Text(L10n.tr("adhkar_memorized_prompt", language))
-                                            .font(.footnote)
-                                            .foregroundColor(.secondary)
-                                            .multilineTextAlignment(.center)
+                                    }) {
+                                        if isSessionAlreadyDone {
+                                            VStack(spacing: 3) {
+                                                Text(L10n.tr("adhkar_read_done", language))
+                                                    .font(.subheadline)
+                                                    .fontWeight(.bold)
+                                                Text(L10n.tr("adhkar_tap_to_undo", language))
+                                                    .font(.caption2)
+                                                    .fontWeight(.medium)
+                                                    .opacity(0.9)
+                                            }
                                             .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 7)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .fill(Color.gray.opacity(0.08))
-                                            )
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .stroke(Color.gray.opacity(0.2), lineWidth: 0.8)
-                                            )
+                                            .padding(.vertical, 10)
+                                            .background(Theme.islamicGreen)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(12)
+                                        } else {
+                                            let isExpired = (adhkarState == .expired)
+                                            Text(L10n.tr("adhkar_already_read_prompt", language))
+                                                .font(isExpired ? .subheadline : .footnote)
+                                                .fontWeight(isExpired ? .medium : .regular)
+                                                .foregroundColor(isExpired ? .primary : .secondary)
+                                                .multilineTextAlignment(.center)
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, isExpired ? 10 : 7)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 10)
+                                                        .fill(isExpired ? Color.gray.opacity(0.16) : Color.gray.opacity(0.08))
+                                                )
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 10)
+                                                        .stroke(isExpired ? Color.secondary.opacity(0.35) : Color.gray.opacity(0.2), lineWidth: isExpired ? 1.0 : 0.8)
+                                                )
+                                        }
                                     }
-                                }
-                                .buttonStyle(.plain)
+                                    .buttonStyle(.plain)
                             }
                             
                             ForEach(Array(adhkarList.enumerated()), id: \.element.id) { index, item in
@@ -246,6 +236,7 @@ struct AdhkarSessionView: View {
                                     isCompleted: completedItems.contains(item.id),
                                     showMashaAllah: showMashaAllah == item.id,
                                     language: language,
+                                    showTransliteration: settingsList.first?.showTransliteration ?? true,
                                     isActive: activeAutoCountItemId == item.id,
                                     useAuto: settingsList.first?.adhkarAutoCount ?? true,
                                     isTrackingAllowed: isTrackingAllowed,
@@ -365,7 +356,7 @@ struct AdhkarSessionView: View {
                             }
                             saveCustomOrder()
                         }) {
-                            Text(language == "de" ? "Fertig" : "Done")
+                            Text(L10n.tr("done", language))
                                 .font(.subheadline)
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
@@ -398,28 +389,7 @@ struct AdhkarSessionView: View {
                     }
                 })
             }
-            .alert(
-                String(format: L10n.tr("adhkar_mark_read_confirm", language), sessionTitle),
-                isPresented: $showMarkAllReadDialog
-            ) {
-                Button(L10n.tr("mark_read", language)) {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        markAllAsCompleted()
-                    }
-                }
-                Button(L10n.tr("cancel", language), role: .cancel) {}
-            }
-            .alert(
-                String(format: L10n.tr("adhkar_mark_unread_confirm", language), sessionTitle),
-                isPresented: $showMarkUnreadDialog
-            ) {
-                Button(L10n.tr("mark_unread", language), role: .destructive) {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        markAsUncompleted()
-                    }
-                }
-                Button(L10n.tr("cancel", language), role: .cancel) {}
-            }
+
             .onDisappear {
                 stopAutoCount()
             }
@@ -792,6 +762,7 @@ struct AdhkarCard: View {
     let isCompleted: Bool
     let showMashaAllah: Bool
     let language: String
+    var showTransliteration: Bool = true
     let isActive: Bool
     let useAuto: Bool
     let isTrackingAllowed: Bool
@@ -831,7 +802,7 @@ struct AdhkarCard: View {
                         Image(systemName: "line.3.horizontal")
                             .font(.title3)
                             .foregroundColor(.gray)
-                        Text(language == "de" ? "Reihenfolge anpassen" : "Reorder")
+                        Text(L10n.tr("adhkar_reorder", language))
                             .font(.caption2)
                             .foregroundColor(.gray)
                     }
@@ -853,7 +824,7 @@ struct AdhkarCard: View {
                 .padding(.top, isEditMode ? 0 : 8)
             
             // Transliteration
-            if language != "ar" && !item.transliteration.isEmpty {
+            if showTransliteration && language != "ar" && !item.transliteration.isEmpty {
                 Text(item.transliteration)
                     .font(.body)
                     .foregroundColor(item.isMandatory ? .gray : .gray.opacity(0.4))
@@ -868,7 +839,7 @@ struct AdhkarCard: View {
                             .font(.headline)
                             .foregroundColor(Theme.islamicGreen)
                         
-                        Text(language == "de" ? "Sure Al-Mulk lesen" : "Read Surah Al-Mulk")
+                        Text(L10n.tr("read_surah_mulk", language))
                             .font(.headline)
                             .foregroundColor(.primary)
                         
@@ -1065,14 +1036,14 @@ struct AdhkarInfoModalView: View {
                         // 3. Tempo-Regler (BPM)
                         VStack(spacing: 8) {
                             HStack {
-                                Text(language == "de" ? "Geschwindigkeit" : "Speed")
+                                Text(L10n.tr("speed", language))
                                     .font(.footnote)
                                     .foregroundColor(.gray)
                                 Spacer()
                                 Text(
-                                    item.customSpeedStep == 0 ? (language == "de" ? "Langsam" : (language == "ar" ? "بطيء" : "Slow")) :
-                                    item.customSpeedStep == 1 ? (language == "de" ? "Normal" : (language == "ar" ? "عادي" : "Normal")) :
-                                    (language == "de" ? "Schnell" : (language == "ar" ? "سريع" : "Fast"))
+                                    item.customSpeedStep == 0 ? L10n.tr("tempo_slow", language) :
+                                    item.customSpeedStep == 1 ? L10n.tr("tempo_normal", language) :
+                                    L10n.tr("tempo_fast", language)
                                 )
                                 .font(.footnote)
                                 .fontWeight(.semibold)
@@ -1139,7 +1110,7 @@ struct AdhkarInfoModalView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Adhkar Info")
+            .navigationTitle(L10n.tr("adhkar_info_title", language))
             #if os(iOS)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

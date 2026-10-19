@@ -36,9 +36,9 @@ struct AlKahfReaderView: View {
                         .tint(Theme.islamicGreen)
                 } else if hasError {
                     VStack(spacing: 12) {
-                        Text("Fehler beim Laden von Sure Al-Kahf")
+                        Text(L10n.tr("surah_kahf_load_error", settings.language))
                             .foregroundColor(.secondary)
-                        Button("Erneut versuchen") {
+                        Button(L10n.tr("retry", settings.language)) {
                             loadSurah()
                         }
                         .tint(Theme.islamicGreen)
@@ -73,7 +73,7 @@ struct AlKahfReaderView: View {
                                 try? modelContext.save()
                                 dismiss()
                             }) {
-                                Text("Als gelesen markieren")
+                                Text(L10n.tr("mark_as_read", settings.language))
                                     .font(.headline)
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
@@ -99,7 +99,7 @@ struct AlKahfReaderView: View {
                     )
                 }
             }
-            .navigationTitle("Sure Al-Kahf")
+            .navigationTitle(L10n.tr("surah_alkahf", settings.language))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -109,7 +109,7 @@ struct AlKahfReaderView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Schließen") {
+                    Button(L10n.tr("close", settings.language)) {
                         dismiss()
                     }
                     .foregroundColor(Theme.getQuranTextColor(for: quranTheme, systemColorScheme: colorScheme))
