@@ -16,6 +16,7 @@ class QuranProgressStore: ObservableObject {
     static let shared = QuranProgressStore()
     
     @Published private(set) var readFrontier: Int = 0
+    @Published var khatmResetToken: UUID = UUID()
     private let oldBookmarkKey = "quranBookmark"
     private let bookmarkKey = "quranFrontierBookmark_v1"
     private(set) var bookmark: QuranBookmark? = nil
@@ -240,7 +241,9 @@ class QuranProgressStore: ObservableObject {
         UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
         UserDefaults.standard.synchronize()
         try? modelContext.save()
-        print("[QURAN_STATE] resetKhatm: alt \(oldVal) -> neu 0, UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier"))")
+        self.khatmResetToken = UUID()
+        print("[QURAN_STATE] resetKhatm: alt \(oldVal) -> neu 0, UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier")), token = \(self.khatmResetToken)")
+        NotificationCenter.default.post(name: Notification.Name("ResetQuranStartPage"), object: nil)
     }
     
     func setReadFrontier(_ newIndex: Int, modelContext: ModelContext) {
@@ -257,7 +260,9 @@ class QuranProgressStore: ObservableObject {
         UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
         UserDefaults.standard.synchronize()
         try? modelContext.save()
-        print("[QURAN_STATE] setReadFrontier manual debug override: alt \(oldVal) -> neu \(clamped), UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier"))")
+        self.khatmResetToken = UUID()
+        print("[QURAN_STATE] setReadFrontier manual debug override: alt \(oldVal) -> neu \(clamped), UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier")), token = \(self.khatmResetToken)")
+        NotificationCenter.default.post(name: Notification.Name("ResetQuranStartPage"), object: nil)
     }
     
     private func scheduleDebouncedSwiftDataSave(modelContext: ModelContext) {

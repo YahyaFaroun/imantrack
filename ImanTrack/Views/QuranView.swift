@@ -51,6 +51,7 @@ struct QuranView: View {
     @State private var renderedPageMinY: [Int: CGFloat] = [:]
     @State private var renderedPageTopBounds: [Int: [String: CGFloat]] = [:]
     @State private var renderedPageBounds: [Int: [String: CGFloat]] = [:]
+    @State private var lastObservedResetToken: UUID? = nil
 
     // MARK: - Zoom-Konstanten
     static let zoomStepSize: CGFloat = 1.0                  // 1 pt pro Stufe
@@ -440,6 +441,14 @@ struct QuranView: View {
             let bmStr = progressStore.bookmark != nil ? "Vers #\(progressStore.bookmark!.verseIndex) d:\(Int(progressStore.bookmark!.delta))pt" : "keines"
             print("[QURAN_STATE] onAppear: Speicher=\(progressStore.readFrontier), UserDefaults=\(storedUD), Zielvers=\(targetStr), startPage=\(startPage ?? -1), offset=\(currentOffset), Lesezeichen=\(bmStr)")
             
+            if lastObservedResetToken == nil {
+                lastObservedResetToken = progressStore.khatmResetToken
+            } else if lastObservedResetToken != progressStore.khatmResetToken {
+                lastObservedResetToken = progressStore.khatmResetToken
+                resetReaderToStart()
+                return
+            }
+            
             // Tab-Wechsel: NICHTS neu aufbauen! View bleibt exakt wie sie war.
             if !hasRestoredInitialPosition {
                 initStartPageIfNeeded()
@@ -472,14 +481,28 @@ struct QuranView: View {
             progressStore.flushPendingChanges(modelContext: modelContext)
         }
         #endif
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ResetQuranStartPage"))) { _ in
-            self.startPage = nil
-            self.hasRestoredInitialPosition = false
-            self.renderedPageMinY.removeAll()
-            self.renderedPageTopBounds.removeAll()
-            self.renderedPageBounds.removeAll()
-            initStartPageIfNeeded(force: true)
+        .onChange(of: progressStore.khatmResetToken) { _, newToken in
+            if self.lastObservedResetToken != newToken {
+                self.lastObservedResetToken = newToken
+                resetReaderToStart()
+            }
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ResetQuranStartPage"))) { _ in
+            self.lastObservedResetToken = progressStore.khatmResetToken
+            resetReaderToStart()
+        }
+    }
+    
+    private func resetReaderToStart() {
+        print("[QURAN_STATE] resetReaderToStart: Setze Quran-Reader komplett auf S.1 / Al-Fatiha zurück")
+        self.startPage = nil
+        self.hasRestoredInitialPosition = false
+        self.renderedPageMinY.removeAll()
+        self.renderedPageTopBounds.removeAll()
+        self.renderedPageBounds.removeAll()
+        self.minAllowedOffsetY = 0
+        self.isUserScrolling = false
+        initStartPageIfNeeded(force: true)
     }
     
     private func saveCurrentBookmark() {
@@ -733,6 +756,10 @@ struct QuranView: View {
                 self.minAllowedOffsetY = currentOffset
                 QuranPerf.shared.end("4_update_minAllowedOffsetY", state: minYState, t0: minYt0, extra: "\(String(format: "%.1f", currentOffset))pt")
             }
+            
+            if maxIdx + 1 >= 6236 {
+                triggerKhatmCompletion()
+            }
         }
     }
     
@@ -810,6 +837,14 @@ struct QuranView: View {
         }
     }
     
+    private func triggerKhatmCompletion() {
+        guard !showKhatmCelebrationAnimation else { return }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            showKhatmCelebrationAnimation = true
+        }
+        progressStore.resetKhatm(modelContext: modelContext)
+    }
+    
     private func completeKhatm() {
         if progressStore.readFrontier < 6236 {
             if let unreadVerse = quranAPIService.getVerseAtIndex(progressStore.readFrontier) {
@@ -819,10 +854,7 @@ struct QuranView: View {
                 }
             }
         } else {
-            progressStore.resetKhatm(modelContext: modelContext)
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                showKhatmCelebrationAnimation = true
-            }
+            triggerKhatmCompletion()
         }
     }
 }
