@@ -80,13 +80,7 @@ struct QuranView: View {
         return false
     }
 
-    #if DEBUG
-    @AppStorage("quranShowDebugOverlay") private var quranShowDebugOverlay: Bool = false
-    @AppStorage("quranDebug_lastSave_summary") private var debugLastSaveSummary: String = ""
-    @AppStorage("quranDebug_lastRestore_summary") private var debugLastRestoreSummary: String = ""
-    @State private var debugTopPage: Int = 1
-    @State private var debugTopPageGrayCount: Int = 0
-    #endif
+
 
     var body: some View {
         let (bodyState, bodyT0) = QuranPerf.shared.begin("2a_QuranView_body")
@@ -101,7 +95,7 @@ struct QuranView: View {
                     VStack(spacing: 16) {
                         ProgressView()
                             .tint(Theme.accent)
-                        Text("Quran wird geladen...")
+                        Text(L10n.tr("quran_loading", settings.language))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -120,7 +114,7 @@ struct QuranView: View {
                             VStack(spacing: 16) {
                                 ProgressView()
                                     .tint(Theme.accent)
-                                Text("Position wird geladen...")
+                                Text(L10n.tr("quran_position_loading", settings.language))
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
@@ -187,12 +181,7 @@ struct QuranView: View {
                                             onCompleteKhatm: {
                                                 completeKhatm()
                                             },
-                                            onPageScrollUpdate: { pageNum, grayCount in
-                                                #if DEBUG
-                                                self.debugTopPage = pageNum
-                                                self.debugTopPageGrayCount = grayCount
-                                                #endif
-                                            }
+                                            onPageScrollUpdate: { _, _ in }
                                         )
                                         .id(pageNum)
                                     }
@@ -214,32 +203,6 @@ struct QuranView: View {
                         }
                         #endif
                         .opacity(hasRestoredInitialPosition ? 1.0 : 0.0)
-                        .overlay(alignment: .top) {
-                            #if DEBUG
-                            if quranShowDebugOverlay {
-                                let fontLineHeight = Theme.quranUIFont(type: quranFontType, size: viewModel.fontSize).lineHeight
-                                ZStack(alignment: .topLeading) {
-                                    Rectangle()
-                                        .fill(Color.red)
-                                        .frame(height: 1.5)
-                                        .offset(y: fontLineHeight)
-                                    
-                                    HStack(spacing: 4) {
-                                        Text("Erkennungsschwelle: 1 Zeile (\(Int(fontLineHeight))pt)")
-                                            .font(.system(size: 10, weight: .bold))
-                                            .foregroundColor(.white)
-                                    }
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.red.opacity(0.85))
-                                    .cornerRadius(4)
-                                    .offset(x: 16, y: fontLineHeight + 4)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .topLeading)
-                                .allowsHitTesting(false)
-                            }
-                            #endif
-                        }
                     }
                     .simultaneousGesture(
                         MagnificationGesture()
@@ -341,90 +304,7 @@ struct QuranView: View {
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
                     .zIndex(100)
                 }
-                
-                #if DEBUG
-                if quranShowDebugOverlay {
-                    VStack {
-                        Spacer()
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                let unreadVerse = quranAPIService.getVerseAtIndex(progressStore.readFrontier)
-                                let frontierStr = unreadVerse != nil ? "\(unreadVerse!.surah):\(unreadVerse!.ayah) · #\(progressStore.readFrontier)" : "Ende (#\(progressStore.readFrontier))"
-                                let unreadPage = unreadVerse?.pageNumber ?? 1
-                                
-                                Text("Lesefront: \(frontierStr)")
-                                    .font(.caption.bold())
-                                    .foregroundColor(.white)
-                                    .accessibilityIdentifier("debug_read_frontier")
-                                
-                                Text("Nächste Seite: S. \(unreadPage) | Top S. \(debugTopPage): \(debugTopPageGrayCount) grau")
-                                    .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.85))
-                                
-                                let bmStr = progressStore.bookmark != nil ? "Vers #\(progressStore.bookmark!.verseIndex) d:\(Int(progressStore.bookmark!.delta))pt" : "Keines"
-                                Text("Lesezeichen: \(bmStr)")
-                                    .font(.caption2)
-                                    .foregroundColor(.yellow)
-                                    .accessibilityIdentifier("debug_resume_anchor")
-                                
-                                let offsetVal = uiScrollView?.contentOffset.y ?? 0
-                                Text("Offset: \(String(format: "%.1f", offsetVal))pt")
-                                    .font(.caption2)
-                                    .foregroundColor(.cyan)
-                                    .accessibilityIdentifier("debug_scroll_offset")
-                                
-                                Text("Scrollen: \(isCurrentlyUserScrolling ? "Aktiv" : "Inaktiv") | Bereit: \(hasRestoredInitialPosition ? "Ja" : "Nein")")
-                                    .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.75))
-                                
-                                Divider()
-                                    .background(Color.white.opacity(0.35))
-                                    .padding(.vertical, 2)
-                                
-                                Text("Letztes Speichern:")
-                                    .font(.caption2.bold())
-                                    .foregroundColor(.green)
-                                    .accessibilityIdentifier("debug_last_save_header")
-                                if debugLastSaveSummary.isEmpty {
-                                    Text("Noch keines erfasst")
-                                        .font(.system(size: 9))
-                                        .foregroundColor(.white.opacity(0.6))
-                                } else {
-                                    Text(debugLastSaveSummary)
-                                        .font(.system(size: 9, design: .monospaced))
-                                        .foregroundColor(.white.opacity(0.95))
-                                        .accessibilityIdentifier("debug_last_save_content")
-                                }
-                                
-                                Text("Letzte Wiederherstellung:")
-                                    .font(.caption2.bold())
-                                    .foregroundColor(.orange)
-                                    .padding(.top, 2)
-                                    .accessibilityIdentifier("debug_last_restore_header")
-                                if debugLastRestoreSummary.isEmpty {
-                                    Text("Noch keine erfasst")
-                                        .font(.system(size: 9))
-                                        .foregroundColor(.white.opacity(0.6))
-                                } else {
-                                    Text(debugLastRestoreSummary)
-                                        .font(.system(size: 9, design: .monospaced))
-                                        .foregroundColor(.white.opacity(0.95))
-                                        .accessibilityIdentifier("debug_last_restore_content")
-                                }
-                            }
-                            Spacer()
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Color.black.opacity(0.75))
-                        .cornerRadius(10)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 10)
-                    }
-                    .allowsHitTesting(false)
-                    .zIndex(95)
-                }
-                #endif
+
             }
             .navigationTitle(viewModel.navTitle.isEmpty ? L10n.tr("tab_quran", settings.language) : viewModel.navTitle)
             #if os(iOS)
@@ -531,18 +411,7 @@ struct QuranView: View {
         )
         print("[QURAN_RESUME] Speichern: readFrontier=\(frontierIndex) (\(frontierVerse.surah):\(frontierVerse.ayah) auf S.\(frontierPage)), frontierTop=\(String(format: "%.1f", frontierTop))pt, sichtbareOberkante=\(String(format: "%.1f", sichtbareOberkanteInSeite))pt, delta=\(String(format: "%.1f", delta))pt (fontSize: \(bookmark.fontSize))")
         progressStore.saveBookmark(bookmark)
-        
-        #if DEBUG
-        let frontierStr = "\(frontierVerse.surah):\(frontierVerse.ayah) (#\(frontierIndex))"
-        let saveSummary = "Frontier: \(frontierStr) · S. \(frontierPage)\nTop: \(String(format: "%.1f", frontierTop))pt | Sichtbar: \(String(format: "%.1f", sichtbareOberkanteInSeite))pt | delta: \(String(format: "%.1f", delta))pt"
-        UserDefaults.standard.set(frontierStr, forKey: "quranDebug_lastSave_readFrontier")
-        UserDefaults.standard.set(frontierPage, forKey: "quranDebug_lastSave_frontierPage")
-        UserDefaults.standard.set(Double(frontierTop), forKey: "quranDebug_lastSave_frontierTop")
-        UserDefaults.standard.set(Double(sichtbareOberkanteInSeite), forKey: "quranDebug_lastSave_sichtbareOberkante")
-        UserDefaults.standard.set(Double(delta), forKey: "quranDebug_lastSave_delta")
-        UserDefaults.standard.set(saveSummary, forKey: "quranDebug_lastSave_summary")
-        UserDefaults.standard.synchronize()
-        #endif
+
     }
     
     private func initStartPageIfNeeded(force: Bool = false) {
@@ -665,18 +534,7 @@ struct QuranView: View {
                 self.hasRestoredInitialPosition = true
                 
                 print("[QURAN_RESUME] Wiederherstellung (Seitenanfang S.\(frontierPage)): Inset=\(String(format: "%.1f", currentTopInset))pt, Offset=\(String(format: "%.1f", finalTopOffset))pt, minAllowedOffsetY=\(String(format: "%.1f", finalTopOffset))pt")
-                
-                #if DEBUG
-                let restoreSummary = "S. \(frontierPage) · 1. Vers: ja · Zweig: Seitenanfang\nZiel: \(String(format: "%.1f", finalTopOffset))pt | Inset: \(String(format: "%.1f", currentTopInset))pt | minOffsetY: \(String(format: "%.1f", finalTopOffset))pt"
-                UserDefaults.standard.set(frontierPage, forKey: "quranDebug_lastRestore_frontierPage")
-                UserDefaults.standard.set(true, forKey: "quranDebug_lastRestore_isFirstVerseOfPage")
-                UserDefaults.standard.set("Seitenanfang", forKey: "quranDebug_lastRestore_branch")
-                UserDefaults.standard.set(Double(finalTopOffset), forKey: "quranDebug_lastRestore_targetOffset")
-                UserDefaults.standard.set(Double(finalTopOffset), forKey: "quranDebug_lastRestore_measuredPos")
-                UserDefaults.standard.set(Double(finalTopOffset), forKey: "quranDebug_lastRestore_minAllowedOffsetY")
-                UserDefaults.standard.set(restoreSummary, forKey: "quranDebug_lastRestore_summary")
-                UserDefaults.standard.synchronize()
-                #endif
+
             }
             return
         }
@@ -714,19 +572,7 @@ struct QuranView: View {
             
             // 4. Log [QURAN_RESUME]
             print("[QURAN_RESUME] Wiederherstellung: Ziel=\(String(format: "%.1f", rawTarget))pt, vor Korrektur=\(String(format: "%.1f", measuredPosBefore))pt, nach Korrektur=\(String(format: "%.1f", measuredPosAfter))pt, minAllowedOffsetY=\(String(format: "%.1f", finalOffset))pt")
-            
-            #if DEBUG
-            let isFirstStr = isFirstVerseOfPage ? "ja" : "nein"
-            let restoreSummary = "S. \(frontierPage) · 1. Vers: \(isFirstStr) · Zweig: \(branch)\nZiel: \(String(format: "%.1f", targetOffset))pt | Gemessen: \(String(format: "%.1f", measuredPosAfter))pt | minOffsetY: \(String(format: "%.1f", finalOffset))pt"
-            UserDefaults.standard.set(frontierPage, forKey: "quranDebug_lastRestore_frontierPage")
-            UserDefaults.standard.set(isFirstVerseOfPage, forKey: "quranDebug_lastRestore_isFirstVerseOfPage")
-            UserDefaults.standard.set(branch, forKey: "quranDebug_lastRestore_branch")
-            UserDefaults.standard.set(Double(targetOffset), forKey: "quranDebug_lastRestore_targetOffset")
-            UserDefaults.standard.set(Double(measuredPosAfter), forKey: "quranDebug_lastRestore_measuredPos")
-            UserDefaults.standard.set(Double(finalOffset), forKey: "quranDebug_lastRestore_minAllowedOffsetY")
-            UserDefaults.standard.set(restoreSummary, forKey: "quranDebug_lastRestore_summary")
-            UserDefaults.standard.synchronize()
-            #endif
+
         }
     }
     
@@ -911,11 +757,11 @@ struct QuranPageView: View {
                     .frame(maxWidth: .infinity)
             } else if hasError {
                 VStack(spacing: 8) {
-                    Text("Fehler beim Laden von Seite \(pageNumber)")
+                    Text(String(format: L10n.tr("quran_page_load_error", language), pageNumber))
                         .font(.footnote)
                         .foregroundColor(.secondary)
                     Button(action: { loadPage() }) {
-                        Text("Erneut versuchen")
+                        Text(L10n.tr("retry", language))
                             .font(.caption.bold())
                             .foregroundColor(Theme.accent)
                             .padding(.horizontal, 16)
