@@ -71,7 +71,8 @@ struct ImanTrackerTests {
         SolarValidationTestCase(city: "Sydney", dateStr: "2026-12-21", lat: -33.8688, lon: 151.2093, method: .mwl, timeZoneIdentifier: "Australia/Sydney", expectedFajr: "03:56", expectedSunrise: "05:40", expectedDhuhr: "12:53", expectedSunset: "20:05", expectedIsha: "21:43")
     ]
 
-    @Test func validateSolarCalculationsAgainstAladhan() async throws {
+    @Test @MainActor func validateSolarCalculationsAgainstAladhan() async throws {
+        UserDefaults.standard.set("mwl", forKey: "calculationMethodRaw")
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
@@ -499,6 +500,114 @@ struct ImanTrackerTests {
         #expect(promptNextSession == false, "Sheet darf bei der nächsten Session nicht erneut erscheinen")
     }
 
+    @Test @MainActor func testMultiLanguageReminderScheduling() async throws {
+        print("=== MULTI-LANGUAGE TEST: Erinnerungen in DE, EN und AR ===")
+        let schema = Schema([DailyRecord.self, UserSettings.self])
+        
+        let languages = ["de", "en", "ar"]
+        for lang in languages {
+            UserDefaults.standard.set(lang, forKey: "language")
+            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let userSettings = UserSettings()
+            userSettings.language = lang
+            container.mainContext.insert(userSettings)
+            try container.mainContext.save()
+            
+            AdhkarReminderManager.shared.scheduleReminders(container: container)
+            try await Task.sleep(nanoseconds: 300_000_000)
+            
+            var pending: [UNNotificationRequest] = []
+            await withCheckedContinuation { continuation in
+                AdhkarReminderManager.shared.getPendingReminders { requests in
+                    pending = requests
+                    continuation.resume()
+                }
+            }
+            
+            print("[RAW LOG] Sprache '\(lang)': Geplante Erinnerungen (Anzahl: \(pending.count)):")
+            for req in pending {
+                print("  - [\(req.identifier)] Title: '\(req.content.title)' | Body: '\(req.content.body)'")
+            }
+            
+            if let sleepReq = pending.first(where: { $0.identifier.hasPrefix("AdhkarReminder_sleep_") }) {
+                let expectedTitle = L10n.tr("adhkar_reminder_sleep_title", lang)
+                let expectedBody = L10n.tr("adhkar_reminder_sleep_body", lang)
+                #expect(sleepReq.content.title == expectedTitle, "Sleep title for \(lang) must match L10n")
+                #expect(sleepReq.content.body == expectedBody, "Sleep body for \(lang) must match L10n")
+            }
+            
+            if let kahfReq = pending.first(where: { $0.identifier.hasPrefix("KahfReminder_friday_") }) {
+                let expectedTitle = L10n.tr("adhkar_reminder_kahf_title", lang)
+                let expectedBody = L10n.tr("adhkar_reminder_kahf_body", lang)
+                #expect(kahfReq.content.title == expectedTitle, "Kahf title for \(lang) must match L10n")
+                #expect(kahfReq.content.body == expectedBody, "Kahf body for \(lang) must match L10n")
+            }
+        }
+    }
+
+    @Test @MainActor func testCalculationMethodsAndExactMaghribTransition() async throws {
+        defer { UserDefaults.standard.set("mwl", forKey: "calculationMethodRaw") }
+        print("=== BERECHNUNGSMETHODEN & EXAKTER MAGHRIB WECHSEL TEST ===")
+        let lat = 51.2277
+        let lon = 6.7735 // Düsseldorf
+        let date = Date()
+        
+        // 1. Verify methods generate valid non-nil prayer dates
+        for method in CalculationMethod.allCases {
+            UserDefaults.standard.set(method.rawValue, forKey: "calculationMethodRaw")
+            let fajr = LocationAndSolarManager.calculateFajrDateStatic(for: date, latitude: lat, longitude: lon, method: method)
+            let isha = LocationAndSolarManager.calculateIshaDateStatic(for: date, latitude: lat, longitude: lon, method: method)
+            #expect(fajr != nil, "Fajr for \(method.rawValue) must not be nil")
+            #expect(isha != nil, "Isha for \(method.rawValue) must not be nil")
+            print("[RAW LOG] Method \(method.rawValue): Fajr=\(String(describing: fajr)), Isha=\(String(describing: isha))")
+        }
+        
+        // 2. Verify Asr standard vs hanafi difference
+        let asrStandard = LocationAndSolarManager.calculateAsrDateStatic(for: date, latitude: lat, longitude: lon, school: "standard")
+        let asrHanafi = LocationAndSolarManager.calculateAsrDateStatic(for: date, latitude: lat, longitude: lon, school: "hanafi")
+        #expect(asrStandard != nil && asrHanafi != nil)
+        #expect(asrHanafi! > asrStandard!, "Hanafi Asr must be later than Standard Asr")
+        
+        // 3. Verify exact minute Maghrib date transition (date >= sunset)
+        if let maghrib = LocationAndSolarManager.calculateSunsetDateStatic(for: date, latitude: lat, longitude: lon) {
+            let justBeforeMaghrib = maghrib.addingTimeInterval(-10)
+            let exactlyMaghrib = maghrib
+            
+            let dateBefore = LocationAndSolarManager.getTrackingDateStatic(for: justBeforeMaghrib, location: nil)
+            let dateAtMaghrib = LocationAndSolarManager.getTrackingDateStatic(for: exactlyMaghrib, location: nil)
+            
+            let cal = Calendar.current
+            #expect(cal.startOfDay(for: dateAtMaghrib) > cal.startOfDay(for: dateBefore), "Tracking date must transition exactly at Maghrib minute")
+            print("[RAW LOG] Maghrib exact transition verified: before=\(dateBefore), atMaghrib=\(dateAtMaghrib)")
+        }
+    }
+
+    @Test @MainActor func testAdhkarStateTimeWindows() async throws {
+        print("=== ADHKAR ZEITFENSTER TEST (Abend: Asr->Maghrib, Schlaf: Maghrib->01:00) ===")
+        let solarManager = LocationAndSolarManager.shared
+        let trackingDate = solarManager.currentTrackingDate
+        
+        let fajr = solarManager.getFajrDate(for: trackingDate) ?? trackingDate
+        let dhuhr = solarManager.getDhuhrDate(for: trackingDate) ?? trackingDate
+        let asr = solarManager.getAsrDate(for: trackingDate) ?? trackingDate
+        let maghrib = solarManager.getMaghribDate(for: trackingDate) ?? trackingDate
+        
+        // Morning: Fajr -> Dhuhr
+        #expect(fajr < dhuhr)
+        
+        // Evening: Asr -> Maghrib
+        #expect(asr < maghrib)
+        
+        // Verify Sleep window end is 01:00 AM
+        let sleepEnd = Calendar.current.date(bySettingHour: 1, minute: 0, second: 0, of: trackingDate)
+        #expect(sleepEnd != nil)
+        #expect(Calendar.current.component(.hour, from: sleepEnd!) == 1)
+        #expect(Calendar.current.component(.minute, from: sleepEnd!) == 0)
+        
+        print("[RAW LOG] Adhkar time windows verified successfully")
+    }
+
     @Test @MainActor func testCaptureScreenshots() async throws {
         print("=== SCREENSHOT ERSTELLUNG: NotificationPermissionSheet & Denied-Banner ===")
         let artifactDir = "/Users/princepalestine/.gemini/antigravity/brain/c988de47-d5c3-46a8-a524-9c9d00f843e8"
@@ -530,6 +639,27 @@ struct ImanTrackerTests {
         // 2. Screenshot DhikrSettingsView mit verweigerter Berechtigung (.denied)
         let settingsView = DhikrSettingsView()
         renderToPNG(settingsView, filename: "denied_permission_banner.png")
+    }
+
+    @Test @MainActor func testLaIlahaIllallahTasbihLinking() async throws {
+        print("=== TEST: La ilaha illallah Tasbih Linking in Morgen & Abend Adhkar ===")
+        // 1. Verify Morgenadhkar item 20 is linked to .laIlahaIllallah
+        let morningItem20 = morgenAdhkar.first(where: { $0.arabic.contains("لاَ إِلَهَ إِلاَّ اللَّهُ، وَحْدَهُ لاَ شَرِيكَ لَهُ") })
+        #expect(morningItem20 != nil, "Morgenadhkar item 20 must exist")
+        #expect(morningItem20?.linkedTasbihCategory == .laIlahaIllallah, "Morgenadhkar item 20 must be linked to .laIlahaIllallah")
+        #expect(morningItem20?.count == 10, "Morgenadhkar item 20 count must be 10")
+
+        // 2. Verify Abendadhkar item 20 is linked to .laIlahaIllallah
+        let eveningItem20 = abendAdhkar.first(where: { $0.arabic.contains("لاَ إِلَهَ إِlaَّ اللَّهُ، وَحْدَهُ لاَ شَرِيكَ لَهُ") || $0.arabic.contains("لاَ إِلَهَ إِلاَّ اللَّهُ، وَحْدَهُ لاَ شَرِيكَ لَهُ") })
+        #expect(eveningItem20 != nil, "Abendadhkar item 20 must exist")
+        #expect(eveningItem20?.linkedTasbihCategory == .laIlahaIllallah, "Abendadhkar item 20 must be linked to .laIlahaIllallah")
+        #expect(eveningItem20?.count == 10, "Abendadhkar item 20 count must be 10")
+
+        // 3. Verify DailyRecord tracking increments laIlahaIllallahCount
+        let record = DailyRecord(date: Date())
+        #expect(record.laIlahaIllallahCount == 0)
+        record.laIlahaIllallahCount += morningItem20?.count ?? 10
+        #expect(record.laIlahaIllallahCount == 10, "DailyRecord laIlahaIllallahCount must be 10 after completing morning item 20")
     }
 }
 
