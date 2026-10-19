@@ -12,7 +12,7 @@ struct TasbihView: View {
     }
     
     @AppStorage("selectedIstighfarForm") private var selectedIstighfarForm: IstighfarForm = .kurz
-    @AppStorage("selectedSalawatForm") private var selectedSalawatForm: SalawatForm = .kurz
+    @AppStorage("selectedSalawatForm") private var selectedSalawatForm: SalawatForm = .waSallim
     
     @StateObject private var solarManager = LocationAndSolarManager.shared
     

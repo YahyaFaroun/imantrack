@@ -42,7 +42,9 @@ final class UserSettings {
     var showIstighfarGewaltig: Bool = true
     var showIstighfarLang: Bool = true
     var showIstighfarQuranisch: Bool = true
+    var showIstighfarYunus: Bool = true
     
+    var showSalawatWaSallim: Bool = true
     var showSalawatKurz: Bool = true
     var showSalawatLang: Bool = true
     
@@ -52,13 +54,16 @@ final class UserSettings {
     var istighfarGewaltigBpm: Int = 40
     var istighfarLangBpm: Int = 40
     var istighfarQuranischBpm: Int = 40
+    var istighfarYunusBpm: Int = 40
     
+    var salawatWaSallimBpm: Int = 60
     var salawatKurzBpm: Int = 60
     var salawatLangBpm: Int = 40
     
     // Appearance
     var isDarkMode: Bool = true
     var language: String = "en"
+    var showTransliteration: Bool = true
     
     // Adhkar counting mode
     var adhkarAutoCount: Bool = true
@@ -84,7 +89,7 @@ final class UserSettings {
     
     init() {
         let locale = Locale.current.language.languageCode?.identifier ?? "en"
-        if ["de", "en", "ar"].contains(locale) {
+        if ["de", "en", "ar", "tr", "id", "ms", "fr", "es", "ur", "ru", "bn"].contains(locale) {
             self.language = locale
         } else {
             self.language = "en"
@@ -96,8 +101,8 @@ enum IstighfarForm: String, CaseIterable, Codable {
     case kurz = "kurz"
     case extended = "mittel"
     case gewaltig = "gewaltig"
+    case yunus = "yunus"
     case lang = "lang"
-    case quranisch = "quranisch"
     
     var displayName: String {
         displayName(for: "de")
@@ -108,8 +113,8 @@ enum IstighfarForm: String, CaseIterable, Codable {
         case .kurz: return L10n.tr("istighfar_kurz_title", lang)
         case .extended: return L10n.tr("istighfar_extended_title", lang)
         case .gewaltig: return L10n.tr("istighfar_gewaltig_title", lang)
+        case .yunus: return L10n.tr("istighfar_yunus_title", lang)
         case .lang: return L10n.tr("istighfar_lang_title", lang)
-        case .quranisch: return L10n.tr("istighfar_quranisch_title", lang)
         }
     }
     
@@ -132,8 +137,8 @@ enum IstighfarForm: String, CaseIterable, Codable {
         case .kurz: return "Astaghfirullah"
         case .extended: return "Astaghfirullaha wa atubu ilayh"
         case .gewaltig: return "Astaghfirullahal 'Adheemal-ladhi la ilaha illa Huwal-Hayyul-Qayyumu wa atubu ilayh"
+        case .yunus: return "La ilaha illa anta, subhanaka inni kuntu minaz-zalimin"
         case .lang: return "Allahumma Anta Rabbi la ilaha illa Ant. Khalaqtani wa ana 'abduka, wa ana 'ala 'ahdika wa wa'dika ma-stata't. A'udhu bika min sharri ma sana't. Abu'u laka bi-ni'matika 'alayy, wa abu'u bi-dhanbi fa-ghfir li, fa-innahu la yaghfiru-dh-dhunuba illa Ant."
-        case .quranisch: return "Rabbana dhalamna anfusana wa-in lam taghfir lana wa-tarhamna lanakunanna minal-khasireen"
         }
     }
     
@@ -142,8 +147,8 @@ enum IstighfarForm: String, CaseIterable, Codable {
         case .kurz: return "أَسْتَغْفِرُ اللَّهَ"
         case .extended: return "أَسْتَغْفِرُ اللهَ وَأَتُوبُ إِلَيْهِ"
         case .gewaltig: return "أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيَّ الْقَيُّومَ وَأَتُوبُ إِلَيْهِ"
+        case .yunus: return "لَا إِلَٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ"
         case .lang: return "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلاَّ أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لاَ يَغْفِرُ الذُّنوبَ إِلاَّ أَنْتَ"
-        case .quranisch: return "رَبَّنَا ظَلَمْنَا أَنْفُسَنَا وَإِنْ لَمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ"
         }
     }
     
@@ -152,13 +157,14 @@ enum IstighfarForm: String, CaseIterable, Codable {
         case .kurz: return 60
         case .extended: return 50
         case .gewaltig: return 40
+        case .yunus: return 40
         case .lang: return 40
-        case .quranisch: return 40
         }
     }
 }
 
 enum SalawatForm: String, CaseIterable, Codable {
+    case waSallim = "waSallim"
     case kurz = "kurz"
     case lang = "lang"
     
@@ -168,6 +174,7 @@ enum SalawatForm: String, CaseIterable, Codable {
     
     func displayName(for lang: String) -> String {
         switch self {
+        case .waSallim: return L10n.tr("salawat_wa_sallim_title", lang)
         case .kurz: return L10n.tr("salawat_kurz_title", lang)
         case .lang: return L10n.tr("salawat_lang_title", lang)
         }
@@ -189,6 +196,7 @@ enum SalawatForm: String, CaseIterable, Codable {
     
     func subtitle(for lang: String) -> String {
         switch self {
+        case .waSallim: return "Allahumma salli wa sallim 'ala Muhammad"
         case .kurz: return "Allahumma salli 'ala Muhammadin wa 'ala ali Muhammad"
         case .lang: return "Allahumma salli 'ala Muhammadin wa 'ala ali Muhammad, kama sallayta 'ala Ibrahima wa 'ala ali Ibrahim, innaka Hamidun Majid. Allahumma barik 'ala Muhammadin wa 'ala ali Muhammad, kama barakta 'ala Ibrahima wa 'ala ali Ibrahim, innaka Hamidun Majid."
         }
@@ -196,6 +204,7 @@ enum SalawatForm: String, CaseIterable, Codable {
     
     var arabic: String {
         switch self {
+        case .waSallim: return "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى مُحَمَّدٍ"
         case .kurz: return "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ"
         case .lang: return "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ"
         }
@@ -203,6 +212,7 @@ enum SalawatForm: String, CaseIterable, Codable {
     
     var defaultBpm: Int {
         switch self {
+        case .waSallim: return 60
         case .kurz: return 60
         case .lang: return 40
         }

@@ -36,55 +36,13 @@ struct TasbihSettingsView: View {
     
 
     
-    @State private var isKahfReminderEnabled: Bool = true
-    @State private var isPermissionDenied: Bool = false
-    
+
     private var language: String {
         settingsList.first?.language ?? "de"
     }
     
     var body: some View {
         Form {
-            if isPermissionDenied {
-                Section {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "bell.slash.fill")
-                                .font(.title3)
-                                .foregroundColor(.orange)
-                            Text("Mitteilungen sind in den iOS-Einstellungen deaktiviert.")
-                                .font(.subheadline)
-                                .foregroundColor(.primary)
-                        }
-                        
-                        Button(action: {
-                            if let url = URL(string: UIApplication.openSettingsURLString) {
-                                UIApplication.shared.open(url)
-                            }
-                        }) {
-                            Text("Einstellungen öffnen")
-                                .font(.caption)
-                                .fontWeight(.bold)
-                                .foregroundColor(Theme.islamicGreen)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Theme.islamicGreen.opacity(0.12))
-                                .cornerRadius(8)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-            
-            Section(header: Text(L10n.tr("adhkar_reminder_section_header", language))) {
-                Toggle(L10n.tr("reminder_kahf", language), isOn: $isKahfReminderEnabled)
-                    .onChange(of: isKahfReminderEnabled) { _, newValue in
-                        UserDefaults.standard.set(newValue, forKey: "isKahfReminderEnabled")
-                        saveSettings()
-                        AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
-                    }
-            }
-
             Section(header: Text(L10n.tr("tasbih_count_mode", language))) {
                 Picker(L10n.tr("tasbih_count_mode", language), selection: $tasbihAutoCount) {
                     Text(L10n.tr("adhkar_count_manual", language)).tag(false)
@@ -199,7 +157,6 @@ struct TasbihSettingsView: View {
         .navigationTitle(L10n.tr("tasbih_sec", language))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            checkPermissionStatus()
             if let s = settingsList.first {
                 tasbihAutoCount = s.tasbihAutoCount
                 tasbihVibrationEnabled = s.tasbihVibrationEnabled
@@ -221,8 +178,6 @@ struct TasbihSettingsView: View {
                 
                 laIlahaIllallahEnabled = s.laIlahaIllallahEnabled
                 laIlahaIllallahGoal = (s.laIlahaIllallahGoal == 0 || s.laIlahaIllallahGoal == 500) ? 100 : s.laIlahaIllallahGoal
-
-                isKahfReminderEnabled = UserDefaults.standard.object(forKey: "isKahfReminderEnabled") != nil ? UserDefaults.standard.bool(forKey: "isKahfReminderEnabled") : true
             }
         }
         .sheet(isPresented: $showAddCustomDhikr) {
@@ -297,7 +252,6 @@ struct TasbihSettingsView: View {
         showAddCustomDhikr = false
     }
     
-    @discardableResult
     private func saveSettings() {
         let s = settingsList.first ?? UserSettings()
         if settingsList.isEmpty {
@@ -328,12 +282,6 @@ struct TasbihSettingsView: View {
 
         
         try? modelContext.save()
-    }
-    
-    private func checkPermissionStatus() {
-        AdhkarReminderManager.shared.getAuthorizationStatus { status in
-            isPermissionDenied = (status == .denied)
-        }
     }
     
     private func formatNumber(_ num: Int) -> String {

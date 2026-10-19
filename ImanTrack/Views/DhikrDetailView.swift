@@ -48,6 +48,7 @@ struct DhikrDetailView: View {
     @State var manualAddAmount = ""
     @State var manualSubtractAmount = ""
     @State var showInfoSheet = false
+    @State private var speedUpdateToken = 0
     @FocusState var isTextFieldFocused: Bool
     
     private var settings: UserSettings {
@@ -93,13 +94,14 @@ struct DhikrDetailView: View {
             case .kurz: rawVal = settings.istighfarKurzBpm == 0 ? baseTempo : settings.istighfarKurzBpm
             case .extended: rawVal = settings.istighfarExtendedBpm == 0 ? baseTempo : settings.istighfarExtendedBpm
             case .gewaltig: rawVal = settings.istighfarGewaltigBpm == 0 ? baseTempo : settings.istighfarGewaltigBpm
+            case .yunus: rawVal = settings.istighfarYunusBpm == 0 ? baseTempo : settings.istighfarYunusBpm
             case .lang: rawVal = settings.istighfarLangBpm == 0 ? baseTempo : settings.istighfarLangBpm
-            case .quranisch: rawVal = settings.istighfarQuranischBpm == 0 ? baseTempo : settings.istighfarQuranischBpm
             }
         case .salawat:
             guard selectedIndex < activeSalawatCases.count else { return baseTempo }
             let form = activeSalawatCases[selectedIndex]
             switch form {
+            case .waSallim: rawVal = settings.salawatWaSallimBpm == 0 ? baseTempo : settings.salawatWaSallimBpm
             case .kurz: rawVal = settings.salawatKurzBpm == 0 ? baseTempo : settings.salawatKurzBpm
             case .lang: rawVal = settings.salawatLangBpm == 0 ? baseTempo : settings.salawatLangBpm
             }
@@ -202,12 +204,13 @@ struct DhikrDetailView: View {
             case .kurz: return TasbihIntervals(langsam: 1.67, normal: 1.08, schnell: 0.50)
             case .extended: return TasbihIntervals(langsam: 2.04, normal: 1.51, schnell: 0.99)
             case .gewaltig: return TasbihIntervals(langsam: 5.63, normal: 4.95, schnell: 4.27)
+            case .yunus: return TasbihIntervals(langsam: 4.80, normal: 4.00, schnell: 3.20)
             case .lang: return TasbihIntervals(langsam: 15.70, normal: 13.45, schnell: 11.20)
-            case .quranisch: return TasbihIntervals(langsam: 7.33, normal: 6.40, schnell: 5.47)
             }
         case .salawat:
             guard selectedIndex < activeSalawatCases.count else { return nil }
             switch activeSalawatCases[selectedIndex] {
+            case .waSallim: return TasbihIntervals(langsam: 2.80, normal: 2.20, schnell: 1.60)
             case .kurz: return TasbihIntervals(langsam: 3.33, normal: 2.63, schnell: 1.93)
             case .lang: return TasbihIntervals(langsam: 11.60, normal: 10.45, schnell: 9.30)
             }
@@ -222,19 +225,19 @@ struct DhikrDetailView: View {
         }
     }
     
-    private var currentTasbihKey: String {
+    private func speedKeyFor(index: Int) -> String {
         if let custom = customTasbih {
             return "tasbih_speed_\(custom.id)"
         }
         guard let type = type else { return "tasbih_speed_default" }
         switch type {
         case .istighfar:
-            guard selectedIndex < activeIstighfarCases.count else { return "tasbih_speed_istighfar" }
-            let form = activeIstighfarCases[selectedIndex]
+            guard index < activeIstighfarCases.count else { return "tasbih_speed_istighfar" }
+            let form = activeIstighfarCases[index]
             return "tasbih_speed_istighfar_\(form.rawValue)"
         case .salawat:
-            guard selectedIndex < activeSalawatCases.count else { return "tasbih_speed_salawat" }
-            let form = activeSalawatCases[selectedIndex]
+            guard index < activeSalawatCases.count else { return "tasbih_speed_salawat" }
+            let form = activeSalawatCases[index]
             return "tasbih_speed_salawat_\(form.rawValue)"
         case .subhanAllah:
             return "tasbih_speed_subhanAllah"
@@ -247,11 +250,31 @@ struct DhikrDetailView: View {
         }
     }
     
-    private var currentSpeedStep: Int {
-        if let saved = UserDefaults.standard.object(forKey: currentTasbihKey) as? Int {
-            return saved
+    private func speedStepFor(index: Int) -> Int {
+        _ = speedUpdateToken
+        let key = speedKeyFor(index: index)
+        if let saved = UserDefaults.standard.object(forKey: key) as? Int {
+            return min(max(saved, 0), 2)
         }
         return 1 // Voreinstellung "Mittel" für Tasbih
+    }
+    
+    private func saveSpeedStep(_ newStep: Int, forIndex index: Int) {
+        let key = speedKeyFor(index: index)
+        UserDefaults.standard.set(newStep, forKey: key)
+        speedUpdateToken += 1
+        if index == selectedIndex && counterState == .running {
+            pauseTimer()
+            startTimer()
+        }
+    }
+    
+    private var currentTasbihKey: String {
+        speedKeyFor(index: selectedIndex)
+    }
+    
+    private var currentSpeedStep: Int {
+        speedStepFor(index: selectedIndex)
     }
     
     var interval: Double {
@@ -285,13 +308,14 @@ struct DhikrDetailView: View {
             case .kurz: return 60
             case .extended: return 50
             case .gewaltig: return 40
+            case .yunus: return 40
             case .lang: return 40
-            case .quranisch: return 40
             }
         case .salawat:
             guard selectedIndex < activeSalawatCases.count else { return 60 }
             let form = activeSalawatCases[selectedIndex]
             switch form {
+            case .waSallim: return 60
             case .kurz: return 60
             case .lang: return 40
             }
@@ -323,6 +347,57 @@ struct DhikrDetailView: View {
         }
     }
     
+    private var isSmallScreen: Bool {
+        #if os(iOS) && !SKIP
+        return UIScreen.main.bounds.height <= 700
+        #else
+        return false
+        #endif
+    }
+    
+    private var textBlockHeight: CGFloat {
+        isSmallScreen ? 120 : 135
+    }
+    
+    private func arabicFontSizeFor(_ text: String) -> CGFloat {
+        let count = text.count
+        if count <= 25 {
+            return isSmallScreen ? 26 : 28
+        } else if count <= 55 {
+            return isSmallScreen ? 22 : 24
+        } else if count <= 90 {
+            return isSmallScreen ? 20 : 22
+        } else if count <= 130 {
+            return isSmallScreen ? 18 : 19
+        } else {
+            return isSmallScreen ? 17 : 18
+        }
+    }
+    
+    private func arabicLineSpacingFor(_ text: String) -> CGFloat {
+        let count = text.count
+        if count <= 25 {
+            return 6
+        } else if count <= 55 {
+            return 5
+        } else {
+            return 4
+        }
+    }
+    
+    private func transliterationFontSizeFor(_ text: String) -> CGFloat {
+        let count = text.count
+        if count <= 35 {
+            return isSmallScreen ? 14 : 15
+        } else if count <= 70 {
+            return isSmallScreen ? 13 : 13.5
+        } else if count <= 120 {
+            return isSmallScreen ? 12 : 12.5
+        } else {
+            return isSmallScreen ? 11 : 11.5
+        }
+    }
+    
     private func formatNumber(_ num: Int) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -335,10 +410,10 @@ struct DhikrDetailView: View {
         ZStack {
             Theme.background.ignoresSafeArea()
             
-            VStack(spacing: 30) {
-                // Page Indicator at the very top
-                if pageCount > 1 {
-                    HStack(spacing: 8) {
+            VStack(spacing: 0) {
+                // Page Indicator at the very top (feste Höhe für alle Tasbihs)
+                HStack(spacing: 8) {
+                    if pageCount > 1 {
                         ForEach(0..<pageCount, id: \.self) { index in
                             Circle()
                                 .fill(selectedIndex == index ? Theme.islamicGreen : Color.primary.opacity(0.3))
@@ -349,45 +424,48 @@ struct DhikrDetailView: View {
                                     }
                                 }
                         }
+                    } else {
+                        Color.clear.frame(width: 8, height: 8)
                     }
-                    .padding(.top, 8)
                 }
+                .frame(height: 14)
+                .padding(.top, 6)
+                .padding(.bottom, 6)
                 
                 // TabView für die Versionen (BPM & Arabischer Text ändern sich, Zähler bleibt unifiziert)
                 TabView(selection: $selectedIndex) {
                     ForEach(0..<pageCount, id: \.self) { index in
-                        ScrollView {
-                            VStack(spacing: 12) {
-                                let isLangIstighfar = (type == .istighfar && activeIstighfarCases[index] == .lang)
-                                let fontSize: CGFloat = {
-                                    if isLangIstighfar { return 24 }
-                                    switch type {
-                                    case .istighfar: return 26
-                                    case .salawat: return 24
-                                    case .laIlahaIllallah: return 26
-                                    default: return 30
-                                    }
-                                }()
-                                
-                                Text(titleArFor(index))
-                                    .font(.system(size: fontSize))
-                                    .lineSpacing(8)
+                        let arText = titleArFor(index)
+                        let transText = transliterationFor(index)
+                        let hasTrans = settings.language != "ar" && settings.showTransliteration && !transText.isEmpty
+                        let arSize = arabicFontSizeFor(arText)
+                        let arSpacing = arabicLineSpacingFor(arText)
+                        let transSize = transliterationFontSizeFor(transText)
+                        
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: hasTrans ? 6 : 0) {
+                                Text(arText)
+                                    .font(.system(size: arSize, weight: .regular))
+                                    .minimumScaleFactor(0.75)
+                                    .lineSpacing(arSpacing)
                                     .foregroundColor(.primary)
                                     .multilineTextAlignment(.center)
                                     .environment(\.layoutDirection, .rightToLeft)
-                                    .padding(.horizontal)
+                                    .padding(.horizontal, 16)
                                 
-                                if settings.language != "ar" {
-                                    Text(transliterationFor(index))
-                                        .font(isLangIstighfar ? .subheadline : .headline)
+                                if hasTrans {
+                                    Text(transText)
+                                        .font(.system(size: transSize, weight: .medium))
+                                        .minimumScaleFactor(0.8)
                                         .foregroundColor(.gray)
                                         .multilineTextAlignment(.center)
-                                        .padding(.horizontal)
+                                        .padding(.horizontal, 16)
                                         .lineLimit(nil)
-                                        .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
-                            .padding(.vertical, 8)
+                            .padding(.vertical, 4)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: textBlockHeight, alignment: .center)
                         }
                         .tag(index)
                     }
@@ -395,7 +473,7 @@ struct DhikrDetailView: View {
                 #if os(iOS)
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 #endif
-                .frame(height: (type == .istighfar && selectedIndex == 3) ? 270 : 240)
+                .frame(height: textBlockHeight)
                 .onChange(of: selectedIndex) { _, newValue in
                     if type == .istighfar {
                         if newValue < activeIstighfarCases.count {
@@ -414,7 +492,8 @@ struct DhikrDetailView: View {
                     }
                 }
 
-                
+                // Freier Bereich oberhalb des Zählkreises (symmetrisch zum unteren Bereich)
+                Spacer(minLength: 8)
 
                 // Main Counter Circle
                 ZStack {
@@ -460,10 +539,65 @@ struct DhikrDetailView: View {
                 .onTapGesture {
                     handleCircleTap()
                 }
-                
-                // Kein äußeres Tagesziel-Label mehr, da es jetzt im Kreis platziert ist
-                
-                Spacer()
+
+                // Freier Bereich unterhalb des Zählkreises (symmetrisch zum oberen Bereich)
+                Spacer(minLength: 8)
+
+                // Symmetrische Buttons unten mit sanften, zum Design passenden Farben
+                HStack(alignment: .center) {
+                    // Links: Korrektur-Button (Minus, sanftes Rot)
+                    Button(action: {
+                        manualSubtractAmount = ""
+                        handleStopButtonTap()
+                    }) {
+                        Image(systemName: "minus")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color.red.opacity(0.85))
+                            .frame(width: 58, height: 58)
+                            .background(Color.red.opacity(0.14))
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.red.opacity(0.25), lineWidth: 1.5)
+                            )
+                    }
+                    .padding(.leading, 30)
+                    
+                    Spacer(minLength: 8)
+                    
+                    // Mitte: Kompakte Drei-Stufen-Auswahl (Langsam / Normal / Schnell)
+                    CompactTasbihSpeedSelector(
+                        currentStep: currentSpeedStep,
+                        language: settings.language,
+                        onSelectStep: { newStep in
+                            saveSpeedStep(newStep, forIndex: selectedIndex)
+                        }
+                    )
+                    
+                    Spacer(minLength: 8)
+                    
+                    // Rechts: Plus-Button für manuelles Eintragen (sanftes Grün)
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            showManualAddAlert = true
+                        }
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(Theme.islamicGreen)
+                            .frame(width: 58, height: 58)
+                            .background(Theme.islamicGreen.opacity(0.14))
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Theme.islamicGreen.opacity(0.25), lineWidth: 1.5)
+                            )
+                    }
+                    .padding(.trailing, 30)
+                }
+                .padding(.bottom, 24)
             }
             
             if showMashaAllah {
@@ -488,54 +622,6 @@ struct DhikrDetailView: View {
                         .padding(.bottom, 50)
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            
-            // Symmetrische Buttons unten mit sanften, zum Design passenden Farben
-            VStack {
-                Spacer()
-                HStack {
-                    // Links: Korrektur-Button (Minus, sanftes Rot)
-                    Button(action: {
-                        manualSubtractAmount = ""
-                        handleStopButtonTap()
-                    }) {
-                        Image(systemName: "minus")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color.red.opacity(0.85))
-                            .frame(width: 58, height: 58)
-                            .background(Color.red.opacity(0.14))
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.red.opacity(0.25), lineWidth: 1.5)
-                            )
-                    }
-                    .padding(.leading, 30)
-                    
-                    Spacer()
-                    
-                    // Rechts: Plus-Button für manuelles Eintragen (sanftes Grün)
-                    Button(action: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            showManualAddAlert = true
-                        }
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(Theme.islamicGreen)
-                            .frame(width: 58, height: 58)
-                            .background(Theme.islamicGreen.opacity(0.14))
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle()
-                                    .stroke(Theme.islamicGreen.opacity(0.25), lineWidth: 1.5)
-                            )
-                    }
-                    .padding(.trailing, 30)
-                }
-                .padding(.bottom, 24)
             }
             
             // Custom-Overlay für manuelles Hinzufügen (minimalistisches Pop-up)
@@ -720,15 +806,7 @@ struct DhikrDetailView: View {
             TranslationSheet(
                 language: settings.language,
                 title: localizedTitle,
-                translation: currentTranslation,
-                initialStep: currentSpeedStep,
-                onSaveStep: { newStep in
-                    UserDefaults.standard.set(newStep, forKey: currentTasbihKey)
-                    if counterState == .running {
-                        pauseTimer()
-                        startTimer()
-                    }
-                }
+                translation: currentTranslation
             )
         }
     }
@@ -1035,13 +1113,14 @@ struct DhikrDetailView: View {
             case .kurz: settings.istighfarKurzBpm = newValue
             case .extended: settings.istighfarExtendedBpm = newValue
             case .gewaltig: settings.istighfarGewaltigBpm = newValue
+            case .yunus: settings.istighfarYunusBpm = newValue
             case .lang: settings.istighfarLangBpm = newValue
-            case .quranisch: settings.istighfarQuranischBpm = newValue
             }
         case .salawat:
             guard selectedIndex < activeSalawatCases.count else { break }
             let form = activeSalawatCases[selectedIndex]
             switch form {
+            case .waSallim: settings.salawatWaSallimBpm = newValue
             case .kurz: settings.salawatKurzBpm = newValue
             case .lang: settings.salawatLangBpm = newValue
             }
@@ -1063,35 +1142,6 @@ struct TranslationSheet: View {
     let language: String
     let title: String
     let translation: String
-    let initialStep: Int
-    let onSaveStep: (Int) -> Void
-    
-    @State private var localStep: Double
-    @State private var isDragging: Bool = false
-    @State private var lastSavedStep: Int
-    @State private var lastHapticStep: Int
-    
-    init(language: String, title: String, translation: String, initialStep: Int, onSaveStep: @escaping (Int) -> Void) {
-        self.language = language
-        self.title = title
-        self.translation = translation
-        let clamped = min(max(initialStep, 0), 2)
-        self.initialStep = clamped
-        self.onSaveStep = onSaveStep
-        _localStep = State(initialValue: Double(clamped))
-        _lastSavedStep = State(initialValue: clamped)
-        _lastHapticStep = State(initialValue: clamped)
-    }
-    
-    private func triggerHaptic(for step: Int) {
-        #if os(iOS) && !SKIP
-        if step != lastHapticStep {
-            lastHapticStep = step
-            let feedback = UISelectionFeedbackGenerator()
-            feedback.selectionChanged()
-        }
-        #endif
-    }
     
     var body: some View {
         NavigationStack {
@@ -1117,84 +1167,6 @@ struct TranslationSheet: View {
                                 .background(Theme.cardBackground)
                                 .cornerRadius(16)
                         }
-                        
-                        // Tempo-Regler (3 Stufen)
-                        VStack(spacing: 8) {
-                            HStack {
-                                Text(language == "de" ? "Geschwindigkeit" : "Speed")
-                                    .font(.footnote)
-                                    .foregroundColor(.gray)
-                                Spacer()
-                                let stepVal = min(max(Int(round(localStep)), 0), 2)
-                                Text(
-                                    stepVal == 0 ? (language == "de" ? "Langsam" : (language == "ar" ? "بطيء" : "Slow")) :
-                                    stepVal == 1 ? (language == "de" ? "Normal" : (language == "ar" ? "عادي" : "Normal")) :
-                                    (language == "de" ? "Schnell" : (language == "ar" ? "سريع" : "Fast"))
-                                )
-                                .font(.footnote)
-                                .fontWeight(.semibold)
-                                .foregroundColor(Theme.islamicGreen)
-                            }
-                            .padding(.horizontal, 4)
-                            
-                            HStack(spacing: 16) {
-                                Button(action: {
-                                    let current = Int(round(localStep))
-                                    if current > 0 {
-                                        let newStep = current - 1
-                                        localStep = Double(newStep)
-                                        lastSavedStep = newStep
-                                        triggerHaptic(for: newStep)
-                                        onSaveStep(newStep)
-                                    }
-                                }) {
-                                    Image(systemName: "tortoise.fill")
-                                        .foregroundColor(Int(round(localStep)) <= 0 ? .gray.opacity(0.3) : .gray)
-                                        .font(.body)
-                                        .frame(width: 32, height: 32)
-                                }
-                                
-                                Slider(
-                                    value: $localStep,
-                                    in: 0...2,
-                                    step: 1,
-                                    onEditingChanged: { editing in
-                                        isDragging = editing
-                                        if !editing {
-                                            let step = min(max(Int(round(localStep)), 0), 2)
-                                            localStep = Double(step)
-                                            lastHapticStep = step
-                                            if step != lastSavedStep {
-                                                lastSavedStep = step
-                                                onSaveStep(step)
-                                            }
-                                        }
-                                    }
-                                )
-                                .tint(Theme.islamicGreen)
-                                .accentColor(Theme.islamicGreen)
-                                .padding(.vertical, 8)
-                                
-                                Button(action: {
-                                    let current = Int(round(localStep))
-                                    if current < 2 {
-                                        let newStep = current + 1
-                                        localStep = Double(newStep)
-                                        lastSavedStep = newStep
-                                        triggerHaptic(for: newStep)
-                                        onSaveStep(newStep)
-                                    }
-                                }) {
-                                    Image(systemName: "hare.fill")
-                                        .foregroundColor(Int(round(localStep)) >= 2 ? .gray.opacity(0.3) : .gray)
-                                        .font(.body)
-                                        .frame(width: 32, height: 32)
-                                }
-                            }
-                        }
-                        .padding()
-                        .background(Theme.cardBackground)
-                        .cornerRadius(16)
                     }
                     .padding(.horizontal)
                 }
@@ -1203,15 +1175,9 @@ struct TranslationSheet: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .interactiveDismissDisabled(isDragging)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(L10n.tr("done", language)) {
-                        let step = min(max(Int(round(localStep)), 0), 2)
-                        if step != lastSavedStep {
-                            lastSavedStep = step
-                            onSaveStep(step)
-                        }
                         dismiss()
                     }
                     .foregroundColor(Theme.islamicGreen)
@@ -1222,6 +1188,78 @@ struct TranslationSheet: View {
             .toolbarBackground(.visible, for: .navigationBar)
             #endif
         }
+    }
+}
+
+struct CompactTasbihSpeedSelector: View {
+    let currentStep: Int
+    let language: String
+    let onSelectStep: (Int) -> Void
+    
+    var body: some View {
+        HStack(spacing: 2) {
+            // Option 0: Schildkröte (Langsam)
+            segmentButton(stepIndex: 0, accessibilityText: L10n.tr("tempo_slow", language)) {
+                Image(systemName: "tortoise.fill")
+                    .font(.system(size: 13, weight: currentStep == 0 ? .semibold : .medium))
+            }
+            
+            // Option 1: "Normal"
+            segmentButton(stepIndex: 1, accessibilityText: L10n.tr("tempo_normal", language)) {
+                Text(L10n.tr("tempo_normal", language))
+                    .font(.system(size: 12, weight: currentStep == 1 ? .semibold : .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+            
+            // Option 2: Hase (Schnell)
+            segmentButton(stepIndex: 2, accessibilityText: L10n.tr("tempo_fast", language)) {
+                Image(systemName: "hare.fill")
+                    .font(.system(size: 13, weight: currentStep == 2 ? .semibold : .medium))
+            }
+        }
+        .padding(3)
+        .background(
+            Capsule()
+                .fill(Color.primary.opacity(0.05))
+        )
+        .overlay(
+            Capsule()
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+    }
+    
+    @ViewBuilder
+    private func segmentButton<V: View>(stepIndex: Int, accessibilityText: String, @ViewBuilder content: () -> V) -> some View {
+        let isSelected = currentStep == stepIndex
+        Button(action: {
+            if stepIndex != currentStep {
+                #if os(iOS) && !SKIP
+                let generator = UISelectionFeedbackGenerator()
+                generator.selectionChanged()
+                #endif
+                onSelectStep(stepIndex)
+            }
+        }) {
+            content()
+                .foregroundColor(isSelected ? Theme.islamicGreen : Color.gray)
+                .padding(.horizontal, 10)
+                .frame(minHeight: 34)
+                .background(
+                    Group {
+                        if isSelected {
+                            Capsule()
+                                .fill(Theme.islamicGreen.opacity(0.18))
+                        } else {
+                            Color.clear
+                        }
+                    }
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityText)
+        .frame(minHeight: 44)
     }
 }
 
