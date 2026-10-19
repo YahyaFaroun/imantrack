@@ -19,29 +19,7 @@ struct ImanTrackApp: App {
                 }
             }
         }
-        
-        #if DEBUG
-        let args = ProcessInfo.processInfo.arguments
-        if let idx = args.firstIndex(of: "-debugSetFrontier"), idx + 1 < args.count {
-            let val = args[idx + 1]
-            let parts = val.split(separator: ":").compactMap { Int($0) }
-            if parts.count == 2 {
-                if let vIdx = QuranAPIService.shared.getVerseIndex(surah: parts[0], ayah: parts[1]) {
-                    UserDefaults.standard.set(vIdx, forKey: "quranReadFrontier")
-                    UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
-                    UserDefaults.standard.removeObject(forKey: "quranBookmark")
-                    UserDefaults.standard.synchronize()
-                    print("[DEBUG_LAUNCH] Forced readFrontier to \(parts[0]):\(parts[1]) (index \(vIdx))")
-                }
-            }
-        }
-        if args.contains("-debugClearAnchor") {
-            UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
-            UserDefaults.standard.removeObject(forKey: "quranBookmark")
-            UserDefaults.standard.synchronize()
-            print("[DEBUG_LAUNCH] Cleared quranResumeAnchor and quranBookmark")
-        }
-        #endif
+
     }
 
     private func registerFonts() {

@@ -102,8 +102,6 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         // Stop updates to save battery once we have a location
         locationManager.stopUpdatingLocation()
         self.updateTrackingDate()
-        // Fajr Alarm & Adhkar Reminders aktualisieren, wenn neuer Standort vorliegt
-        FajrAlarmManager.shared.scheduleFajrAlarm()
         AdhkarReminderManager.shared.scheduleReminders()
     }
     
@@ -140,8 +138,6 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         let startOfNewDate = Calendar.current.startOfDay(for: newDate)
         if currentTrackingDate != startOfNewDate {
             self.currentTrackingDate = startOfNewDate
-            // Fajr Alarm & Adhkar Reminders automatisch bei spirituellem Datumswechsel neu planen
-            FajrAlarmManager.shared.scheduleFajrAlarm()
             AdhkarReminderManager.shared.scheduleReminders()
         }
         
@@ -246,13 +242,14 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         return LocationAndSolarManager.calculateSunsetDateStatic(for: date, latitude: latitude, longitude: longitude)
     }
     
-    // Berechnet die Fajr-Zeit für ein Datum (Dawn-Equation mit 18 Grad Dämmerung)
+    // Berechnet die Fajr-Zeit für ein Datum
     nonisolated func getFajrDate(for date: Date) -> Date? {
         let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
         let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
         let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
         let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
-        return LocationAndSolarManager.calculateFajrDateStatic(for: date, latitude: lat, longitude: lon)
+        let method = LocationAndSolarManager.getSelectedCalculationMethod()
+        return LocationAndSolarManager.calculateFajrDateStatic(for: date, latitude: lat, longitude: lon, method: method)
     }
     
     // Berechnet die Dhuhr-Zeit (Solar Noon) für ein Datum
@@ -275,7 +272,8 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
         let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
         let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
-        return LocationAndSolarManager.calculateAsrDateStatic(for: date, latitude: lat, longitude: lon)
+        let school = LocationAndSolarManager.getSelectedAsrSchool()
+        return LocationAndSolarManager.calculateAsrDateStatic(for: date, latitude: lat, longitude: lon, school: school)
     }
 
     // Berechnet die Maghrib-Zeit (Sonnenuntergang) für ein Datum
@@ -287,13 +285,23 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         return LocationAndSolarManager.calculateSunsetDateStatic(for: date, latitude: lat, longitude: lon)
     }
     
-    // Berechnet die Isha-Zeit für ein Datum (Maghrib + 90 Minuten als sicherer Standard)
+    // Berechnet die Isha-Zeit für ein Datum
     nonisolated func getIshaDate(for date: Date) -> Date? {
         let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
         let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
         let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
         let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
-        return LocationAndSolarManager.calculateIshaDateStatic(for: date, latitude: lat, longitude: lon)
+        let method = LocationAndSolarManager.getSelectedCalculationMethod()
+        return LocationAndSolarManager.calculateIshaDateStatic(for: date, latitude: lat, longitude: lon, method: method)
+    }
+
+    nonisolated static func getSelectedCalculationMethod() -> CalculationMethod {
+        let raw = UserDefaults.standard.string(forKey: "calculationMethodRaw") ?? "mwl"
+        return CalculationMethod(rawValue: raw) ?? .mwl
+    }
+
+    nonisolated static func getSelectedAsrSchool() -> String {
+        return UserDefaults.standard.string(forKey: "asrSchoolRaw") ?? "standard"
     }
     
     // Statische Hilfsmethoden für zeitzonen- und sonnenuntergangsgetreue Berechnung ohne Instanzreferenz
@@ -330,6 +338,7 @@ public enum CalculationMethod: String, CaseIterable, Codable, Sendable {
     case ummAlQura = "ummAlQura"   // Umm al-Qura: Fajr 18.5°, Isha = Maghrib + 90 min
     case karachi = "karachi"       // Karachi: Fajr 18.0°, Isha 18.0°
     case egyptian = "egyptian"     // Egyptian: Fajr 19.5°, Isha 17.5°
+    case uoif = "uoif"             // UOIF: Fajr 12.0°, Isha 12.0°
     
     public nonisolated var fajrAngle: Double {
         switch self {
@@ -338,6 +347,7 @@ public enum CalculationMethod: String, CaseIterable, Codable, Sendable {
         case .ummAlQura: return 18.5
         case .karachi: return 18.0
         case .egyptian: return 19.5
+        case .uoif: return 12.0
         }
     }
     
@@ -348,6 +358,7 @@ public enum CalculationMethod: String, CaseIterable, Codable, Sendable {
         case .ummAlQura: return nil
         case .karachi: return 18.0
         case .egyptian: return 17.5
+        case .uoif: return 12.0
         }
     }
     
@@ -449,7 +460,7 @@ extension LocationAndSolarManager {
         return startOfTodayUTC.addingTimeInterval(UT * 3600.0)
     }
     
-    nonisolated static func calculateIshaDateStatic(for date: Date, latitude: Double, longitude: Double, method: CalculationMethod = .mwl) -> Date? {
+    nonisolated static func calculateIshaDateStatic(for date: Date, latitude: Double, longitude: Double, method: CalculationMethod = getSelectedCalculationMethod()) -> Date? {
         guard let maghrib = calculateSunsetDateStatic(for: date, latitude: latitude, longitude: longitude) else { return nil }
         
         if let minutes = method.ishaIntervalMinutes {
@@ -513,7 +524,7 @@ extension LocationAndSolarManager {
         return maghrib.addingTimeInterval(90.0 * 60.0)
     }
     
-    nonisolated static func calculateFajrDateStatic(for date: Date, latitude: Double, longitude: Double, method: CalculationMethod = .mwl) -> Date? {
+    nonisolated static func calculateFajrDateStatic(for date: Date, latitude: Double, longitude: Double, method: CalculationMethod = getSelectedCalculationMethod()) -> Date? {
         let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
         var gmtCalendar = Calendar(identifier: .gregorian)
         gmtCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -576,7 +587,7 @@ extension LocationAndSolarManager {
         }
     }
 
-    nonisolated static func calculateAsrDateStatic(for date: Date, latitude: Double, longitude: Double) -> Date? {
+    nonisolated static func calculateAsrDateStatic(for date: Date, latitude: Double, longitude: Double, school: String = getSelectedAsrSchool()) -> Date? {
         guard let sunrise = calculateSunriseDateStatic(for: date, latitude: latitude, longitude: longitude),
               let sunset = calculateSunsetDateStatic(for: date, latitude: latitude, longitude: longitude) else {
             return nil
@@ -604,7 +615,8 @@ extension LocationAndSolarManager {
         let latRad = latitude * .pi / 180.0
         
         let angleDistance = abs(latRad - dec)
-        let cotA = 1.0 + tan(angleDistance)
+        let factor: Double = (school == "hanafi") ? 2.0 : 1.0
+        let cotA = factor + tan(angleDistance)
         let sinA = sin(atan(1.0 / cotA))
         
         let cosH = (sinA - (sinDec * sin(latRad))) / (cosDec * cos(latRad))

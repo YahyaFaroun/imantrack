@@ -10,6 +10,7 @@ struct SettingsView: View {
     
     @State private var isDarkMode: Bool = true
     @State private var language: String = "de"
+    @State private var showTransliteration: Bool = true
     @State private var showSupportReportSheet: Bool = false
     
     private static let availableLanguages = [
@@ -54,11 +55,12 @@ struct SettingsView: View {
                 
                 // Bereich 2: Allgemein (Direkt sichtbar)
                 Section(header: Text(L10n.tr("settings_general", language))) {
-                    NavigationLink(destination: FajrSettingsView()) {
+                    
+                    NavigationLink(destination: PrayerSettingsView()) {
                         Label {
-                            Text(L10n.tr("fajr_sec", language))
+                            Text(L10n.tr("prayer_settings_sec", language))
                         } icon: {
-                            Image(systemName: "alarm.fill")
+                            Image(systemName: "clock.fill")
                                 .foregroundColor(Theme.islamicGreen)
                         }
                     }
@@ -66,6 +68,12 @@ struct SettingsView: View {
                     // Appearance: Dark Mode Toggle
                     Toggle(L10n.tr("dark_mode", language), isOn: $isDarkMode)
                         .onChange(of: isDarkMode) { _, _ in
+                            saveSettings()
+                        }
+                    
+                    // Umschrift anzeigen Toggle
+                    Toggle(L10n.tr("show_transliteration", language), isOn: $showTransliteration)
+                        .onChange(of: showTransliteration) { _, _ in
                             saveSettings()
                         }
                     
@@ -79,14 +87,15 @@ struct SettingsView: View {
                     .onChange(of: language) { _, newValue in
                         UserDefaults.standard.set(newValue, forKey: "language")
                         saveSettings()
+                        AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
                     }
                 }
                 
                 // Bereich 3: Support
-                Section(header: Text(language == "de" ? "Support" : (language == "ar" ? "الدعم والتعليمات" : "Support"))) {
+                Section(header: Text(L10n.tr("settings_support_header", language))) {
                     NavigationLink(destination: FAQView()) {
                         Label {
-                            Text(language == "de" ? "Häufig gestellte Fragen (FAQ)" : (language == "ar" ? "الأسئلة الشائعة" : "FAQ & Help"))
+                            Text(L10n.tr("faq_title", language))
                         } icon: {
                             Image(systemName: "questionmark.circle.fill")
                                 .foregroundColor(Theme.islamicGreen)
@@ -96,7 +105,7 @@ struct SettingsView: View {
                     Button(action: { showSupportReportSheet = true }) {
                         HStack {
                             Label {
-                                Text(language == "de" ? "Support kontaktieren" : (language == "ar" ? "تواصل مع الدعم" : "Contact Support"))
+                                Text(L10n.tr("settings_support_contact", language))
                                     .foregroundColor(.primary)
                             } icon: {
                                 Image(systemName: "envelope.fill")
@@ -111,11 +120,11 @@ struct SettingsView: View {
                 }
                 
                 // Bereich 4: Über ImanTrack / About
-                Section(header: Text(language == "de" ? "Über ImanTrack" : (language == "ar" ? "عن التطبيق" : "About"))) {
+                Section(header: Text(L10n.tr("about_section_header", language))) {
                     Button(action: rateImanTrack) {
                         HStack {
                             Label {
-                                Text(language == "de" ? "ImanTrack bewerten" : (language == "ar" ? "تقييم التطبيق" : "Rate ImanTrack"))
+                                Text(L10n.tr("rate_imantrack", language))
                                     .foregroundColor(.primary)
                             } icon: {
                                 Image(systemName: "star.fill")
@@ -172,6 +181,7 @@ struct SettingsView: View {
         if let s = settingsList.first {
             isDarkMode = s.isDarkMode
             language = s.language
+            showTransliteration = s.showTransliteration
         }
     }
     
@@ -182,6 +192,7 @@ struct SettingsView: View {
         }
         s.isDarkMode = isDarkMode
         s.language = language
+        s.showTransliteration = showTransliteration
         UserDefaults.standard.set(language, forKey: "language")
         try? modelContext.save()
     }

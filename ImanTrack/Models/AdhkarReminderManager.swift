@@ -57,31 +57,6 @@ class AdhkarReminderManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    func sendTestNotification() {
-        requestAuthorization { granted in
-            guard granted else {
-                print("[LOG] Cannot send test notification: permission not granted")
-                return
-            }
-            let center = UNUserNotificationCenter.current()
-            let content = UNMutableNotificationContent()
-            content.title = "🧪 Test-Erinnerung"
-            content.body = "Die Benachrichtigungen für ImanTrack funktionieren einwandfrei!"
-            content.sound = .default
-            if #available(iOS 15.0, *) {
-                content.interruptionLevel = .timeSensitive
-            }
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
-            let request = UNNotificationRequest(identifier: "TestNotification_\(UUID().uuidString)", content: content, trigger: trigger)
-            center.add(request) { error in
-                if let error = error {
-                    print("[LOG] Error sending test notification: \(error)")
-                } else {
-                    print("[LOG] Test notification scheduled in 5 seconds")
-                }
-            }
-        }
-    }
     
     func scheduleReminders(container: ModelContainer? = nil) {
         getAuthorizationStatus { [weak self] status in
