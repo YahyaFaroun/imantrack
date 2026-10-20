@@ -1,10 +1,24 @@
 import SwiftUI
 import SwiftData
 
-struct FAQItem: Identifiable {
+struct FAQItem: Identifiable, Codable {
     var id: String { question }
     let question: String
     let answer: String
+}
+
+private struct RawFAQSection: Codable {
+    let title: String
+    let icon: String
+    let iconColor: String
+    let items: [FAQItem]
+}
+
+private struct RawFAQLanguageData: Codable {
+    let navTitle: String
+    let bannerTitle: String
+    let bannerDesc: String
+    let sections: [RawFAQSection]
 }
 
 struct FAQSection: Identifiable {
@@ -135,648 +149,54 @@ struct FAQCardView: View {
     }
 }
 
-// MARK: - Localized FAQ Data Dictionary
+// MARK: - Localized FAQ Data Loader
 struct FAQLanguageData {
+    private static let cachedData: [String: RawFAQLanguageData] = loadFAQData()
+    
+    private static func loadFAQData() -> [String: RawFAQLanguageData] {
+        guard let url = Bundle.main.url(forResource: "FAQ", withExtension: "json") ??
+                        Bundle(for: BundleToken.self).url(forResource: "FAQ", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            return [:]
+        }
+        return (try? JSONDecoder().decode([String: RawFAQLanguageData].self, from: data)) ?? [:]
+    }
+    
     static func getData(for lang: String) -> (navTitle: String, bannerTitle: String, bannerDesc: String, sections: [FAQSection]) {
-        switch lang {
-        case "en": return getEnglish()
-        case "ar": return getArabic()
-        case "fr": return getFrench()
-        case "es": return getSpanish()
-        case "tr": return getTurkish()
-        case "ru": return getRussian()
-        case "id": return getIndonesian()
-        case "ms": return getMalay()
-        case "ur": return getUrdu()
-        case "bn": return getBengali()
-        default: return getGerman()
+        // Fallback-Kette: gewählte Sprache -> Englisch ("en") -> Deutsch ("de")
+        let raw = cachedData[lang] ?? cachedData["en"] ?? cachedData["de"]
+        guard let raw = raw else {
+            return ("FAQ & Help", "FAQ", "", [])
+        }
+        
+        let sections = raw.sections.map { s in
+            FAQSection(
+                title: s.title,
+                icon: s.icon,
+                iconColor: colorForName(s.iconColor),
+                items: s.items
+            )
+        }
+        
+        return (raw.navTitle, raw.bannerTitle, raw.bannerDesc, sections)
+    }
+    
+    private static func colorForName(_ name: String) -> Color {
+        switch name {
+        case "islamicGreen":
+            return Theme.islamicGreen
+        case "orange":
+            return .orange
+        case "purple":
+            return .purple
+        case "blue":
+            return .blue
+        case "indigo":
+            return .indigo
+        default:
+            return Theme.islamicGreen
         }
     }
-
-    // MARK: - getGerman (de)
-    private static func getGerman() -> (String, String, String, [FAQSection]) {
-        (
-            "FAQ & Hilfe",
-            "Häufig gestellte Fragen (FAQ)",
-            "Hier findest du Antworten zu den wichtigsten Funktionen und Einstellungen in ImanTrack.",
-            [
-                FAQSection(title: "Erste Schritte", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Was bezweckt diese App?", answer: "ImanTrack hilft dir, deinen Iman im Alltag zu stärken: Die App dient hauptsächlich dazu, deine Adhkar, deine Tasbih und dein Quran-Lesen zu tracken – damit du jederzeit nachvollziehen kannst, was du an einem Tag, in einer Woche und in einem Monat geleistet hast."),
-                    FAQItem(question: "Muss ich mich registrieren?", answer: "Nein, ImanTrack ist kostenlos und funktioniert ohne Account. Deine Daten bleiben lokal auf deinem Gerät gespeichert, solange du die App nicht deinstallierst."),
-                    FAQItem(question: "Wie stelle ich meine Ziele ein?", answer: "Unter Einstellungen → Ziele findest du Quran, Tasbih und Adhkar: Bei Quran legst du dein tägliches Seiten-Ziel fest, bei Tasbih ein Tagesziel pro Dhikr. Unter Adhkar stellst du Zählmodus und Erinnerungen ein – Adhkar haben kein Zahlenziel, hier zählt, ob du sie gelesen hast."),
-                    FAQItem(question: "Kann ich die lateinische Umschrift ausblenden?", answer: "Ja. Unter Einstellungen → Allgemein → „Umschrift anzeigen“ kannst du die Umschrift unter dem arabischen Text für die ganze App ein- oder ausschalten."),
-                    FAQItem(question: "In welchen Sprachen gibt es ImanTrack?", answer: "Deutsch, Englisch, Arabisch, Türkisch, Französisch, Spanisch, Indonesisch, Malaiisch, Urdu, Russisch und Bengalisch. Du kannst die Sprache jederzeit unter Einstellungen → Allgemein → Sprache ändern.")
-                ]),
-                FAQSection(title: "Der Tagesrhythmus", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "Warum beginnt mein Tag nicht um Mitternacht?", answer: "ImanTrack orientiert sich am Sonnenuntergang (Maghrib) statt an Mitternacht – so wie der islamische Tag beginnt. Dafür nutzt die App deinen groben Standort."),
-                    FAQItem(question: "Warum steht am Abend „Nacht zum Freitag“?", answer: "Nach islamischer Zählung beginnt der neue Tag mit Maghrib. Deshalb zeigt die App zwischen Maghrib und Fajr zum Beispiel „Nacht zum Freitag“ an. Ab Fajr steht dort dann „Freitag“."),
-                    FAQItem(question: "Was passiert, wenn ich den Standortzugriff nicht erlaube – und ändert sich mein Fortschritt, wenn ich ihn später doch erlaube?", answer: "Ohne Standortfreigabe wechselt dein Tag automatisch um Mitternacht. Du kannst den Standortzugriff jederzeit nachträglich in den iOS-Einstellungen aktivieren – bereits erfasste Tage bleiben dabei unverändert, nur der Zeitpunkt des Tageswechsels passt sich ab sofort an."),
-                    FAQItem(question: "Wofür braucht die App die Gebetszeiten?", answer: "Die Gebetszeiten bestimmen die Zeiten für die Morgen-, Abend- und Schlaf-Adhkar, den islamischen Tagesbeginn ab Maghrib und den Zeitpunkt deiner Erinnerungen. Unter Einstellungen → Allgemein → Gebetszeiten-Berechnung kannst du Methode und Rechtsschule anpassen.")
-                ]),
-                FAQSection(title: "Quran-Tracking", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Wie funktioniert das automatische Quran-Tracking?", answer: "Du liest den Quran von oben nach unten und scrollst dabei langsam weiter. Sobald ein Vers oben aus dem Bildschirm verschwindet, gilt er als gelesen und wird grau. ImanTrack zählt so automatisch, wie viele Verse und Seiten du gelesen hast."),
-                    FAQItem(question: "Warum verschwinden gelesene Seiten und warum kann ich nicht zurückscrollen?", answer: "In ImanTrack geht es darum, den Quran Schritt für Schritt von Anfang bis Ende durchzulesen. Was du gelesen hast, liegt hinter dir – so bleibt der Blick auf die nächste Stelle gerichtet. Jeder Vers zählt pro Khatm genau einmal."),
-                    FAQItem(question: "Warum lässt sich der Quran nicht schnell durchscrollen?", answer: "Das ist gewollt: Ein schneller Wisch bringt dich höchstens ein kleines Stück weiter. So werden Verse nicht versehentlich übersprungen und als gelesen gezählt – zum Beispiel, wenn Kinder die App benutzen."),
-                    FAQItem(question: "Wo lande ich, wenn ich die App wieder öffne?", answer: "Genau an der Stelle, an der du aufgehört hast – auch nach einem Neustart des iPhones."),
-                    FAQItem(question: "Wie ändere ich die Schriftgröße?", answer: "Mit zwei Fingern zoomen. Die Schrift ändert sich dabei sanft in kleinen Stufen, und deine Lesestelle bleibt erhalten."),
-                    FAQItem(question: "Was bedeutet der Prozentwert bei „Tagesziel“?", answer: "Er zeigt, wie viel Prozent deines heutigen Seiten-Ziels du bereits erreicht hast, basierend auf den heute gelesenen Seiten."),
-                    FAQItem(question: "Warum kann ich nicht zwischen den Suren wechseln?", answer: "Bei ImanTrack geht es nicht darum, frei zwischen Suren zu springen, sondern den Quran von Anfang bis Ende zu lesen, um dein persönliches Leseziel („Wird“) zu erreichen."),
-                    FAQItem(question: "Was passiert, wenn ich den ganzen Quran gelesen habe?", answer: "MashaAllah! Nach dem letzten Vers erscheint eine Gratulation. Mit „Neue Khatm beginnen“ startest du wieder bei Sure Al-Fatiha. Die abgeschlossene Khatm wird in deiner Statistik gezählt, alle übrigen Werte bleiben erhalten.")
-                ]),
-                FAQSection(title: "Adhkar", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "Wann sind welche Adhkar aktiv?", answer: "Die Kategorien richten sich nach den Gebetszeiten: Morgen-Adhkar sind bis Dhuhr aktiv, Abend-Adhkar am Nachmittag bis Maghrib, Schlaf-Adhkar ab Maghrib bis 1 Uhr nachts. Danach kannst du sie bis zum nächsten Maghrib über „Bereits gelesen? Hier abhaken“ nachholen."),
-                    FAQItem(question: "Ich habe die Adhkar auswendig oder schon woanders gelesen – muss ich jeden Dhikr einzeln antippen?", answer: "Nein. Ganz oben in der Kategorie findest du „Bereits gelesen? Hier abhaken“. Ein Tipp markiert die ganze Kategorie als erledigt. Hast du dich vertippt, tippst du einfach noch einmal darauf, um es rückgängig zu machen."),
-                    FAQItem(question: "Ich habe eine Adhkar-Zeit verpasst – kann ich sie nachholen?", answer: "Ja, innerhalb eines islamischen Tages, also bis Maghrib. Ist die Zeit einer Kategorie abgelaufen, kannst du sie dort über „Bereits gelesen? Hier abhaken“ als erledigt markieren."),
-                    FAQItem(question: "Welche Möglichkeiten habe ich, die Adhkar zu tracken?", answer: "Unter Einstellungen → Adhkar wählst du zwischen „Manuell antippen“ und „Automatisch“. Im automatischen Modus stellst du dort auch die Geschwindigkeit ein und ob automatisch zum nächsten Dhikr gewechselt werden soll."),
-                    FAQItem(question: "Wie kann ich die Reihenfolge anpassen?", answer: "Halte eine Adhkar-Box gedrückt und nutze die Pfeile oben links, um sie nach oben oder unten zu verschieben."),
-                    FAQItem(question: "Kann ich an die Adhkar erinnert werden?", answer: "Ja. Unter Einstellungen → Adhkar kannst du Erinnerungen für Morgen-, Abend- und Schlaf-Adhkar sowie für Sure Al-Kahf am Freitag einschalten.")
-                ]),
-                FAQSection(title: "Tasbih", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Wie benutze ich den Tasbih-Zähler?", answer: "Tippe auf den Kreis, um zu zählen, oder starte mit dem Play-Symbol das automatische Zählen. Bei jeder Zahl leuchtet der Kreis kurz grün auf. Die Vibration beim Zählen kannst du unter Einstellungen → Tasbih ein- oder ausschalten."),
-                    FAQItem(question: "Wie wechsle ich zwischen verschiedenen Versionen eines Dhikr?", answer: "Wische über den arabischen Text nach links oder rechts. Die Punkte oben zeigen dir, wie viele Versionen es gibt – zum Beispiel beim Istighfar oder bei den Salawat."),
-                    FAQItem(question: "Wie stelle ich die Geschwindigkeit des automatischen Zählens ein?", answer: "Direkt in der Zählansicht unten zwischen Minus und Plus: Schildkröte (langsam), Normal oder Hase (schnell). Die Einstellung wird für jeden Dhikr einzeln gespeichert."),
-                    FAQItem(question: "Wofür sind Plus und Minus?", answer: "Mit Plus kannst du Wiederholungen von Hand hinzufügen. Mit Minus korrigierst du deinen Zähler nachträglich: Entweder ziehst du eine bestimmte Zahl ab (z. B. bei einer Fehleingabe), oder du reduzierst prozentual den zuletzt erfassten Zeitraum."),
-                    FAQItem(question: "Wie kann ich einen eigenen Tasbih hinzufügen?", answer: "Unter Einstellungen → Tasbih kannst du weitere Tasbih hinzufügen und für jeden ein eigenes Tagesziel festlegen.")
-                ]),
-                FAQSection(title: "Fajr-Gebet", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "Was bedeutet „frühzeitig gebetet“ in der Statistik?", answer: "„Frühzeitig gebetet“ bedeutet, dass du dein Fajr-Gebet vor Sonnenaufgang verrichtet hast. Betest du erst nach Ablauf der Fajr-Zeit (also nach Sonnenaufgang), wird es als „Nachgebetet“ gezählt.")
-                ]),
-                FAQSection(title: "Statistik", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "Welche Zeiträume kann ich mir in der Statistik ansehen?", answer: "Woche, Monat und Jahr – jeweils mit Vergleich zur vorherigen Periode."),
-                    FAQItem(question: "Warum hat sich meine Statistik für eine vergangene Woche verändert, nachdem ich mein Ziel angepasst habe?", answer: "Die Statistik bezieht sich immer auf dein aktuell eingestelltes Ziel, nicht auf das Ziel, das zum jeweiligen Zeitpunkt galt. Deine tatsächlich erzielten Werte (z. B. gelesene Seiten) bleiben davon unberührt."),
-                    FAQItem(question: "Was bedeutet die gestrichelte Linie im Diagramm?", answer: "Sie zeigt dein aktuelles Ziel für den gewählten Zeitraum, umgerechnet aus deinem Tagesziel.")
-                ])
-            ]
-        )
-    }
-
-    // MARK: - getEnglish (en)
-    private static func getEnglish() -> (String, String, String, [FAQSection]) {
-        (
-            "FAQ & Help",
-            "Frequently Asked Questions (FAQ)",
-            "Here you will find answers to the most important features and settings in ImanTrack.",
-            [
-                FAQSection(title: "Getting Started", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "What is the purpose of this app?", answer: "ImanTrack helps you strengthen your Iman in daily life: The main purpose is to track your Adhkar, Tasbih, and Quran reading so you can monitor what you have achieved daily, weekly, and monthly."),
-                    FAQItem(question: "Do I need to register?", answer: "No, ImanTrack is free and works without an account. Your data remains stored locally on your device as long as you do not uninstall the app."),
-                    FAQItem(question: "How do I set my goals?", answer: "Under Settings → Goals you will find Quran, Tasbih, and Adhkar: For Quran, set your daily page goal; for Tasbih, set a daily target per Dhikr. Under Adhkar, configure counting mode and reminders – Adhkar have no numerical target, what counts is whether you recited them."),
-                    FAQItem(question: "Can I hide the transliteration?", answer: "Yes. Under Settings → General → \"Show Transliteration\" you can turn the transliteration beneath the Arabic text on or off for the entire app."),
-                    FAQItem(question: "In which languages is ImanTrack available?", answer: "German, English, Arabic, Turkish, French, Spanish, Indonesian, Malay, Urdu, Russian, and Bengali. You can change the language at any time under Settings → General → Language.")
-                ]),
-                FAQSection(title: "Daily Rhythm", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "Why does my day not start at midnight?", answer: "ImanTrack aligns with sunset (Maghrib) instead of midnight – just as the Islamic day begins. The app uses your approximate location for this calculation."),
-                    FAQItem(question: "Why does it say \"Night before Friday\" in the evening?", answer: "According to Islamic reckoning, the new day begins with Maghrib. Therefore, between Maghrib and Fajr, the app displays, for example, \"Night before Friday\". From Fajr onward, it displays \"Friday\"."),
-                    FAQItem(question: "What happens if I don't allow location access – and does my progress change if I allow it later?", answer: "Without location permission, your day automatically resets at midnight. You can enable location access at any time in iOS Settings – previously recorded days remain unchanged, only the time of the day change adapts from then on."),
-                    FAQItem(question: "Why does the app need prayer times?", answer: "The prayer times determine the time windows for Morning, Evening, and Sleep Adhkar, the Islamic day start at Maghrib, and the schedule for your reminders. Under Settings → General → Prayer Time Calculation you can adjust the method and juristic school.")
-                ]),
-                FAQSection(title: "Quran Tracking", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "How does automatic Quran tracking work?", answer: "You read the Quran from top to bottom and scroll forward slowly. As soon as a verse disappears off the top of the screen, it is marked as read and turns gray. ImanTrack automatically counts how many verses and pages you have read."),
-                    FAQItem(question: "Why do read pages disappear and why can't I scroll back?", answer: "ImanTrack is designed for reading through the Quran step by step from beginning to end. What you have read lies behind you – keeping your focus on the next passage. Each verse counts exactly once per Khatm."),
-                    FAQItem(question: "Why can't I scroll through the Quran quickly?", answer: "This is intentional: A quick swipe only moves you a small distance forward. This prevents verses from being accidentally skipped and counted as read – for example, when children use the app."),
-                    FAQItem(question: "Where do I land when I reopen the app?", answer: "Exactly where you left off – even after restarting your iPhone."),
-                    FAQItem(question: "How do I change the font size?", answer: "Pinch to zoom with two fingers. The font size adjusts smoothly in small increments, and your reading position is preserved."),
-                    FAQItem(question: "What does the percentage value at \"Daily Goal\" mean?", answer: "It shows what percentage of today's page goal you have already achieved, based on the pages read today."),
-                    FAQItem(question: "Why can't I switch between Surahs?", answer: "ImanTrack is not about jumping freely between Surahs, but about reading the Quran continuously from beginning to end to fulfill your personal reading portion (Wird)."),
-                    FAQItem(question: "What happens when I have read the entire Quran?", answer: "MashaAllah! After the final verse, a congratulations card appears. With \"Start New Khatm\" you start again at Surah Al-Fatiha. The completed Khatm is recorded in your statistics, while all other numbers remain intact.")
-                ]),
-                FAQSection(title: "Adhkar", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "When are which Adhkar active?", answer: "The categories are aligned with prayer times: Morning Adhkar are active until Dhuhr, Evening Adhkar in the afternoon until Maghrib, Sleep Adhkar from Maghrib until 1 AM. Afterwards, you can make them up until the next Maghrib via \"Already read? Tap to check off\"."),
-                    FAQItem(question: "I recited the Adhkar from memory or elsewhere – do I need to tap each Dhikr individually?", answer: "No. At the very top of each category you will find \"Already read? Tap to check off\". One tap marks the entire category as completed. If you tapped by mistake, tap again to undo."),
-                    FAQItem(question: "I missed an Adhkar time window – can I make it up?", answer: "Yes, within the Islamic day, meaning until Maghrib. Once a category's time has passed, you can mark it as completed via \"Already read? Tap to check off\"."),
-                    FAQItem(question: "What options do I have for tracking Adhkar?", answer: "Under Settings → Adhkar you can choose between \"Manual Tap\" and \"Automatic\". In automatic mode, you can also adjust the speed and choose whether to advance to the next Dhikr automatically."),
-                    FAQItem(question: "How can I adjust the order?", answer: "Press and hold an Adhkar box and use the arrows at the top left to move it up or down."),
-                    FAQItem(question: "Can I be reminded of the Adhkar?", answer: "Yes. Under Settings → Adhkar you can enable reminders for Morning, Evening, and Sleep Adhkar, as well as for Surah Al-Kahf on Fridays.")
-                ]),
-                FAQSection(title: "Tasbih", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "How do I use the Tasbih counter?", answer: "Tap the circle to count, or tap the play icon to start automatic counting. With each count, the circle flashes green briefly. You can toggle vibration during counting under Settings → Tasbih."),
-                    FAQItem(question: "How do I switch between different versions of a Dhikr?", answer: "Swipe left or right across the Arabic text. The indicator dots at the top show how many versions are available – for example, with Istighfar or Salawat."),
-                    FAQItem(question: "How do I set the speed of automatic counting?", answer: "Directly in the counter view at the bottom between Minus and Plus: Turtle (slow), Normal, or Hare (fast). The setting is saved individually for each Dhikr."),
-                    FAQItem(question: "What are Plus and Minus for?", answer: "Use Plus to add counts manually. Use Minus to correct your counter: either subtract a specific number (e.g. after a typing error) or reduce a percentage of the last recorded tracking session."),
-                    FAQItem(question: "How can I add a custom Tasbih?", answer: "Under Settings → Tasbih you can add custom Tasbih and set an individual daily target for each.")
-                ]),
-                FAQSection(title: "Fajr Prayer", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "What does \"Prayed on time\" mean in the statistics?", answer: "\"Prayed on time\" means you performed your Fajr prayer before sunrise. If you pray after the Fajr time window ends (i.e. after sunrise), it is counted as \"Prayed late (Qada)\".")
-                ]),
-                FAQSection(title: "Statistics", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "Which time periods can I view in the statistics?", answer: "Week, month, and year – each with a comparison to the previous period."),
-                    FAQItem(question: "Why did my statistics for a past week change after I adjusted my goal?", answer: "Statistics are always calculated against your currently configured goal, not the goal set at that past time. Your actual achieved numbers (e.g. pages read) remain completely untouched."),
-                    FAQItem(question: "What does the dashed line in the chart represent?", answer: "It shows your current target for the selected time period, converted from your daily goal.")
-                ])
-            ]
-        )
-    }
-
-    // MARK: - getArabic (ar)
-    private static func getArabic() -> (String, String, String, [FAQSection]) {
-        (
-            "الأسئلة الشائعة والتعليمات",
-            "الأسئلة الشائعة (FAQ)",
-            "إليك إجابات حول أهم الميزات والإعدادات في ImanTrack.",
-            [
-                FAQSection(title: "الخطوات الأولى", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "ما الهدف من هذا التطبيق؟", answer: "يساعدك ImanTrack على تقوية إيمانك في حياتك اليومية: يهدف التطبيق بشكل أساسي إلى تتبع أذكارك، وتسبيحك، وقراءتك للقرآن – لتتمكن من متابعة ما أنجزته يومياً، وأسبوعياً، وشهرياً بكل سهولة."),
-                    FAQItem(question: "هل يجب عليّ إنشاء حساب؟", answer: "لا، تطبيق ImanTrack مجاني تماماً ويعمل بدون أي حساب. تظل بياناتك محفوظة محلياً على جهازك طالما لم تقم بحذف التطبيق."),
-                    FAQItem(question: "كيف أحدد أهدافي؟", answer: "من الإعدادات ← الأهداف ستجد القرآن، والتسبيح، والأذكار: في القرآن تحدد هدفك اليومي من الصفحات، وفي التسبيح تحدد هدفاً يومياً لكل ذكر. وتحت الأذكار تضبط طريقة العد والتنبيهات – فالأذكار ليس لها هدف عددي، بل يكفي تحديد ما إذا كنت قد قرأتها."),
-                    FAQItem(question: "هل يمكنني إخفاء النطق بالحروف اللاتينية (الترجمان)؟", answer: "نعم. من خلال الإعدادات ← عام ← \"إظهار النطق اللاتيني\" يمكنك تفعيل أو إيقاف النطق اللاتيني تحت النص العربي في كامل التطبيق."),
-                    FAQItem(question: "ما اللغات التي يدعمها ImanTrack؟", answer: "الألمانية، الإنجليزية، العربية، التركية، الفرنسية، الإسبانية، الإندونيسية، الملايو، الأردية، الروسية، والبنغالية. يمكنك تغيير اللغة في أي وقت من الإعدادات ← عام ← اللغة.")
-                ]),
-                FAQSection(title: "إيقاع اليوم", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "لماذا لا يبدأ يومي عند منتصف الليل؟", answer: "يعتمد ImanTrack على غروب الشمس (المغرب) كبداية لليوم بدلاً من منتصف الليل – كما هو المعتاد في الحساب الشرعي لليوم الإسلامي. يستخدم التطبيق موقعك التقريبي لحساب ذلك بدقة."),
-                    FAQItem(question: "لماذا يظهر في المساء \"ليلة الجمعة\"؟", answer: "في التقويم الإسلامي يبدأ اليوم الجديد مع أذان المغرب. لذلك يظهر لك التطبيق بين المغرب والفجر على سبيل المثال \"ليلة الجمعة\". ومع دخول الفجر يتغير إلى \"الجمعة\"."),
-                    FAQItem(question: "ماذا يحدث إذا لم أمنح إذن تحديد الموقع – وهل يتأثر تقدمي إذا منحته لاحقاً؟", answer: "بدون إذن الموقع، يتغير يومك تلقائياً عند منتصف الليل. يمكنك تفعيل إذن الموقع في أي وقت من إعدادات iOS – وستظل أيامك المسجلة مسبقاً كما هي دون أي تغيير، وسينتقل توقيت تبديل اليوم فوراً للنظام الجديد."),
-                    FAQItem(question: "لماذا يحتاج التطبيق إلى أوقات الصلاة؟", answer: "تحدد أوقات الصلاة النوافذ الزمنية لأذكار الصباح والمساء والنوم، وبداية اليوم الإسلامي من المغرب، ومواعيد التنبيهات. يمكنك ضبط طريقة الحساب والمذهب الفقهي من الإعدادات ← عام ← حساب أوقات الصلاة.")
-                ]),
-                FAQSection(title: "تتبع القرآن", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "كيف يعمل التتبع التلقائي للقرآن؟", answer: "تقرأ القرآن من الأعلى إلى الأسفل وتمرر ببطء أثناء القراءة. وبمجرد أن تختفي الآية من أعلى الشاشة، تُحسب كمقروءة ويتحول لونها إلى الرمادي. يحصي التطبيق تلقائياً عدد الآيات والصفحات المقروءة."),
-                    FAQItem(question: "لماذا تختفي الصفحات المقروءة ولماذا لا يمكن التمرير للخلف؟", answer: "فكرة ImanTrack هي قراءة القرآن خطوة بخطوة من البداية حتى النهاية. ما قرأته أصبح خلفك، ويبقى تركيزك منصباً على الورد القادم. كل آية تُحسب مرة واحدة فقط في الختمة."),
-                    FAQItem(question: "لماذا لا يمكن التمرير السريع عبر صفحات القرآن؟", answer: "هذا أمر مقصود تماماً: التمرير السريع يحرك الشاشة لمسافة قصيرة فقط، لمنع تخطي الآيات بالخطأ واحتسابها كمقروءة – على سبيل المثال عندما يستخدم الأطفال التطبيق."),
-                    FAQItem(question: "إلى أين أصل عندما أعيد فتح التطبيق؟", answer: "إلى الموضع الدقيق الذي توقفت عنده تماماً – حتى بعد إعادة تشغيل هاتف iPhone."),
-                    FAQItem(question: "كيف أغير حجم الخط؟", answer: "باستخدام إصبعين للتكبير والتصغير (Pinch to zoom). يتغير حجم الخط بسلاسة على درجات دقيقة مع الحفاظ التام على موضع قراءتك الحالي."),
-                    FAQItem(question: "ماذا تعني النسبة المئوية بجانب \"الهدف اليومي\"؟", answer: "توضح النسبة المئوية المنجزة من هدفك اليومي للصفحات، بناءً على ما قرأته اليوم."),
-                    FAQItem(question: "لماذا لا يمكنني التنقل بحرية بين السور؟", answer: "الهدف في ImanTrack ليس القفز العشوائي بين السور، بل قراءة القرآن الكريم كاملاً بتسلسل متصل من البداية إلى النهاية لتحقيق وردك القرآني وختمه."),
-                    FAQItem(question: "ماذا يحدث عند قراءة القرآن كاملاً؟", answer: "ما شاء الله! بعد آخر آية تظهر لك بطاقة تهنئة. وباختيار \"بدء ختمة جديدة\" تبدأ من جديد عند سورة الفاتحة. تُحتسب الختمة المكتملة في إحصائياتك مع الحفاظ التام على سائر القيم الأخرى.")
-                ]),
-                FAQSection(title: "الأذكار", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "متى تكون الأذكار نشطة؟", answer: "ترتبط الفئات بأوقات الصلاة: أذكار الصباح نشطة حتى صلاة الظهر، وأذكار المساء من بعد العصر حتى المغرب، وأذكار النوم تبدأ من المغرب حتى الساعة 1 ليلاً. وبعد ذلك يمكنك قضاؤها حتى المغرب التالي عبر \"قرأتها بالفعل؟ اضغط للتحديد\"."),
-                    FAQItem(question: "حفظت الأذكار أو قرأتها في مكان آخر – هل عليّ النقر على كل ذكر منفرداً؟", answer: "لا. في أعلى كل فئة ستجد زر \"قرأتها بالفعل؟ اضغط للتحديد\". ضغطة واحدة تحدد الفئة كاملة كمكتملة. وإذا ضغطت بالخطأ، اضغط مرة أخرى للتراجع."),
-                    FAQItem(question: "فاتني وقت أحد الأذكار – هل يمكنني قضاؤها؟", answer: "نعم، خلال نفس اليوم الإسلامي حتى صلاة المغرب القادمة. فإذا انقضى وقت فئة معينة، يمكنك الدخول إليها وتحديدها كمكتملة عبر \"قرأتها بالفعل؟ اضغط للتحديد\"."),
-                    FAQItem(question: "ما هي الخيارات المتاحة لتتبع الأذكار؟", answer: "من الإعدادات ← الأذكار يمكنك الاختيار بين \"يدوي\" و\"تلقائي\". وفي الوضع التلقائي، يمكنك أيضاً تحديد سرعة العد والتنقل التلقائي إلى الذكر التالي عند اكتمال العدد."),
-                    FAQItem(question: "كيف يمكنني تعديل ترتيب الأذكار؟", answer: "اضغط ضغطة مطولة على بطاقة الذكر، ثم استخدم الأسهم في الزاوية العلوية لنقلها للأعلى أو للأسفل."),
-                    FAQItem(question: "هل يمكن للتطبيق تذكيري بمواعيد الأذكار؟", answer: "نعم. من الإعدادات ← الأذكار يمكنك تفعيل التنبيهات لأذكار الصباح، والمساء، والنوم، وكذلك لسورة الكهف يوم الجمعة.")
-                ]),
-                FAQSection(title: "التسبيح", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "كيف أستخدم عداد التسبيح؟", answer: "المس الدائرة للعد يدوياً، أو اضغط على أيقونة التشغيل للعد التلقائي. مع كل تسبيحة تومض الدائرة باللون الأخضر. يمكنك تفعيل أو إيقاف الاهتزاز أثناء التسبيح من الإعدادات ← التسبيح."),
-                    FAQItem(question: "كيف أنتقل بين الصيغ المختلفة للذكر؟", answer: "اسحب النص العربي لليمين أو اليسار. تُظهر لك النقاط العلوية عدد الصيغ المتوفرة – كما في صيغ الاستغفار أو الصلاة على النبي ﷺ."),
-                    FAQItem(question: "كيف أحدد سرعة العد التلقائي؟", answer: "مباشرة من شاشة العداد في الأسفل بين علامتي الناقص والزائد: السلحفاة (بطيء)، عادي، أو الأرنب (سريع). ويتم حفظ السرعة لكل ذكر بشكل منفصل."),
-                    FAQItem(question: "ما فائدة الزائد والناقص؟", answer: "تتيح لك علامة الزائد إضافة تكرارات يدوياً. ومن خلال علامة الناقص يمكنك تصحيح العداد: إما بطرح عدد محدد (عند الخطأ مثلاً) أو بتقليص نسبة مئوية من آخر جلسة تسبيح."),
-                    FAQItem(question: "كيف يمكنني إضافة ذكر مخصص؟", answer: "من خلال الإعدادات ← التسبيح يمكنك إضافة أذكار جديدة وتحديد هدف يومي خاص بكل ذكر.")
-                ]),
-                FAQSection(title: "صلاة الفجر", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "ماذا يعني \"صليت في الوقت\" في الإحصائيات؟", answer: "\"صليت في الوقت\" يعني أنك أديت صلاة الفجر قبل طلوع الشمس. وإذا صليتها بعد خروج وقت الفجر (أي بعد طلوع الشمس)، تُحسب في الإحصائيات كـ \"قضاء\".")
-                ]),
-                FAQSection(title: "الإحصائيات", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "ما هي الفترات الزمنية التي يمكنني عرضها؟", answer: "الأسبوع، والشهر، والسنة – مع مقارنة واضحة بالفترة السابقة لكل منها."),
-                    FAQItem(question: "لماذا تغيرت إحصائيات أسبوع ماضٍ بعد تعديل هدفي؟", answer: "تعتمد الإحصائيات دائماً على هدفك الحالي المعتمد، وليس الهدف القديم. أما أرقامك المنجزة فعلياً (مثل عدد الصفحات المقروءة) فتظل ثابتة لا تتغير."),
-                    FAQItem(question: "ماذا يعني الخط المتقطع في الرسم البياني؟", answer: "يوضح هدفك المحسوب للفترة المحددة، والمشتق بدقة من هدفك اليومي.")
-                ])
-            ]
-        )
-    }
-
-    // MARK: - getTurkish (tr)
-    private static func getTurkish() -> (String, String, String, [FAQSection]) {
-        (
-            "SSS ve Yardım",
-            "Sıkça Sorulan Sorular (SSS)",
-            "ImanTrack'teki en önemli özellikler ve ayarlar hakkında yanıtları burada bulabilirsiniz.",
-            [
-                FAQSection(title: "Başlarken", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Bu uygulamanın amacı nedir?", answer: "ImanTrack, günlük yaşamınızda imannızı güçlendirmenize yardımcı olur: Uygulama temel olarak zikirlerinizi, tesbihatınızı ve Kuran okumanızı takip etmenizi sağlar; böylece günlük, haftalık ve aylık ilerlemenizi her zaman görebilirsiniz."),
-                    FAQItem(question: "Kayıt olmam gerekiyor mu?", answer: "Hayır, ImanTrack tamamen ücretsizdir ve hesap gerektirmez. Uygulamayı silmediğiniz sürece verileriniz cihazınızda yerel olarak saklanır."),
-                    FAQItem(question: "Hedeflerimi nasıl ayarlayabilirim?", answer: "Ayarlar → Hedefler bölümünden Kuran, Tesbih ve Zikirler'i bulabilirsiniz: Kuran için günlük sayfa hedefinizi, Tesbih için her zikir başına günlük hedefinizi belirlersiniz. Zikirler altında sayma modunu ve hatırlatıcıları ayarlarsınız – zikirlerin sayısal bir hedefi yoktur, önemli olan onları okumuş olmanızdır."),
-                    FAQItem(question: "Transkripsiyonu (okunuşu) gizleyebilir miyim?", answer: "Evet. Ayarlar → Genel → \"Transkripsiyonu Göster\" seçeneğinden Arapça metnin altındaki okunuşu tüm uygulama genelinde açıp kapatabilirsiniz."),
-                    FAQItem(question: "ImanTrack hangi dillerde kullanılabilir?", answer: "Almanca, İngilizce, Arapça, Türkçe, Fransızca, İspanyolca, Endonezce, Malayca, Urduca, Rusça ve Bengalce. Dilediğiniz zaman Ayarlar → Genel → Dil bölümünden değiştirebilirsiniz.")
-                ]),
-                FAQSection(title: "Günlük Ritim", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "Günün neden gece yarısı başlamıyor?", answer: "ImanTrack, İslami gün başlangıcına uygun olarak gece yarısı yerine gün batımını (Akşam namazı) esas alır. Bunun için uygulama yaklaşık konumunuzu kullanır."),
-                    FAQItem(question: "Akşamları neden \"Cuma gecesi\" yazıyor?", answer: "İslami takvimde yeni gün Akşam vaktiyle başlar. Bu nedenle uygulama Akşam ile Sabah arasında örneğin \"Cuma gecesi\" gösterir. Sabah namazı vaktinden itibaren ise \"Cuma\" olarak güncellenir."),
-                    FAQItem(question: "Konum izni vermezsem ne olur ve daha sonra izin verirsem ilerlemem değişir mi?", answer: "Konum izni olmadan gününüz otomatik olarak gece yarısı değişir. Konum iznini dilediğiniz zaman iOS Ayarlarından etkinleştirebilirsiniz; önceden kaydedilmiş günler değişmez, sadece gün geçiş vakti o andan itibaren güncellenir."),
-                    FAQItem(question: "Uygulama namaz vakitlerine neden ihtiyaç duyar?", answer: "Namaz vakitleri Sabah, Akşam ve Uyku zikirlerinin zaman aralıklarını, Akşam ile başlayan İslami günü ve hatırlatıcılarınızı belirler. Ayarlar → Genel → Namaz Vakti Hesaplama bölümünden yöntemi ve mezhebi değiştirebilirsiniz.")
-                ]),
-                FAQSection(title: "Kuran Takibi", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Otomatik Kuran takibi nasıl çalışır?", answer: "Kuran'ı yukarıdan aşağıya doğru yavaşça kaydırarak okursunuz. Bir ayet ekranın üst kısmından kaybolduğu anda okundu sayılır ve griye döner. ImanTrack kaç ayet ve sayfa okuduğunuzu otomatik olarak sayar."),
-                    FAQItem(question: "Okunan sayfalar neden kayboluyor ve neden geri kaydıramıyorum?", answer: "ImanTrack'te amaç Kuran'ı baştan sona adım adım okumaktır. Okuduğunuz yer geride kalır; böylece dikkatiniz daima bir sonraki ayete odaklanır. Her ayet hatim başına yalnızca bir kez sayılır."),
-                    FAQItem(question: "Kuran neden hızlıca kaydırılamıyor?", answer: "Bu bilinçli bir tercihtir: Hızlı bir kaydırma ekranı yalnızca küçük bir miktar ilerletir. Böylece ayetlerin yanlışlıkla atlanması ve okunmuş sayılması engellenir (örneğin çocuklar kullandığında)."),
-                    FAQItem(question: "Uygulamayı tekrar açtığımda nerede kalırım?", answer: "iPhone'unuzu yeniden başlatsanız dahi tam olarak kaldığınız ayette devam edersiniz."),
-                    FAQItem(question: "Yazı boyutunu nasıl değiştirebilirim?", answer: "İki parmağınızla yakınlaştırıp uzaklaştırarak (Pinch to zoom). Yazı boyutu yumuşak adımlarla değişir ve okuma konumunuz kesinlikle kaybolmaz."),
-                    FAQItem(question: "„Günlük Hedef“ yanındaki yüzde ne anlama gelir?", answer: "Bugün okuduğunuz sayfalara göre günlük sayfa hedefinizin yüzde kaçını tamamladığınızı gösterir."),
-                    FAQItem(question: "Neden sureler arasında serbestçe geçiş yapamıyorum?", answer: "ImanTrack'te amaç sureler arasında rastgele atlamak değil, günlük virdinizi tamamlamak için Kuran'ı baştan sona düzenli bir şekilde okumaktır."),
-                    FAQItem(question: "Tüm Kuran'ı bitirdiğimde ne olur?", answer: "MaşaAllah! Son ayetin ardından bir tebrik kartı açılır. \"Yeni Hatme Başla\" ile tekrar Fatiha Suresi'nden başlarsınız. Tamamlanan hatim istatistiklerinize eklenir, diğer tüm değerleriniz eksiksiz korunur.")
-                ]),
-                FAQSection(title: "Zikirler", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "Hangi zikirler ne zaman aktiftir?", answer: "Kategoriler namaz vakitlerine göre belirlenir: Sabah zikirleri Öğle namazına kadar, Akşam zikirleri İkindi vaktinden Akşam'a kadar, Uyku zikirleri ise Akşam'dan gece saat 1'e kadar aktiftir. Daha sonra, bir sonraki Akşam vaktine kadar \"Zaten okudunuz mu? Buradan işaretleyin\" üzerinden bunları kaza edebilirsiniz."),
-                    FAQItem(question: "Zikirleri ezberden okudum – her birine tek tek dokunmam gerekir mi?", answer: "Hayır. Her kategorinin en üstünde \"Zaten okudunuz mu? Buradan işaretleyin\" butonunu bulabilirsiniz. Tek bir dokunuş tüm kategoriyi tamamlandı olarak işaretler. Yanlışlıkla dokunursanız geri almak için tekrar dokunabilirsiniz."),
-                    FAQItem(question: "Zikir vaktini kaçırdım – kaza edebilir miyim?", answer: "Evet, aynı İslami gün içinde (yani bir sonraki Akşam vaktine kadar). Bir kategorinin vakti geçtiğinde, oraya girip \"Zaten okudunuz mu? Buradan işaretleyin\" ile tamamlandı olarak işaretleyebilirsiniz."),
-                    FAQItem(question: "Zikirleri takip etmek için hangi seçeneklerim var?", answer: "Ayarlar → Zikirler bölümünden \"Elle Dokun\" veya \"Otomatik\" seçeneklerini belirleyebilirsiniz. Otomatik modda sayma hızını ve hedef bittiğinde sonraki zikre otomatik geçilip geçilmeyeceğini de ayarlayabilirsiniz."),
-                    FAQItem(question: "Sıralamayı nasıl değiştirebilirim?", answer: "Bir zikir kutusuna basılı tutun ve yukarı veya aşağı taşımak için sol üstteki okları kullanın."),
-                    FAQItem(question: "Zikirler için hatırlatıcı kurabilir miyim?", answer: "Evet. Ayarlar → Zikirler bölümünden Sabah, Akşam ve Uyku zikirleri ile Cuma günleri Kehf Suresi için bildirimleri açabilirsiniz.")
-                ]),
-                FAQSection(title: "Tesbih", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Tesbih sayacını nasıl kullanırım?", answer: "Saymak için daireye dokunun veya otomatik sayımı başlatmak için oynat simgesine basın. Her sayıda daire kısa bir an yeşil yanar. Sayma sırasındaki titreşimi Ayarlar → Tesbih bölümünden açıp kapatabilirsiniz."),
-                    FAQItem(question: "Bir zikrin farklı varyantları arasında nasıl geçiş yaparım?", answer: "Arapça metin üzerinde parmağınızı sağa veya sola kaydırın. Üstteki noktalar kaç varyant olduğunu gösterir (örneğin İstiğfar veya Salavat'ta)."),
-                    FAQItem(question: "Otomatik sayma hızını nasıl ayarlarım?", answer: "Doğrudan sayaç ekranının altında, Eksi ve Artı arasında: Kaplumbağa (yavaş), Normal veya Tavşan (hızlı). Bu ayar her zikir için ayrı ayrı saklanır."),
-                    FAQItem(question: "Artı ve Eksi butonları ne işe yarar?", answer: "Artı ile elden sayı ekleyebilirsiniz. Eksi ile sayacınızı düzeltebilirsiniz: Belirli bir sayıyı düşebilir (örneğin yanlış giriş durumunda) veya son sayım seansını yüzdesel olarak azaltabilirsiniz."),
-                    FAQItem(question: "Nasıl özel bir tesbih ekleyebilirim?", answer: "Ayarlar → Tesbih bölümünden yeni tesbihler ekleyebilir ve her biri için özel günlük hedef belirleyebilirsiniz.")
-                ]),
-                FAQSection(title: "Fecr Namazı", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "İstatistiklerde \"Vaktinde kılındı\" ne anlama gelir?", answer: "\"Vaktinde kılındı\", Sabah namazını güneş doğmadan önce kıldığınız anlamına gelir. Namazı vakit çıktıktan (yani güneş doğduktan) sonra kılarsanız, istatistiklere \"Kaza edildi\" olarak kaydedilir.")
-                ]),
-                FAQSection(title: "İstatistikler", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "İstatistiklerde hangi dönemleri görebilirim?", answer: "Hafta, ay ve yıl – her biri bir önceki dönemle karşılaştırmalı olarak sunulur."),
-                    FAQItem(question: "Hedefimi değiştirdiğimde geçmiş bir haftanın istatistiği neden değişti?", answer: "İstatistikler her zaman o anki hedefinize göre oranlanır, geçmişteki hedefinize göre değil. Gerçekte ulaştığınız sayılar (örneğin okunan sayfalar) bundan kesinlikle etkilenmez."),
-                    FAQItem(question: "Grafikteki kesikli çizgi neyi gösterir?", answer: "Günlük hedefinizden hesaplanan, seçilen dönem için geçerli hedef seviyenizi gösterir.")
-                ])
-            ]
-        )
-    }
-
-    // MARK: - getIndonesian (id)
-    private static func getIndonesian() -> (String, String, String, [FAQSection]) {
-        (
-            "FAQ & Bantuan",
-            "Pertanyaan Umum (FAQ)",
-            "Temukan jawaban seputar fitur dan pengaturan utama di ImanTrack.",
-            [
-                FAQSection(title: "Memulai", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Apa tujuan aplikasi ini?", answer: "ImanTrack membantu Anda memperkuat iman dalam kehidupan sehari-hari: Aplikasi ini terutama digunakan untuk melacak adzkar, tasbih, dan bacaan Al-Quran Anda – agar Anda selalu dapat memantau capaian harian, mingguan, dan bulanan."),
-                    FAQItem(question: "Apakah saya harus mendaftar?", answer: "Tidak, ImanTrack gratis dan bekerja tanpa akun. Data Anda tetap tersimpan secara lokal di perangkat Anda selama aplikasi tidak dihapus."),
-                    FAQItem(question: "Bagaimana cara mengatur target saya?", answer: "Di Pengaturan → Target, Anda akan menemukan Quran, Tasbih, dan Adzkar: Untuk Quran, tentukan target halaman harian Anda; untuk Tasbih, tentukan target harian per dzikir. Di bawah Adzkar, Anda dapat mengatur mode penghitungan dan pengingat – adzkar tidak memiliki target angka, yang penting adalah Anda telah membacanya."),
-                    FAQItem(question: "Bisakah saya menyembunyikan transliterasi latin?", answer: "Bisa. Di Pengaturan → Umum → \"Tampilkan Transliterasi\", Anda dapat mengaktifkan atau menonaktifkan teks latin di bawah ayat Arab untuk seluruh aplikasi."),
-                    FAQItem(question: "Dalam bahasa apa saja ImanTrack tersedia?", answer: "Jerman, Inggris, Arab, Turki, Prancis, Spanyol, Indonesia, Melayu, Urdu, Rusia, dan Bengali. Anda dapat mengganti bahasa kapan saja di Pengaturan → Umum → Bahasa.")
-                ]),
-                FAQSection(title: "Ritme Harian", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "Mengapa hari saya tidak dimulai pada tengah malam?", answer: "ImanTrack mengikuti waktu matahari terbenam (Maghrib) alih-alih tengah malam – sesuai dengan permulaan hari dalam Islam. Aplikasi ini menggunakan lokasi perkiraan Anda untuk perhitungan tersebut."),
-                    FAQItem(question: "Mengapa di malam hari tertulis \"Malam Jumat\"?", answer: "Menurut perhitungan Islam, hari baru dimulai saat Maghrib. Karena itu, antara Maghrib dan Subuh, aplikasi menampilkan misalnya \"Malam Jumat\". Mulai waktu Subuh, tampilannya menjadi \"Jumat\"."),
-                    FAQItem(question: "Apa yang terjadi jika saya tidak mengizinkan akses lokasi – dan apakah progres saya berubah jika saya mengizinkannya nanti?", answer: "Tanpa izin lokasi, pergantian hari otomatis terjadi pada tengah malam. Anda dapat mengaktifkan akses lokasi kapan saja di Pengaturan iOS – riwayat hari yang sudah tercatat tidak akan berubah, hanya waktu pergantian hari yang akan menyesuaikan mulai saat itu."),
-                    FAQItem(question: "Untuk apa aplikasi membutuhkan waktu shalat?", answer: "Waktu shalat menentukan jendela waktu untuk adzkar pagi, petang, dan tidur, awal hari Islam sejak Maghrib, serta jadwal pengingat Anda. Di Pengaturan → Umum → Perhitungan Waktu Shalat, Anda dapat menyesuaikan metode dan mazhab.")
-                ]),
-                FAQSection(title: "Pelacakan Al-Quran", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Bagaimana cara kerja pelacakan Al-Quran otomatis?", answer: "Anda membaca Al-Quran dari atas ke bawah dan menggulir perlahan. Begitu sebuah ayat melewati bagian atas layar, ayat tersebut ditandai telah dibaca dan berubah menjadi abu-abu. ImanTrack secara otomatis menghitung ayat dan halaman yang telah dibaca."),
-                    FAQItem(question: "Mengapa halaman yang telah dibaca menghilang dan tidak bisa digulir ke belakang?", answer: "ImanTrack dirancang untuk membaca Al-Quran secara bertahap dari awal hingga akhir. Apa yang sudah dibaca berada di belakang Anda – agar fokus tetap tertuju pada bacaan berikutnya. Setiap ayat hanya dihitung satu kali per khatam."),
-                    FAQItem(question: "Mengapa Al-Quran tidak bisa digulir dengan cepat?", answer: "Hal ini sengaja dirancang: Usapan cepat hanya memajukan sedikit halaman. Ini mencegah ayat terlewat secara tidak sengaja dan terhitung telah dibaca – misalnya saat anak-anak menggunakan aplikasi."),
-                    FAQItem(question: "Di mana posisi bacaan saat saya membuka kembali aplikasi?", answer: "Tepat di tempat terakhir Anda membaca – bahkan setelah iPhone dimatikan dan dinyalakan ulang."),
-                    FAQItem(question: "Bagaimana cara mengubah ukuran tulisan?", answer: "Cubit layar dengan dua jari (Pinch to zoom). Ukuran teks akan menyesuaikan secara halus bertahap, dan posisi bacaan Anda tetap terjaga."),
-                    FAQItem(question: "Apa arti nilai persentase pada \"Target Harian\"?", answer: "Persentase tersebut menunjukkan berapa persen dari target halaman hari ini yang telah Anda capai, berdasarkan halaman yang sudah dibaca hari ini."),
-                    FAQItem(question: "Mengapa saya tidak bisa melompat antar surah?", answer: "ImanTrack bukan ditujukan untuk melompat bebas antar surah, melainkan untuk membaca Al-Quran secara berurutan dari awal sampai akhir guna menyelesaikan wirid harian Anda."),
-                    FAQItem(question: "Apa yang terjadi jika saya telah membaca seluruh Al-Quran?", answer: "Masya Allah! Setelah ayat terakhir, kartu ucapan selamat akan muncul. Dengan \"Mulai Khatam Baru\", Anda memulai kembali dari Surah Al-Fatihah. Khatam yang selesai akan dihitung dalam statistik Anda, dan semua nilai lainnya tetap tersimpan utuh.")
-                ]),
-                FAQSection(title: "Adzkar", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "Kapan saja adzkar aktif?", answer: "Kategori disesuaikan dengan waktu shalat: Adzkar Pagi aktif hingga Dzuhur, Adzkar Petang di waktu Ashar hingga Maghrib, Adzkar Tidur aktif sejak Maghrib hingga jam 1 malam. Setelah itu, Anda dapat mengqadhanya hingga waktu Maghrib berikutnya melalui \"Sudah dibaca? Ketuk untuk mencentang\"."),
-                    FAQItem(question: "Saya sudah membaca adzkar dari hafalan – apakah harus mengetuk setiap dzikir satu per satu?", answer: "Tidak. Di bagian paling atas setiap kategori, Anda akan menemukan \"Sudah dibaca? Ketuk untuk mencentang\". Satu ketukan menandai seluruh kategori selesai. Jika salah ketuk, ketuk sekali lagi untuk membatalkannya."),
-                    FAQItem(question: "Saya melewatkan waktu adzkar – bisakah saya mengqadhanya?", answer: "Bisa, dalam satu hari Islam yang sama, yaitu sebelum waktu Maghrib berikutnya. Jika waktu suatu kategori telah lewat, Anda dapat membukanya dan menandai selesai melalui \"Sudah dibaca? Ketuk untuk mencentang\"."),
-                    FAQItem(question: "Apa saja opsi untuk melacak adzkar?", answer: "Di Pengaturan → Adzkar, Anda dapat memilih antara \"Manual\" atau \"Otomatis\". Dalam mode otomatis, Anda juga dapat mengatur kecepatan dan memilih apakah ingin berpindah otomatis ke dzikir berikutnya."),
-                    FAQItem(question: "Bagaimana cara mengubah urutan dzikir?", answer: "Tekan dan tahan salah satu kotak adzkar, lalu gunakan panah di kiri atas untuk memindahkannya ke atas atau ke bawah."),
-                    FAQItem(question: "Bisakah saya mendapatkan pengingat adzkar?", answer: "Bisa. Di Pengaturan → Adzkar, Anda dapat menyalakan pengingat untuk Adzkar Pagi, Petang, Tidur, serta Surah Al-Kahf pada hari Jumat.")
-                ]),
-                FAQSection(title: "Tasbih", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Bagaimana cara menggunakan penghitung tasbih?", answer: "Ketuk lingkaran untuk menghitung secara manual, atau ketuk ikon putar untuk memulai penghitungan otomatis. Setiap hitungan ditandai kilatan hijau pada lingkaran. Anda dapat mengatur getaran saat menghitung di Pengaturan → Tasbih."),
-                    FAQItem(question: "Bagaimana cara beralih antar variasi dzikir?", answer: "Geser teks Arab ke kiri atau kanan. Titik-titik di bagian atas menunjukkan jumlah variasi yang tersedia – misalnya pada Istighfar atau Shalawat."),
-                    FAQItem(question: "Bagaimana cara mengatur kecepatan hitungan otomatis?", answer: "Langsung pada tampilan penghitung di bagian bawah antara Minus dan Plus: Kura-kura (lambat), Normal, atau Kelinci (cepat). Pengaturan ini disimpan secara individual untuk setiap dzikir."),
-                    FAQItem(question: "Apa kegunaan tombol Plus dan Minus?", answer: "Tombol Plus digunakan untuk menambahkan hitungan secara manual. Tombol Minus untuk mengoreksi hitungan: mengurangi angka tertentu (misal salah ketuk) atau mengurangi persentase dari sesi penghitungan terakhir."),
-                    FAQItem(question: "Bagaimana cara menambahkan tasbih kustom?", answer: "Di Pengaturan → Tasbih, Anda dapat menambahkan tasbih baru dan menentukan target harian masing-masing.")
-                ]),
-                FAQSection(title: "Shalat Subuh", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "Apa arti \"Tepat waktu\" dalam statistik?", answer: "\"Tepat waktu\" berarti Anda melaksanakan shalat Subuh sebelum matahari terbit. Jika Anda shalat setelah waktu Subuh habis (setelah terbit fajar/syuruq), maka akan dicatat sebagai \"Qadha\".")
-                ]),
-                FAQSection(title: "Statistik", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "Periode apa saja yang bisa dilihat di statistik?", answer: "Minggu, bulan, dan tahun – masing-masing dilengkapi perbandingan dengan periode sebelumnya."),
-                    FAQItem(question: "Mengapa statistik minggu lalu berubah setelah saya menyesuaikan target?", answer: "Statistik selalu mengacu pada target Anda yang aktif saat ini, bukan target lama. Capaian riil Anda (misalnya jumlah halaman yang dibaca) sama sekali tidak terpengaruh."),
-                    FAQItem(question: "Apa arti garis putus-putus pada grafik?", answer: "Garis tersebut menunjukkan target Anda untuk periode yang dipilih, yang dikonversi dari target harian Anda.")
-                ])
-            ]
-        )
-    }
-
-    // MARK: - getMalay (ms)
-    private static func getMalay() -> (String, String, String, [FAQSection]) {
-        (
-            "FAQ & Bantuan",
-            "Soalan Lazim (FAQ)",
-            "Dapatkan jawapan mengenai ciri-ciri utama dan tetapan dalam ImanTrack.",
-            [
-                FAQSection(title: "Permulaan", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Apakah tujuan aplikasi ini?", answer: "ImanTrack membantu anda memperkukuh iman dalam kehidupan seharian: Aplikasi ini khusus untuk menjejak zikir, tasbih, dan bacaan Al-Quran anda – agar anda sentiasa dapat memantau pencapaian harian, mingguan, dan bulanan."),
-                    FAQItem(question: "Adakah saya perlu mendaftar?", answer: "Tidak, ImanTrack adalah percuma dan berfungsi tanpa akaun. Data anda disimpan secara setempat pada peranti anda selagi aplikasi tidak dipadam."),
-                    FAQItem(question: "Bagaimanakah cara menetapkan sasaran saya?", answer: "Di Tetapan → Sasaran, anda akan menemui Quran, Tasbih, dan Zikir: Untuk Quran, tetapkan sasaran halaman harian anda; untuk Tasbih, tetapkan sasaran harian bagi setiap zikir. Di bawah Zikir, anda boleh menetapkan mod kiraan dan peringatan – zikir tidak mempunyai sasaran nombor khusus, yang penting adalah anda telah membacanya."),
-                    FAQItem(question: "Bolehkah saya menyembunyikan transliterasi rumi?", answer: "Boleh. Di Tetapan → Umum → \"Papar Transliterasi\", anda boleh menghidupkan atau mematikan tulisan rumi di bawah teks Arab untuk keseluruhan aplikasi."),
-                    FAQItem(question: "Dalam bahasa apakah ImanTrack tersedia?", answer: "Jerman, Inggeris, Arab, Turki, Perancis, Sepanyol, Indonesia, Melayu, Urdu, Rusia, dan Bengali. Anda boleh menukar bahasa pada bila-bila masa di Tetapan → Umum → Bahasa.")
-                ]),
-                FAQSection(title: "Ritma Harian", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "Mengapakah hari saya tidak bermula pada tengah malam?", answer: "ImanTrack berpandukan waktu matahari terbenam (Maghrib) dan bukannya tengah malam – seperti permulaan hari menurut Islam. Aplikasi menggunakan lokasi anggaran anda untuk pengiraan ini."),
-                    FAQItem(question: "Mengapakah pada waktu malam tertera \"Malam Jumaat\"?", answer: "Menurut kiraan Islam, hari baharu bermula sebaik masuk waktu Maghrib. Oleh itu, antara Maghrib dan Subuh, aplikasi memaparkan contohnya \"Malam Jumaat\". Mulai waktu Subuh, ia bertukar kepada \"Jumaat\"."),
-                    FAQItem(question: "Apakah yang berlaku jika saya tidak membenarkan akses lokasi – dan adakah rekod saya berubah jika saya membenarkannya kemudian?", answer: "Tanpa kebenaran lokasi, pertukaran hari berlaku secara automatik pada tengah malam. Anda boleh mengaktifkan akses lokasi pada bila-bila masa di Tetapan iOS – rekod hari sebelumnya tidak akan berubah, hanya waktu pertukaran hari yang akan diselaraskan bermula waktu itu."),
-                    FAQItem(question: "Mengapakah aplikasi memerlukan waktu solat?", answer: "Waktu solat menentukan masa untuk zikir pagi, petang, dan tidur, permulaan hari Islam sejak Maghrib, serta jadual peringatan anda. Di Tetapan → Umum → Pengiraan Waktu Solat, anda boleh menyesuaikan kaedah dan mazhab.")
-                ]),
-                FAQSection(title: "Penjejakan Al-Quran", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Bagaimanakah penjejakan Al-Quran automatik berfungsi?", answer: "Anda membaca Al-Quran dari atas ke bawah dan menatal perlahan-lahan. Sebaik sahaja sesuatu ayat melepasi bahagian atas skrin, ia ditandakan telah dibaca dan bertukar kelabu. ImanTrack mengira ayat dan halaman secara automatik."),
-                    FAQItem(question: "Mengapakah halaman yang telah dibaca hilang dan tidak boleh ditatal ke belakang?", answer: "ImanTrack direka untuk membaca Al-Quran langkah demi langkah dari awal hingga akhir. Apa yang telah dibaca berada di belakang anda – agar tumpuan kekal pada ayat seterusnya. Setiap ayat hanya dikira sekali bagi setiap khatam."),
-                    FAQItem(question: "Mengapakah Al-Quran tidak boleh ditatal dengan laju?", answer: "Ini disengajakan: Leretan pantas hanya menggerakkan sedikit sahaja paparan. Ini mengelakkan ayat terlangkau secara tidak sengaja dan dikira telah dibaca – contohnya apabila kanak-kanak menggunakan aplikasi."),
-                    FAQItem(question: "Di manakah kedudukan bacaan apabila saya membuka semula aplikasi?", answer: "Tepat di tempat terakhir anda berhenti – walaupun selepas memulakan semula iPhone anda."),
-                    FAQItem(question: "Bagaimanakah cara menukar saiz fon?", answer: "Cubit skrin dengan dua jari (Pinch to zoom). Saiz tulisan akan berubah secara beransur-ansur dan kedudukan bacaan anda sentiasa terpelihara."),
-                    FAQItem(question: "Apakah maksud nilai peratusan pada \"Sasaran Harian\"?", answer: "Ia menunjukkan peratusan sasaran halaman hari ini yang telah anda capai, berdasarkan halaman yang dibaca hari ini."),
-                    FAQItem(question: "Mengapakah saya tidak boleh bertukar surah sesuka hati?", answer: "ImanTrack bukan bertujuan untuk melompat antara surah, tetapi untuk membaca Al-Quran secara berturutan dari awal hingga akhir bagi menyempurnakan wirid harian anda."),
-                    FAQItem(question: "Apakah yang berlaku apabila saya selesai membaca seluruh Al-Quran?", answer: "MashaAllah! Selepas ayat terakhir, kad ucapan tahniah akan dipaparkan. Dengan \"Mula Khatam Baharu\", anda akan bermula semula dari Surah Al-Fatihah. Khatam yang selesai dikira dalam statistik anda, manakala semua nilai lain kekal terpelihara.")
-                ]),
-                FAQSection(title: "Zikir", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "Bilakah zikir-zikir ini aktif?", answer: "Kategori berpandukan waktu solat: Zikir Pagi aktif sehingga Zohor, Zikir Petang pada waktu Asar hingga Maghrib, Zikir Sebelum Tidur aktif dari Maghrib hingga jam 1 pagi. Selepas itu, anda boleh menggantikannya sehingga waktu Maghrib seterusnya melalui \"Sudah dibaca? Ketuk untuk tandakan\"."),
-                    FAQItem(question: "Saya sudah membaca zikir secara hafalan – adakah saya perlu mengetik setiap zikir?", answer: "Tidak. Di bahagian paling atas setiap kategori, terdapat butang \"Sudah dibaca? Ketuk untuk tandakan\". Satu ketikan menandakan seluruh kategori selesai. Jika tersilap ketik, ketik sekali lagi untuk membatalkannya."),
-                    FAQItem(question: "Saya terlepas waktu zikir – bolehkah saya menggantikannya?", answer: "Boleh, dalam hari Islam yang sama iaitu sebelum waktu Maghrib seterusnya. Jika waktu sesuatu kategori telah tamat, anda boleh membukanya dan menandakan selesai melalui \"Sudah dibaca? Ketuk untuk tandakan\"."),
-                    FAQItem(question: "Apakah pilihan yang ada untuk menjejak zikir?", answer: "Di Tetapan → Zikir, anda boleh memilih antara \"Ketik Manual\" atau \"Automatik\". Dalam mod automatik, anda juga boleh menetapkan kelajuan dan sama ada mahu beralih secara automatik ke zikir seterusnya."),
-                    FAQItem(question: "Bagaimanakah cara mengubah susunan zikir?", answer: "Tekan dan tahan mana-mana kotak zikir, kemudian gunakan anak panah di kiri atas untuk mengalihkannya ke atas atau ke bawah."),
-                    FAQItem(question: "Bolehkah saya menerima peringatan zikir?", answer: "Boleh. Di Tetapan → Zikir, anda boleh menghidupkan peringatan untuk Zikir Pagi, Petang, Sebelum Tidur, serta Surah Al-Kahf pada hari Jumaat.")
-                ]),
-                FAQSection(title: "Tasbih", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Bagaimanakah cara menggunakan pembilang tasbih?", answer: "Ketik bulatan untuk mengira, atau tekan ikon main untuk memulakan kiraan automatik. Setiap kiraan ditandai kilauan hijau pada bulatan. Anda boleh menghidupkan atau mematikan getaran di Tetapan → Tasbih."),
-                    FAQItem(question: "Bagaimanakah cara bertukar antara versi zikir?", answer: "Leret teks Arab ke kiri atau kanan. Titik-titik di bahagian atas menunjukkan bilangan versi yang ada – contohnya pada Istighfar atau Selawat."),
-                    FAQItem(question: "Bagaimanakah cara menetapkan kelajuan kiraan automatik?", answer: "Terus pada paparan pembilang di bahagian bawah antara Tolak dan Tambah: Kura-kura (perlahan), Normal, atau Arnab (laju). Tetapan ini disimpan secara berasingan bagi setiap zikir."),
-                    FAQItem(question: "Apakah fungsi Tambah dan Tolak?", answer: "Gunakan Tambah untuk menambah kiraan secara manual. Gunakan Tolak untuk membetulkan kiraan: sama ada menolak nombor tertentu (jika tersilap) atau mengurangkan peratusan daripada sesi kiraan terakhir."),
-                    FAQItem(question: "Bagaimanakah cara menambah tasbih sendiri?", answer: "Di Tetapan → Tasbih, anda boleh menambah zikir baharu dan menetapkan sasaran harian tersendiri bagi setiap satunya.")
-                ]),
-                FAQSection(title: "Solat Subuh", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "Apakah maksud \"Tepat pada waktunya\" dalam statistik?", answer: "\"Tepat pada waktunya\" bermaksud anda menunaikan solat Subuh sebelum matahari terbit. Sekiranya anda solat selepas tamat waktu Subuh (selepas terbit matahari), ia dikira sebagai \"Qada\".")
-                ]),
-                FAQSection(title: "Statistik", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "Apakah tempoh masa yang boleh saya lihat dalam statistik?", answer: "Minggu, bulan, dan tahun – setiap satunya disertakan perbandingan dengan tempoh sebelumnya."),
-                    FAQItem(question: "Mengapakah statistik minggu lepas berubah selepas saya mengubah sasaran?", answer: "Statistik sentiasa merujuk kepada sasaran aktif semasa anda, bukan sasaran lama. Pencapaian sebenar anda (seperti bilangan halaman yang dibaca) kekal tidak terjejas sama sekali."),
-                    FAQItem(question: "Apakah maksud garis putus-putus pada carta?", answer: "Ia menunjukkan sasaran semasa anda bagi tempoh yang dipilih, yang dikira daripada sasaran harian anda.")
-                ])
-            ]
-        )
-    }
-
-    // MARK: - getFrench (fr)
-    private static func getFrench() -> (String, String, String, [FAQSection]) {
-        (
-            "FAQ & Aide",
-            "Foire aux questions (FAQ)",
-            "Trouvez ici les réponses aux fonctionnalités et réglages essentiels d'ImanTrack.",
-            [
-                FAQSection(title: "Premiers pas", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Quel est le but de cette application ?", answer: "ImanTrack vous aide à renforcer votre foi au quotidien : l'application sert principalement à suivre vos Adhkar, votre Tasbih et votre lecture du Coran – afin de visualiser facilement ce que vous avez accompli chaque jour, chaque semaine et chaque mois."),
-                    FAQItem(question: "Dois-je créer un compte ?", answer: "Non, ImanTrack est entièrement gratuit et fonctionne sans aucun compte. Vos données restent enregistrées localement sur votre appareil tant que vous ne supprimez pas l'application."),
-                    FAQItem(question: "Comment configurer mes objectifs ?", answer: "Sous Paramètres → Objectifs, vous trouverez le Coran, le Tasbih et les Adhkar : pour le Coran, fixez votre objectif quotidien de pages ; pour le Tasbih, un objectif quotidien par Dhikr. Sous Adhkar, réglez le mode de comptage et les rappels – les Adhkar n'ont pas d'objectif chiffré, l'important est de les avoir lus."),
-                    FAQItem(question: "Puis-je masquer la translittération latine ?", answer: "Oui. Sous Paramètres → Général → « Afficher la translittération », vous pouvez activer ou désactiver la transcription phonétique sous le texte arabe pour l'ensemble de l'application."),
-                    FAQItem(question: "En quelles langues ImanTrack est-il disponible ?", answer: "Allemand, anglais, arabe, turc, français, espagnol, indonésien, malais, ourdou, russe et bengali. Vous pouvez changer la langue à tout moment sous Paramètres → Général → Langue.")
-                ]),
-                FAQSection(title: "Rythme quotidien", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "Pourquoi ma journée ne commence-t-elle pas à minuit ?", answer: "ImanTrack s'aligne sur le coucher du soleil (Maghrib) plutôt que sur minuit – conformément au début de la journée islamique. L'application utilise votre localisation approximative pour ce calcul."),
-                    FAQItem(question: "Pourquoi est-il écrit « Veille du vendredi » le soir ?", answer: "Selon le calendrier islamique, la nouvelle journée débute au Maghrib. Entre le Maghrib et le Fajr, l'application affiche donc par exemple « Veille du vendredi ». À partir du Fajr, l'affichage passe à « Vendredi »."),
-                    FAQItem(question: "Que se passe-t-il si je refuse la localisation – et mes progrès changent-ils si je l'autorise plus tard ?", answer: "Sans accès à la localisation, le changement de jour s'effectue automatiquement à minuit. Vous pouvez activer la localisation à tout moment dans les Réglages iOS – vos journées déjà enregistrées restent inchangées, seule l'heure de bascule s'ajustera à partir de cet instant."),
-                    FAQItem(question: "Pourquoi l'application a-t-elle besoin des horaires de prière ?", answer: "Les horaires de prière déterminent les plages actives pour les Adhkar du matin, du soir et du coucher, le début de la journée islamique au Maghrib et l'envoi de vos rappels. Sous Paramètres → Général → Calcul des horaires de prière, vous pouvez ajuster la méthode et l'école juridique.")
-                ]),
-                FAQSection(title: "Suivi du Coran", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Comment fonctionne le suivi automatique du Coran ?", answer: "Vous lisez le Coran de haut en bas en faisant défiler lentement. Dès qu'un verset disparaît en haut de l'écran, il est considéré comme lu et devient gris. ImanTrack compte ainsi automatiquement le nombre de versets et de pages lus."),
-                    FAQItem(question: "Pourquoi les pages lues disparaissent-elles et pourquoi ne puis-je pas revenir en arrière ?", answer: "ImanTrack est conçu pour lire le Coran pas à pas du début à la fin. Ce que vous avez lu est accompli – vous gardez ainsi toute votre attention sur la suite. Chaque verset ne compte qu'une seule fois par Khatm."),
-                    FAQItem(question: "Pourquoi ne peut-on pas faire défiler le Coran rapidement ?", answer: "C'est un choix délibéré : un glissement rapide ne fait avancer l'affichage que d'une courte distance. Cela évite de sauter involontairement des versets et de les comptabiliser comme lus (par exemple si des enfants manipulent l'écran)."),
-                    FAQItem(question: "Où reprend la lecture quand je rouvre l'application ?", answer: "Exactement à l'endroit où vous vous étiez arrêté – même après un redémarrage de votre iPhone."),
-                    FAQItem(question: "Comment modifier la taille de la police ?", answer: "Pincez l'écran avec deux doigts (Pinch to zoom). La taille du texte s'ajuste en douceur par paliers et votre position de lecture est parfaitement conservée."),
-                    FAQItem(question: "Que signifie le pourcentage à côté de « Objectif quotidien » ?", answer: "Il indique le pourcentage de votre objectif de pages du jour déjà accompli, calculé à partir des pages lues aujourd'hui."),
-                    FAQItem(question: "Pourquoi ne puis-je pas passer librement d'une sourate à l'autre ?", answer: "Dans ImanTrack, le but n'est pas de naviguer au hasard entre les sourates, mais de lire le Coran de manière continue du début à la fin pour accomplir votre lecture quotidienne suivie (Wird)."),
-                    FAQItem(question: "Que se passe-t-il lorsque j'ai lu tout le Coran ?", answer: "MashaAllah ! Après le dernier verset, un message de félicitations s'affiche. Avec « Commencer un nouveau Khatm », vous repartez à la sourate Al-Fatiha. Le Khatm achevé est comptabilisé dans vos statistiques et toutes les autres valeurs restent conservées.")
-                ]),
-                FAQSection(title: "Adhkar", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "Quand chaque catégorie d'Adhkar est-elle active ?", answer: "Les catégories s'alignent sur les heures de prière : les Adhkar du matin sont actifs jusqu'à Dhuhr, les Adhkar du soir de l'Asr jusqu'au Maghrib, les Adhkar du coucher à partir du Maghrib jusqu'à 1 h du matin. Ensuite, vous pouvez les rattraper jusqu'au Maghrib suivant via « Déjà lu ? Appuyez pour cocher »."),
-                    FAQItem(question: "J'ai récité de mémoire ou ailleurs – dois-je appuyer sur chaque Dhikr individuellement ?", answer: "Non. Tout en haut de chaque catégorie, vous trouverez « Déjà lu ? Appuyez pour cocher ». Un seul appui valide toute la catégorie. En cas d'erreur, appuyez de nouveau pour annuler."),
-                    FAQItem(question: "J'ai manqué le moment d'un Adhkar – puis-je le rattraper ?", answer: "Oui, au cours de la même journée islamique, c'est-à-dire jusqu'au Maghrib suivant. Si le temps d'une catégorie est écoulé, vous pouvez y entrer et la marquer comme terminée via « Déjà lu ? Appuyez pour cocher »."),
-                    FAQItem(question: "Quelles sont les options pour suivre les Adhkar ?", answer: "Sous Paramètres → Adhkar, choisissez entre « Manuel » ou « Automatique ». En mode automatique, vous pouvez régler la vitesse et décider si le passage au Dhikr suivant s'effectue automatiquement."),
-                    FAQItem(question: "Comment réorganiser l'ordre des Adhkar ?", answer: "Maintenez votre doigt appuyé sur un encadré d'Adhkar et utilisez les flèches en haut à gauche pour le déplacer vers le haut ou vers le bas."),
-                    FAQItem(question: "Puis-je recevoir des rappels pour les Adhkar ?", answer: "Oui. Sous Paramètres → Adhkar, vous pouvez activer des rappels pour les Adhkar du matin, du soir, du coucher ainsi que pour la sourate Al-Kahf le vendredi.")
-                ]),
-                FAQSection(title: "Tasbih", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Comment utiliser le compteur de Tasbih ?", answer: "Appuyez sur le cercle pour compter manuellement, ou appuyez sur l'icône de lecture pour lancer le comptage automatique. À chaque incrément, le cercle émet un bref flash vert. Vous pouvez activer ou désactiver la vibration sous Paramètres → Tasbih."),
-                    FAQItem(question: "Comment passer d'une variante à l'autre d'un Dhikr ?", answer: "Balayez le texte arabe vers la gauche ou vers la droite. Les points en haut indiquent le nombre de variantes disponibles (par exemple pour l'Istighfar ou les Salawat)."),
-                    FAQItem(question: "Comment régler la vitesse du comptage automatique ?", answer: "Directement sur l'écran du compteur en bas, entre Moins et Plus : Tortue (lent), Normal ou Lièvre (rapide). Ce réglage est mémorisé individuellement pour chaque Dhikr."),
-                    FAQItem(question: "À quoi servent les boutons Plus et Moins ?", answer: "Le bouton Plus permet d'ajouter des répétitions manuellement. Le bouton Moins permet de corriger le compteur : soit en soustrayant un chiffre précis (en cas d'erreur de saisie), soit en réduisant d'un certain pourcentage la dernière session de comptage."),
-                    FAQItem(question: "Comment ajouter un Tasbih personnalisé ?", answer: "Sous Paramètres → Tasbih, vous pouvez ajouter d'autres Tasbih et définir un objectif quotidien propre à chacun.")
-                ]),
-                FAQSection(title: "Prière du Fajr", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "Que signifie « Prié à l'heure » dans les statistiques ?", answer: "« Prié à l'heure » signifie que vous avez accompli votre prière du Fajr avant le lever du soleil. Si vous priez après la fin de l'heure du Fajr (après le lever du soleil), cela est comptabilisé comme « Rattrapé (Qada) ».")
-                ]),
-                FAQSection(title: "Statistiques", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "Quelles périodes puis-je consulter dans les statistiques ?", answer: "Semaine, mois et année – chacune avec une comparaison claire par rapport à la période précédente."),
-                    FAQItem(question: "Pourquoi mes statistiques d'une semaine passée ont-elles changé après avoir modifié mon objectif ?", answer: "Les statistiques se basent toujours sur votre objectif actuellement en vigueur, et non sur l'ancien. Vos accomplissements réels (comme le nombre de pages lues) demeurent strictement inchangés."),
-                    FAQItem(question: "Que représente la ligne pointillée sur le graphique ?", answer: "Elle indique votre objectif calculé pour la période sélectionnée, converti à partir de votre objectif quotidien.")
-                ])
-            ]
-        )
-    }
-
-    // MARK: - getSpanish (es)
-    private static func getSpanish() -> (String, String, String, [FAQSection]) {
-        (
-            "FAQ y Ayuda",
-            "Preguntas frecuentes (FAQ)",
-            "Encuentra respuestas sobre las funciones y ajustes más importantes de ImanTrack.",
-            [
-                FAQSection(title: "Primeros pasos", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "¿Cuál es el propósito de esta aplicación?", answer: "ImanTrack te ayuda a fortalecer tu fe en la vida cotidiana: la app sirve principalmente para registrar tus Adhkar, tu Tasbih y tu lectura del Corán, permitiéndote comprobar en todo momento tus logros diarios, semanales y mensuales."),
-                    FAQItem(question: "¿Tengo que registrarme?", answer: "No, ImanTrack es gratuita y funciona sin cuenta. Tus datos permanecen guardados localmente en tu dispositivo siempre que no desinstales la aplicación."),
-                    FAQItem(question: "¿Cómo configuro mis metas?", answer: "En Ajustes → Metas encontrarás el Corán, el Tasbih y los Adhkar: para el Corán defines tu meta diaria de páginas; para el Tasbih, una meta diaria por Dhikr. En Adhkar configuras el modo de conteo y los recordatorios: los Adhkar no tienen una meta numérica, lo que cuenta es si los has leído."),
-                    FAQItem(question: "¿Puedo ocultar la transliteración latina?", answer: "Sí. En Ajustes → General → \"Mostrar transliteración\" puedes activar o desactivar la fonética debajo del texto en árabe para toda la aplicación."),
-                    FAQItem(question: "¿En qué idiomas está disponible ImanTrack?", answer: "Alemán, inglés, árabe, turco, francés, español, indonesio, malayo, urdu, ruso y bengalí. Puedes cambiar de idioma en cualquier momento en Ajustes → General → Idioma.")
-                ]),
-                FAQSection(title: "Ritmo diario", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "¿Por qué mi día no comienza a medianoche?", answer: "ImanTrack se orienta por la puesta de sol (Maghrib) en lugar de la medianoche, tal como comienza el día islámico. La app utiliza tu ubicación aproximada para este cálculo."),
-                    FAQItem(question: "¿Por qué dice por la noche \"Víspera del viernes\"?", answer: "Según el cómputo islámico, el nuevo día comienza con el Maghrib. Por eso, entre Maghrib y Fajr la aplicación muestra, por ejemplo, \"Víspera del viernes\". A partir del Fajr se muestra \"Viernes\"."),
-                    FAQItem(question: "¿Qué sucede si no permito el acceso a la ubicación y si lo permito más adelante?", answer: "Sin permiso de ubicación, el cambio de día se realiza automáticamente a medianoche. Puedes activar la ubicación en cualquier momento en los Ajustes de iOS: los días ya registrados no cambian, solo se ajustará la hora de cambio de día a partir de ese momento."),
-                    FAQItem(question: "¿Para qué necesita la aplicación los horarios de oración?", answer: "Los horarios de oración determinan los periodos para los Adhkar de la mañana, de la tarde y antes de dormir, el inicio del día islámico en Maghrib y la programación de tus recordatorios. En Ajustes → General → Cálculo de horarios de oración puedes ajustar el método y la escuela jurídica.")
-                ]),
-                FAQSection(title: "Seguimiento del Corán", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "¿Cómo funciona el seguimiento automático del Corán?", answer: "Lees el Corán de arriba hacia abajo desplazándote lentamente. En cuanto un versículo desaparece por la parte superior de la pantalla, se marca como leído y se vuelve gris. ImanTrack cuenta automáticamente cuántos versículos y páginas has leído."),
-                    FAQItem(question: "¿Por qué desaparecen las páginas leídas y por qué no puedo retroceder?", answer: "En ImanTrack el objetivo es leer el Corán paso a paso desde el principio hasta el final. Lo leído queda atrás para mantener el enfoque en la siguiente parte. Cada versículo cuenta exactamente una vez por Khatm."),
-                    FAQItem(question: "¿Por qué no se puede desplazar el Corán rápidamente?", answer: "Es intencionado: un deslizamiento rápido solo avanza un pequeño tramo. Así se evita saltar versículos por accidente y contarlos como leídos (por ejemplo, cuando los niños usan la aplicación)."),
-                    FAQItem(question: "¿Dónde reanudo la lectura al volver a abrir la app?", answer: "Exactamente en el punto donde lo dejaste, incluso después de reiniciar tu iPhone."),
-                    FAQItem(question: "¿Cómo cambio el tamaño de letra?", answer: "Pellizca la pantalla con dos dedos (Pinch to zoom). El tamaño de la fuente cambia suavemente en pequeños pasos y tu posición de lectura se mantiene intacta."),
-                    FAQItem(question: "¿Qué significa el porcentaje en \"Meta Diaria\"?", answer: "Muestra qué porcentaje de tu meta de páginas de hoy has alcanzado ya, en función de las páginas leídas hoy."),
-                    FAQItem(question: "¿Por qué no puedo saltar libremente entre suras?", answer: "En ImanTrack la finalidad no es saltar entre suras al azar, sino leer el Corán de manera continua de principio a fin para cumplir tu porción de lectura diaria (Wird)."),
-                    FAQItem(question: "¿Qué sucede cuando he leído todo el Corán?", answer: "¡MashaAllah! Tras el último versículo aparece una tarjeta de felicitación. Con \"Comenzar nuevo Khatm\" vuelves a empezar en la Sura Al-Fatiha. El Khatm completado se contabiliza en tus estadísticas y todos los demás valores se conservan intactos.")
-                ]),
-                FAQSection(title: "Adhkar", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "¿Cuándo está activa cada categoría de Adhkar?", answer: "Las categorías se rigen por los horarios de oración: los Adhkar de la mañana están activos hasta Dhuhr, los de la tarde en horario de Asr hasta Maghrib, y los de antes de dormir desde Maghrib hasta la 1 de la madrugada. Después puedes recuperarlos hasta el siguiente Maghrib mediante \"¿Ya lo has leído? Toca para marcar\"."),
-                    FAQItem(question: "Me sé los Adhkar de memoria o ya los leí en otro lugar: ¿tengo que pulsar cada Dhikr?", answer: "No. En la parte superior de cada categoría verás \"¿Ya lo has leído? Toca para marcar\". Un solo toque marca toda la categoría como completada. Si te equivocaste, vuelve a tocar para deshacerlo."),
-                    FAQItem(question: "Se me pasó el tiempo de un Adhkar: ¿puedo recuperarlo?", answer: "Sí, dentro del mismo día islámico, es decir, hasta el siguiente Maghrib. Si ha vencido el tiempo de una categoría, puedes entrar en ella y marcarla como completada mediante \"¿Ya lo has leído? Toca para marcar\"."),
-                    FAQItem(question: "¿Qué opciones tengo para registrar los Adhkar?", answer: "En Ajustes → Adhkar puedes elegir entre \"Manual\" o \"Automático\". En el modo automático también configuras la velocidad y si deseas pasar automáticamente al siguiente Dhikr al completar el conteo."),
-                    FAQItem(question: "¿Cómo puedo modificar el orden?", answer: "Mantén pulsada una tarjeta de Adhkar y utiliza las flechas de la esquina superior izquierda para moverla hacia arriba o hacia abajo."),
-                    FAQItem(question: "¿Puedo recibir recordatorios de los Adhkar?", answer: "Sí. En Ajustes → Adhkar puedes activar recordatorios para los Adhkar de la mañana, de la tarde y antes de dormir, así como para la Sura Al-Kahf los viernes.")
-                ]),
-                FAQSection(title: "Tasbih", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "¿Cómo uso el contador de Tasbih?", answer: "Toca el círculo para contar o presiona el icono de reproducir para el conteo automático. Con cada repetición el círculo emite un destello verde. Puedes activar o desactivar la vibración en Ajustes → Tasbih."),
-                    FAQItem(question: "¿Cómo cambio entre las diferentes versiones de un Dhikr?", answer: "Desliza el texto en árabe hacia la izquierda o hacia la derecha. Los puntos de la parte superior indican cuántas versiones existen (por ejemplo, en el Istighfar o en las Salawat)."),
-                    FAQItem(question: "¿Cómo ajusto la velocidad del conteo automático?", answer: "Directamente en la pantalla del contador, entre el Menos y el Más: Tortuga (lento), Normal o Liebre (rápido). Este ajuste se guarda por separado para cada Dhikr."),
-                    FAQItem(question: "¿Para qué sirven el Más y el Menos?", answer: "Con el Más puedes añadir repeticiones manualmente. Con el Menos corriges tu contador: puedes restar una cantidad determinada (por ejemplo, tras un error) o reducir porcentualmente la última sesión de conteo."),
-                    FAQItem(question: "¿Cómo puedo añadir un Tasbih personalizado?", answer: "En Ajustes → Tasbih puedes añadir más Tasbih y definir una meta diaria propia para cada uno.")
-                ]),
-                FAQSection(title: "Oración de Fajr", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "¿Qué significa \"Rezado a tiempo\" en las estadísticas?", answer: "\"Rezado a tiempo\" significa que rezaste la oración de Fajr antes de la salida del sol. Si rezas después de que termine el tiempo de Fajr (es decir, tras el amanecer), se contabiliza como \"Compensado (Qada)\".")
-                ]),
-                FAQSection(title: "Estadísticas", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "¿Qué periodos de tiempo puedo consultar en las estadísticas?", answer: "Semana, mes y año, cada uno con una comparación frente al periodo anterior."),
-                    FAQItem(question: "¿Por qué cambiaron mis estadísticas de una semana pasada tras modificar mi meta?", answer: "Las estadísticas se calculan siempre respecto a tu meta actual activa, no a la meta antigua. Tus cifras reales obtenidas (como las páginas leídas) no se ven afectadas en absoluto."),
-                    FAQItem(question: "¿Qué representa la línea discontinua en el gráfico?", answer: "Muestra tu meta calculada para el periodo seleccionado, convertida a partir de tu meta diaria.")
-                ])
-            ]
-        )
-    }
-
-    // MARK: - getUrdu (ur)
-    private static func getUrdu() -> (String, String, String, [FAQSection]) {
-        (
-            "عمومی سوالات اور مدد",
-            "اکثر پوچھے جانے والے سوالات (FAQ)",
-            "ImanTrack کے اہم فیچرز اور سیٹنگز کے بارے میں سوالات کے جوابات یہاں پائیں۔",
-            [
-                FAQSection(title: "ابتدائی مراحل", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "اس ایپ کا مقصد کیا ہے؟", answer: "ImanTrack روزمرہ کی زندگی میں آپ کے ایمان کو مضبوط کرنے میں مدد کرتا ہے: اس ایپ کا بنیادی مقصد آپ کے اذکار، تسبیح اور تلاوتِ قرآن کو ٹریک کرنا ہے تاکہ آپ روزانہ، ہفتہ وار اور ماہانہ بنیادوں پر اپنی پیش رفت کا باآسانی جائزہ لے سکیں۔"),
-                    FAQItem(question: "کیا اکاؤنٹ بنانا ضروری ہے؟", answer: "نہیں، ImanTrack بالکل مفت ہے اور بغیر کسی اکاؤنٹ کے کام کرتا ہے۔ آپ کا ڈیٹا آپ کے آلے پر محفوظ رہتا ہے جب تک کہ آپ ایپ ڈیلیٹ نہ کریں۔"),
-                    FAQItem(question: "میں اپنے اہداف کیسے مقرر کروں؟", answer: "ترتیبات ← اہداف میں آپ کو قرآن، تسبیح اور اذکار ملیں گے: قرآن کے لیے روزانہ صفحات کا ہدف اور تسبیح کے لیے فی ذکر روزانہ کا ہدف مقرر کریں۔ اذکار کے تحت آپ گنتی کا طریقہ اور یاد دہانیاں سیٹ کرتے ہیں – اذکار کا کوئی عددی ہدف نہیں ہے، اہم بات یہ ہے کہ آپ نے انہیں پڑھا ہو۔"),
-                    FAQItem(question: "کیا میں لاطینی رسم الخط (نقل حرفی) کو چھپا سکتا ہوں؟", answer: "جی ہاں۔ ترتیبات ← عام ← \"نقل حرفی دکھائیں\" کے ذریعے آپ پوری ایپ میں عربی متن کے نیچے لاطینی الفاظ کو آن یا آف کر سکتے ہیں۔"),
-                    FAQItem(question: "ImanTrack کن زبانوں میں دستیاب ہے؟", answer: "جرمن، انگریزی، عربی، ترکی، فرانسیسی، ہسپانوی، انڈونیشی، ملائی، اردو، روسی اور بنگالی۔ آپ کسی بھی وقت ترتیبات ← عام ← زبان سے زبان تبدیل کر سکتے ہیں۔")
-                ]),
-                FAQSection(title: "روزمرہ کا معمول", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "میرا دن آدھی رات سے کیوں شروع نہیں ہوتا؟", answer: "ImanTrack آدھی رات کے بجائے غروب آفتاب (مغرب) سے دن کے آغاز کا حساب لگاتا ہے – جیسا کہ اسلامی دن کا آغاز ہوتا ہے۔ اس کے لیے ایپ آپ کا تخمینی مقام استعمال کرتی ہے۔"),
-                    FAQItem(question: "شام کے وقت \"جمعہ کی رات\" کیوں لکھا آتا ہے؟", answer: "اسلامی حساب کے مطابق نیا دن مغرب سے شروع ہوتا ہے۔ اس لیے ایپ مغرب اور فجر کے درمیان مثلاً \"جمعہ کی رات\" دکھاتی ہے۔ فجر کے بعد وہاں \"جمعہ\" لکھا آتا ہے۔"),
-                    FAQItem(question: "اگر میں لوکیشن کی اجازت نہ دوں تو کیا ہوگا – اور بعد میں اجازت دینے سے کیا ڈیٹا تبدیل ہوگا؟", answer: "لوکیشن کی اجازت کے بغیر دن خود بخود آدھی رات کو تبدیل ہوگا۔ آپ iOS ترتیبات میں کسی بھی وقت لوکیشن آن کر سکتے ہیں – پہلے سے ریکارڈ شدہ دن تبدیل نہیں ہوں گے، صرف آئندہ سے دن کی تبدیلی کا وقت ایڈجسٹ ہو جائے گا۔"),
-                    FAQItem(question: "ایپ کو نماز کے اوقات کی ضرورت کیوں ہے؟", answer: "نماز کے اوقات صبح، شام اور سوتے وقت کے اذکار، مغرب سے اسلامی دن کے آغاز اور آپ کی یاد دہانیوں کے نظام الاوقات کا تعین کرتے ہیں۔ ترتیبات ← عام ← اوقات نماز کا حساب سے آپ طریقہ کار اور فقہی مسلک تبدیل کر سکتے ہیں۔")
-                ]),
-                FAQSection(title: "قرآن ٹریکنگ", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "خودکار قرآن ٹریکنگ کیسے کام کرتی ہے؟", answer: "آپ قرآن کو اوپر سے نیچے کی طرف پڑھتے ہوئے آہستہ آہستہ اسکرول کرتے ہیں۔ جیسے ہی کوئی آیت اسکرین کے اوپری حصے سے اوجھل ہوتی ہے، وہ پڑھی ہوئی شمار ہو جاتی ہے اور خاکستری (گرے) ہو جاتی ہے۔ اس طرح ایپ خود بخود آیات اور صفحات کا حساب رکھتی ہے۔"),
-                    FAQItem(question: "پڑھے ہوئے صفحات غائب کیوں ہو جاتے ہیں اور میں پیچھے اسکرول کیوں نہیں کر سکتا؟", answer: "ImanTrack میں مقصد قرآن کو شروع سے آخر تک قدم بہ قدم مکمل کرنا ہے۔ جو آپ پڑھ چکے ہیں وہ پیچھے رہ جاتا ہے – تاکہ آپ کی توجہ اگلے حصے پر رہے۔ ہر ختم میں ہر آیت بالکل ایک بار شمار ہوتی ہے۔"),
-                    FAQItem(question: "قرآن کو تیزی سے اسکرول کیوں نہیں کیا جا سکتا؟", answer: "یہ جان بوجھ کر بنایا گیا ہے: تیزی سے سوائپ کرنے سے اسکرین صرف تھوڑا سا آگے بڑھتی ہے۔ اس سے آیات کے غلطی سے چھوٹ جانے اور پڑھے جانے کے طور پر شمار ہونے سے بچا جا سکتا ہے – مثلاً جب بچے ایپ استعمال کر رہے ہوں۔"),
-                    FAQItem(question: "جب میں دوبارہ ایپ کھولتا ہوں تو میں کہاں سے شروع کروں گا؟", answer: "بالکل اسی مقام پر جہاں آپ نے چھوڑا تھا – آئی فون ری اسٹارٹ کرنے کے بعد بھی۔"),
-                    FAQItem(question: "میں فونٹ کا سائز کیسے تبدیل کروں؟", answer: "دو انگلیوں سے زوم کریں (Pinch to zoom)۔ فونٹ کا سائز چھوٹے اور ہموار مراحل میں تبدیل ہوتا ہے اور آپ کا تلاوت کا مقام بالکل برقرار رہتا ہے۔"),
-                    FAQItem(question: "\"روزانہ کا ہدف\" کے ساتھ فیصد کا کیا مطلب ہے؟", answer: "یہ بتاتا ہے کہ آج پڑھے گئے صفحات کی بنیاد پر آپ نے اپنے روزانہ کے ہدف کا کتنے فیصد حصہ مکمل کر لیا ہے۔"),
-                    FAQItem(question: "میں سورتوں کے درمیان آزادانہ طور پر کیوں نہیں جا سکتا؟", answer: "ImanTrack کا مقصد سورتوں کے درمیان ادھر ادھر جانا نہیں ہے، بلکہ اپنے روزانہ کے وِرد کو مکمل کرنے کے لیے شروع سے آخر تک مسلسل قرآن پڑھنا ہے۔"),
-                    FAQItem(question: "جب میں پورا قرآن پڑھ لوں تو کیا ہوگا؟", answer: "ماشاء اللہ! آخری آیت کے بعد مبارکباد کا کارڈ نظر آئے گا۔ \"نیا ختم شروع کریں\" کے ذریعے آپ دوبارہ سورۃ الفاتحہ سے آغاز کریں گے۔ مکمل شدہ ختم آپ کے اعداد و شمار میں شامل ہو جائے گا اور باقی تمام ریکارڈ محفوظ رہے گا۔")
-                ]),
-                FAQSection(title: "اذکار", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "کون سے اذکار کب فعال ہوتے ہیں؟", answer: "کیٹیگریز نماز کے اوقات کے مطابق ہیں: صبح کے اذکار ظہر تک، شام کے اذکار عصر سے مغرب تک، اور سونے کے اذکار مغرب سے رات 1 بجے تک فعال رہتے ہیں۔ اس کے بعد آپ اگلی مغرب تک \"پہلے سے پڑھ چکے ہیں؟ یہاں نشان لگائیں\" کے ذریعے انہیں قضا کر سکتے ہیں۔"),
-                    FAQItem(question: "میں نے اذکار زبانی یا کہیں اور پڑھ لیے ہیں – کیا مجھے ہر ذکر پر الگ الگ ٹیپ کرنا ہوگا؟", answer: "نہیں، ہر کیٹیگری کے بالکل اوپر آپ کو \"پہلے سے پڑھ چکے ہیں؟ یہاں نشان لگائیں\" ملے گا۔ ایک ٹیپ پوری کیٹیگری کو مکمل نشان زد کر دیتا ہے۔ غلطی ہو جائے تو واپس لانے کے لیے دوبارہ ٹیپ کریں۔"),
-                    FAQItem(question: "میرا ذکر کا وقت نکل گیا – کیا میں بعد میں پڑھ سکتا ہوں؟", answer: "جی ہاں، اسی اسلامی دن کے دوران، یعنی اگلی مغرب تک۔ اگر کسی کیٹیگری کا وقت گزر جائے تو آپ وہاں جا کر \"پہلے سے پڑھ چکے ہیں؟ یہاں نشان لگائیں\" کے ذریعے اسے مکمل کر سکتے ہیں۔"),
-                    FAQItem(question: "اذکار کو ٹریک کرنے کے کون سے طریقے ہیں؟", answer: "ترتیبات ← اذکار کے تحت \"دستی\" اور \"خودکار\" میں سے انتخاب کریں۔ خودکار موڈ میں آپ رفتار بھی سیٹ کر سکتے ہیں اور ہدف پورا ہونے پر خود بخود اگلے ذکر پر منتقل ہو سکتے ہیں۔"),
-                    FAQItem(question: "میں اذکار کی ترتیب کیسے بدل سکتا ہوں؟", answer: "کسی بھی ذکر کے خانے کو دبا کر رکھیں اور اوپر بائیں جانب والے تیروں کی مدد سے اسے اوپر یا نیچے منتقل کریں۔"),
-                    FAQItem(question: "کیا مجھے اذکار کی یاد دہانی مل سکتی ہے؟", answer: "جی ہاں۔ ترتیبات ← اذکار میں آپ صبح، شام اور سوتے وقت کے اذکار کے ساتھ ساتھ جمعہ کے دن سورۃ الکہف کے لیے یاد دہانیاں آن کر سکتے ہیں۔")
-                ]),
-                FAQSection(title: "تسبیح", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "میں تسبیح کاؤنٹر کیسے استعمال کروں؟", answer: "گننے کے لیے دائرے پر ٹیپ کریں، یا خودکار گنتی کے لیے پلے آئیکن پر کلک کریں۔ ہر نمبر پر دائرہ ہلکا سا سبز چمکتا ہے۔ گنتی کے دوران وائبریشن کو آپ ترتیبات ← تسبیح سے آن یا آف کر سکتے ہیں۔"),
-                    FAQItem(question: "میں کسی ذکر کے مختلف صیغوں کے درمیان کیسے سوئچ کروں؟", answer: "عربی متن پر دائیں یا بائیں سوائپ کریں۔ اوپر دیے گئے نقطے بتاتے ہیں کہ کتنے صیغے دستیاب ہیں – جیسے استغفار یا صلوات میں۔"),
-                    FAQItem(question: "میں خودکار گنتی کی رفتار کیسے سیٹ کروں؟", answer: "کاؤنٹر اسکرین کے نیچے مائنس اور پلس کے درمیان: کچھوا (سست)، معمول، یا خرگوش (تیز)۔ یہ ترتیب ہر ذکر کے لیے الگ الگ محفوظ ہوتی ہے۔"),
-                    FAQItem(question: "پلس اور مائنس کے بٹن کس لیے ہیں؟", answer: "پلس کے ذریعے آپ دستی طور پر تعداد شامل کر سکتے ہیں۔ مائنس سے آپ کاؤنٹر درست کر سکتے ہیں: مخصوص تعداد گھٹا سکتے ہیں یا آخری سیشن کی تعداد میں سے فیصد کم کر سکتے ہیں۔"),
-                    FAQItem(question: "میں اپنی مرضی کی تسبیح کیسے شامل کروں؟", answer: "ترتیبات ← تسبیح کے تحت آپ مزید تسبیحات شامل کر سکتے ہیں اور ہر ایک کے لیے الگ روزانہ ہدف مقرر کر سکتے ہیں۔")
-                ]),
-                FAQSection(title: "نماز فجر", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "اعداد و شمار میں \"وقت پر ادا کی\" کا کیا مطلب ہے؟", answer: "\"وقت پر ادا کی\" کا مطلب ہے کہ آپ نے فجر کی نماز سورج نکلنے سے پہلے ادا کی۔ اگر آپ فجر کا وقت ختم ہونے کے بعد (یعنی طلوع آفتاب کے بعد) پڑھتے ہیں، تو اسے \"قضا کی گئی\" کے طور پر شمار کیا جائے گا۔")
-                ]),
-                FAQSection(title: "شماریات", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "میں شماریات میں کون سے ادوار دیکھ سکتا ہوں؟", answer: "ہفتہ، مہینہ اور سال – ہر ایک پچھلے دور کے ساتھ واضح موازنے کے ساتھ۔"),
-                    FAQItem(question: "میرا ہدف تبدیل کرنے کے بعد پچھلے ہفتے کی شماریات کیوں بدل گئیں؟", answer: "شماریات کا حساب ہمیشہ آپ کے موجودہ فعال ہدف کے مطابق ہوتا ہے، پرانے ہدف کے مطابق نہیں۔ آپ کے اصل حاصل کردہ اعداد و شمار (جیسے پڑھے گئے صفحات) بالکل غیر تبدیل شدہ رہتے ہیں۔"),
-                    FAQItem(question: "گراف میں ڈیش والی لائن کیا ظاہر کرتی ہے؟", answer: "یہ منتخب کردہ مدت کے لیے آپ کا ہدف دکھاتی ہے، جو آپ کے روزانہ کے ہدف سے اخذ کیا گیا ہے۔")
-                ])
-            ]
-        )
-    }
-
-    // MARK: - getRussian (ru)
-    private static func getRussian() -> (String, String, String, [FAQSection]) {
-        (
-            "FAQ и помощь",
-            "Часто задаваемые вопросы (FAQ)",
-            "Здесь вы найдёте ответы на главные вопросы о функциях и настройках ImanTrack.",
-            [
-                FAQSection(title: "С чего начать", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Какова цель этого приложения?", answer: "ImanTrack помогает вам укреплять иман в повседневной жизни: приложение создано для отслеживания ваших азкаров, тасбиха и чтения Корана, позволяя в любой момент видеть ваши достижения за день, неделю и месяц."),
-                    FAQItem(question: "Нужно ли регистрироваться?", answer: "Нет, ImanTrack полностью бесплатен и работает без аккаунта. Ваши данные хранятся локально на вашем устройстве, пока вы не удалите приложение."),
-                    FAQItem(question: "Как настроить свои цели?", answer: "В меню Настройки → Цели вы найдёте Коран, Тасбих и Азкар: для Корана задайте ежедневную цель по страницам, для Тасбиха — цель по каждому зикру. В разделе Азкар настраиваются режим счёта и напоминания — у азкаров нет числовой цели, важно лишь то, прочитали ли вы их."),
-                    FAQItem(question: "Можно ли скрыть латинскую транскрипцию?", answer: "Да. В Настройки → Общие → «Показывать транскрипцию» можно включить или выключить транслитерацию под арабским текстом для всего приложения."),
-                    FAQItem(question: "На каких языках доступен ImanTrack?", answer: "Немецкий, английский, арабский, турецкий, французский, испанский, индонезийский, малайский, урду, русский и бенгальский. Сменить язык можно в любой момент в Настройки → Общие → Язык.")
-                ]),
-                FAQSection(title: "Суточный ритм", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "Почему мой день начинается не в полночь?", answer: "ImanTrack ориентируется на закат солнца (Магриб), а не на полночь — именно так начинается день в исламе. Для точного расчёта приложение использует ваше приблизительное местоположение."),
-                    FAQItem(question: "Почему вечером пишется «Ночь на пятницу»?", answer: "По исламскому календарю новый день наступает с Магрибом. Поэтому между Магрибом и Фаджром приложение отображает, к примеру, «Ночь на пятницу». С наступлением Фаджра статус меняется на «Пятница»."),
-                    FAQItem(question: "Что будет, если не разрешить доступ к геопозиции, и изменится ли прогресс, если включить её позже?", answer: "Без доступа к геопозиции смена дня происходит автоматически в полночь. Вы можете включить геопозицию в любой момент в Настройках iOS: ранее записанные дни сохранятся без изменений, а время смены дня обновится с этого момента."),
-                    FAQItem(question: "Зачем приложению время намаза?", answer: "Время намазов определяет интервалы для утренних, вечерних азкаров и азкаров перед сном, исламское начало дня с Магриба и расписание уведомлений. В Настройки → Общие → Расчёт времени намаза можно выбрать метод и мазхаб.")
-                ]),
-                FAQSection(title: "Чтение Корана", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Как работает автоматическое отслеживание чтения Корана?", answer: "Вы читаете Коран сверху вниз, медленно прокручивая страницу. Как только аят скрывается за верхним краем экрана, он отмечается прочитанным и становится серым. ImanTrack автоматически подсчитывает прочитанные аяты и страницы."),
-                    FAQItem(question: "Почему прочитанные страницы исчезают и нельзя прокрутить назад?", answer: "Смысл ImanTrack — читать Коран шаг за шагом от начала до конца. Прочитанное остаётся позади, помогая вам сосредоточиться на следующем отрывке. Каждый аят засчитывается строго один раз за хатм."),
-                    FAQItem(question: "Почему нельзя быстро прокрутить Коран?", answer: "Это сделано намеренно: быстрый взмах прокручивает страницу лишь на небольшое расстояние. Это предотвращает случайный пропуск аятов и их ложный учёт (например, если приложение открыли дети)."),
-                    FAQItem(question: "Где я окажусь при повторном открытии приложения?", answer: "Ровно на том месте, где вы остановились — даже после перезагрузки iPhone."),
-                    FAQItem(question: "Как изменить размер шрифта?", answer: "Жестом масштабирования двумя пальцами (Pinch to zoom). Шрифт плавно меняется небольшими шагами, а позиция чтения полностью сохраняется."),
-                    FAQItem(question: "Что означает процент возле «Цели на день»?", answer: "Он показывает, какой процент от вашей суточной нормы страниц вы уже выполнили сегодня на основе прочитанного."),
-                    FAQItem(question: "Почему нельзя свободно переключаться между сурами?", answer: "ImanTrack создан не для случайных переходов между сурами, а для последовательного непрерывного чтения Корана от начала до конца для выполнения ежедневного вирда."),
-                    FAQItem(question: "Что происходит, когда я прочитаю весь Коран?", answer: "МашаАллах! После последнего аята появится поздравительная карточка. Кнопкой «Начать новый хатм» вы снова начинаете с суры Аль-Фатиха. Завершённый хатм заносится в вашу статистику, а все остальные показатели полностью сохраняются.")
-                ]),
-                FAQSection(title: "Азкар", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "Когда активны те или иные азкары?", answer: "Категории привязаны ко времени намаза: Утренний азкар активен до Зухра, Вечерний — от Асра до Магриба, Азкар перед сном — от Магриба до 1 часа ночи. После этого вы можете восполнить их до следующего Магриба через «Уже прочитали? Нажмите, чтобы отметить»."),
-                    FAQItem(question: "Я прочитал азкары наизусть или в другом месте — нужно ли нажимать каждый зикр?", answer: "Нет. В самом верху каждой категории есть кнопка «Уже прочитали? Нажмите, чтобы отметить». Одно нажатие отмечает всю категорию прочитанной. При случайном нажатии нажмите ещё раз для отмены."),
-                    FAQItem(question: "Я пропустил время азкара — можно ли восполнить?", answer: "Да, в пределах текущего исламского дня — то есть до следующего Магриба. Если время вышло, откройте категорию и отметьте её через «Уже прочитали? Нажмите, чтобы отметить»."),
-                    FAQItem(question: "Какие есть режимы для подсчёта азкаров?", answer: "В Настройки → Азкар выберите «Вручную» или «Автоматически». В автоматическом режиме можно настроить скорость и автопереход к следующему зикру при достижении цели."),
-                    FAQItem(question: "Как настроить порядок азкаров?", answer: "Удерживайте карточку азкара пальцем и перемещайте её вверх или вниз с помощью стрелок в левом верхнем углу."),
-                    FAQItem(question: "Можно ли включить напоминания об азкарах?", answer: "Да. В Настройки → Азкар можно включить уведомления для Утреннего, Вечернего азкара, Азкара перед сном, а также для суры Аль-Кахф по пятницам.")
-                ]),
-                FAQSection(title: "Тасбих", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "Как пользоваться счётчиком тасбиха?", answer: "Нажимайте на круг для счёта или запустите автоматический счёт кнопкой воспроизведения. При каждом счёте круг кратковременно мигает зелёным. Вибрацию можно включить или выключить в Настройки → Тасбих."),
-                    FAQItem(question: "Как переключаться между версиями одного зикра?", answer: "Проведите по арабскому тексту влево или вправо. Точки вверху показывают количество доступных версий (например, для Истигфара или Салавата)."),
-                    FAQItem(question: "Как настроить скорость автоматического счёта?", answer: "Прямо на экране счётчика внизу между минусом и плюсом: Черепаха (медленно), Обычный или Заяц (быстро). Значение сохраняется индивидуально для каждого зикра."),
-                    FAQItem(question: "Для чего нужны Плюс и Минус?", answer: "Плюс позволяет добавить повторения вручную. Минус корректирует счётчик: можно вычесть конкретное число (при ошибке) или уменьшить на процент последнюю сессию счёта."),
-                    FAQItem(question: "Как добавить свой тасбих?", answer: "В Настройки → Тасбих можно добавить новые зикры и задать для каждого индивидуальную суточную цель.")
-                ]),
-                FAQSection(title: "Молитва Фаджр", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "Что означает «Вовремя» в статистике?", answer: "«Вовремя» означает, что вы совершили утреннюю молитву Фаджр до восхода солнца. Если вы помолились после окончания времени Фаджра (после восхода), это засчитывается как «Возмещено (Када)».")
-                ]),
-                FAQSection(title: "Статистика", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "Какие периоды доступны для просмотра?", answer: "Неделя, месяц и год — каждый с наглядным сравнением с предыдущим периодом."),
-                    FAQItem(question: "Почему изменилась статистика за прошлую неделю после изменения цели?", answer: "Статистика всегда рассчитывается относительно вашей текущей активной цели, а не старой. Ваши фактически достигнутые результаты (например, прочитанные страницы) остаются неизменными."),
-                    FAQItem(question: "Что означает пунктирная линия на графике?", answer: "Она отображает целевой уровень для выбранного периода, пересчитанный из вашей суточной нормы.")
-                ])
-            ]
-        )
-    }
-
-    // MARK: - getBengali (bn)
-    private static func getBengali() -> (String, String, String, [FAQSection]) {
-        (
-            "সাধারণ জিজ্ঞাসা ও সাহায্য",
-            "সচরাচর জিজ্ঞাসিত প্রশ্নাবলী (FAQ)",
-            "ImanTrack-এর গুরুত্বপূর্ণ বৈশিষ্ট্য ও সেটিংস সংক্রান্ত উত্তর এখানে পাবেন।",
-            [
-                FAQSection(title: "শুরু করা", icon: "sparkles", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "এই অ্যাপের মূল উদ্দেশ্য কী?", answer: "ImanTrack আপনার দৈনন্দিন জীবনে ইমানকে মজবুত করতে সাহায্য করে: অ্যাপটির প্রধান কাজ হলো আপনার আজকার, তাসবীহ এবং কুরআন তেলাওয়াত ট্র্যাক করা – যাতে আপনি প্রতিদিন, প্রতি সপ্তাহে এবং প্রতি মাসে আপনার অগ্রগতির হিসাব রাখতে পারেন।"),
-                    FAQItem(question: "আমার কি রেজিস্ট্রেশন করা প্রয়োজন?", answer: "না, ImanTrack সম্পূর্ণ বিনামূল্যে এবং কোনো অ্যাকাউন্ট ছাড়াই কাজ করে। যতক্ষণ না আপনি অ্যাপটি মুছে ফেলছেন, আপনার তথ্য আপনার ডিভাইসেই সুরক্ষিত থাকবে।"),
-                    FAQItem(question: "আমি কীভাবে আমার লক্ষ্য নির্ধারণ করব?", answer: "সেটিংস → লক্ষ্য-তে আপনি কুরআন, তাসবীহ এবং আজকার পাবেন: কুরআনের জন্য আপনার দৈনিক পৃষ্ঠার লক্ষ্য নির্ধারণ করুন, তাসবীহের জন্য প্রতিটি জিকিরের দৈনিক লক্ষ্য নির্ধারণ করুন। আজকারের অধীনে আপনি গণনা মোড ও রিমাইন্ডার সেট করতে পারেন – আজকারের কোনো সংখ্যাগত লক্ষ্য নেই, আপনি পড়েছেন কি না তা নিশ্চিত করাই যথেষ্ট।"),
-                    FAQItem(question: "আমি কি ইংরেজি/ল্যাটিন উচ্চারণ লুকাতে পারি?", answer: "হ্যাঁ। সেটিংস → সাধারণ → \"উচ্চারণ প্রদর্শন করুন\"-এ গিয়ে আপনি পুরো অ্যাপে আরবি লেখার নিচের উচ্চারণ অন বা অফ করতে পারেন।"),
-                    FAQItem(question: "ImanTrack কোন কোন ভাষায় পাওয়া যায়?", answer: "জার্মান, ইংরেজি, আরবি, তুর্কি, ফরাসি, স্প্যানিশ, ইন্দোনেশীয়, মালয়, উর্দু, রুশ এবং বাংলা। আপনি সেটিংস → সাধারণ → ভাষা থেকে যেকোনো সময় ভাষা পরিবর্তন করতে পারেন।")
-                ]),
-                FAQSection(title: "দৈনিক ছন্দ", icon: "sunset.fill", iconColor: .orange, items: [
-                    FAQItem(question: "আমার দিন মধ্যরাতে শুরু হয় না কেন?", answer: "ইসলামি দিনের সূচনা অনুযায়ী ImanTrack মধ্যরাতের পরিবর্তে সূর্যাস্ত (মাগরিব) থেকে দিন গণনা করে। এর জন্য অ্যাপটি আপনার আনুমানিক ভৌগোলিক অবস্থান ব্যবহার করে।"),
-                    FAQItem(question: "সন্ধ্যার পর \"শুক্রবার-এর রাত\" কেন দেখায়?", answer: "ইসলামি গণনা মতে মাগরিবের সাথেই নতুন দিন শুরু হয়। তাই মাগরিব ও ফজরের মাঝের সময়ে অ্যাপটি যেমন \"শুক্রবার-এর রাত\" প্রদর্শন করে। ফজর উদিত হলে সেখানে \"শুক্রবার\" দেখায়।"),
-                    FAQItem(question: "আমি লোকেশন পারমিশন না দিলে কী হবে – আর পরে দিলে কি আগের অগ্রগতি বদলে যাবে?", answer: "লোকেশন পারমিশন ছাড়া আপনার দিন স্বাভাবিকভাবে মধ্যরাতে পরিবর্তিত হবে। আপনি যেকোনো সময় iOS সেটিংসে লোকেশন চালু করতে পারেন – পূর্বের রেকর্ড করা দিনগুলো অপরিবর্তিত থাকবে, শুধু তখন থেকে দিন পরিবর্তনের সময় সমন্বয় হবে।"),
-                    FAQItem(question: "অ্যাপটির নামাজের সময়ের প্রয়োজন কেন?", answer: "নামাজের সময়গুলো সকাল, সন্ধ্যা এবং ঘুমের আজকারের সময়সীমা, মাগরিব থেকে ইসলামি দিনের সূচনা এবং রিমাইন্ডারের সময় নির্ধারণ করে। সেটিংস → সাধারণ → নামাজের সময় গণনা থেকে আপনি পদ্ধতি ও মাজহাব পরিবর্তন করতে পারেন।")
-                ]),
-                FAQSection(title: "কুরআন ট্র্যাকিং", icon: "book.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "স্বয়ংক্রিয় কুরআন ট্র্যাকিং কীভাবে কাজ করে?", answer: "আপনি ওপর থেকে নিচে কুরআন তেলাওয়াত করবেন এবং ধীরে ধীরে স্ক্রল করবেন। একটি আয়াত স্ক্রিনের ওপর থেকে চলে যাওয়ার সাথে সাথেই তা পঠিত হিসেবে গণ্য হবে এবং ধূসর হয়ে যাবে। ImanTrack স্বয়ংক্রিয়ভাবে পঠিত আয়াত ও পৃষ্ঠার হিসাব রাখে।"),
-                    FAQItem(question: "পঠিত পৃষ্ঠাগুলো সরে যায় কেন এবং পেছনে স্ক্রল করা যায় না কেন?", answer: "ImanTrack-এর উদ্দেশ্য হলো শুরু থেকে শেষ পর্যন্ত ধাপে ধাপে কুরআন খতম করা। যা পড়া হয়েছে তা পেছনে রয়ে যায় – যাতে আপনার মনোযোগ পরবর্তী অংশে নিবদ্ধ থাকে। প্রতিটি আয়াত প্রতি খতমে কেবল একবারই গণ্য হয়।"),
-                    FAQItem(question: "কুরআন দ্রুত স্ক্রল করা যায় না কেন?", answer: "এটি উদ্দেশ্যমূলকভাবে করা হয়েছে: দ্রুত সোয়াইপ করলে স্ক্রিন সামান্য দূর এগোবে। এতে ভুলবশত আয়াত এড়িয়ে যাওয়া এবং পঠিত হিসেবে গণনা হওয়া রোধ করা যায় (যেমন শিশুরা অ্যাপ ব্যবহার করলে)।"),
-                    FAQItem(question: "অ্যাপ পুনরায় খুললে আমি কোথা থেকে শুরু করব?", answer: "ঠিক যেখানে আপনি শেষ করেছিলেন – এমনকি আপনার আইফোন রিস্টার্ট করার পরেও।"),
-                    FAQItem(question: "ফন্ট সাইজ কীভাবে পরিবর্তন করব?", answer: "দুই আঙুল দিয়ে জুম করুন (Pinch to zoom)। ফন্ট সাইজ ধাপে ধাপে মসৃণভাবে পরিবর্তিত হবে এবং আপনার বর্তমান পড়ার অবস্থান অক্ষুণ্ণ থাকবে।"),
-                    FAQItem(question: "\"দৈনিক লক্ষ্য\"-এর পাশের শতাংশের অর্থ কী?", answer: "আজকে পঠিত পৃষ্ঠার ওপর ভিত্তি করে আপনার আজকের পৃষ্ঠার লক্ষ্যের কত শতাংশ অর্জিত হয়েছে তা এটি প্রদর্শন করে।"),
-                    FAQItem(question: "আমি সূরাগুলোর মধ্যে ইচ্ছামতো পরিবর্তন করতে পারি না কেন?", answer: "ImanTrack-এ এলোমেলোভাবে সূরা পরিবর্তন করার সুযোগ রাখা হয়নি, বরং আপনার নিয়মিত দৈনিক ওজিফা (উইর্ড) সম্পন্ন করার জন্য শুরু থেকে শেষ পর্যন্ত একটানা কুরআন পাঠ করাই এর লক্ষ্য।"),
-                    FAQItem(question: "সম্পূর্ণ কুরআন পড়া শেষ হলে কী ঘটবে?", answer: "মাশাআল্লাহ! শেষ আয়াতের পর একটি অভিনন্দন বার্তা প্রদর্শিত হবে। \"নতুন খতম শুরু করুন\" দিয়ে আপনি পুনরায় সূরা আল-ফাতিহা থেকে শুরু করবেন। সম্পন্ন খতমটি আপনার পরিসংখ্যানে গণনা করা হবে এবং অন্যান্য সমস্ত তথ্য অপরিবর্তিত থাকবে।")
-                ]),
-                FAQSection(title: "আজকার", icon: "moon.stars.fill", iconColor: .purple, items: [
-                    FAQItem(question: "কোন আজকার কখন সক্রিয় থাকে?", answer: "ক্যাটাগরিগুলো নামাজের সময়ের ওপর নির্ভরশীল: সকালের আজকার জোহর পর্যন্ত, সন্ধ্যার আজকার আসর থেকে মাগরিব পর্যন্ত এবং ঘুমের আজকার মাগরিব থেকে রাত ১টা পর্যন্ত সক্রিয় থাকে। এরপর পরবর্তী মাগরিব পর্যন্ত আপনি \"ইতিমধ্যে পড়েছেন? টিক দিতে ট্যাপ করুন\" দিয়ে তা কাজা করতে পারবেন।"),
-                    FAQItem(question: "আমি মুখস্থ বা অন্য কোথাও আজকার পড়েছি – প্রতিটিতে কি আলাদা ট্যাপ করতে হবে?", answer: "না। প্রতিটি ক্যাটাগরির ওপরে \"ইতিমধ্যে পড়েছেন? টিক দিতে ট্যাপ করুন\" পাবেন। একটি ট্যাপে পুরো ক্যাটাগরি সম্পন্ন হিসেবে চিহ্নিত হবে। ভুল হলে আনডু করতে আবার ট্যাপ করুন।"),
-                    FAQItem(question: "আজকারের সময় পার হয়ে গেলে কি কাজা করা যাবে?", answer: "হ্যাঁ, একই ইসলামি দিনের মধ্যে, অর্থাৎ পরবর্তী মাগরিব পর্যন্ত। কোনো ক্যাটাগরির সময় শেষ হয়ে গেলেও আপনি সেখানে গিয়ে \"ইতিমধ্যে পড়েছেন? টিক দিতে ট্যাপ করুন\" দিয়ে সম্পন্ন করতে পারবেন।"),
-                    FAQItem(question: "আজকার ট্র্যাকিংয়ের কী কী বিকল্প রয়েছে?", answer: "সেটিংস → আজকার-এ আপনি \"ম্যানুয়াল\" অথবা \"স্বয়ংক্রিয়\" বেছে নিতে পারেন। স্বয়ংক্রিয় মোডে আপনি গতি নির্ধারণ করতে পারেন এবং লক্ষ্য শেষ হলে স্বয়ংক্রিয়ভাবে পরবর্তী জিকিরে যাওয়ার বিকল্প চালু করতে পারেন।"),
-                    FAQItem(question: "আমি আজকারের ক্রম কীভাবে পরিবর্তন করব?", answer: "যেকোনো আজকার কার্ড চেপে ধরে রাখুন এবং ওপরে বাম পাশের তীরচিহ্ন ব্যবহার করে তা ওপরে বা নিচে সরান।"),
-                    FAQItem(question: "আমি কি আজকারের রিমাইন্ডার পেতে পারি?", answer: "হ্যাঁ। সেটিংস → আজকার-এ আপনি সকাল, সন্ধ্যা, ঘুমের আজকার এবং শুক্রবারের সূরা আল-কাহাফের জন্য রিমাইন্ডার চালু করতে পারেন।")
-                ]),
-                FAQSection(title: "তাসবীহ", icon: "circle.hexagongrid.fill", iconColor: Theme.islamicGreen, items: [
-                    FAQItem(question: "আমি তাসবীহ কাউন্টার কীভাবে ব্যবহার করব?", answer: "গণনা করতে বৃত্তে ট্যাপ করুন, অথবা স্বয়ংক্রিয় গণনার জন্য প্লে আইকনে চাপ দিন। প্রতি গণনায় বৃত্তটি হালকা সবুজ হয়ে জ্বলে উঠবে। গণনা চলাকালীন ভাইব্রেশন আপনি সেটিংস → তাসবীহ থেকে চালু বা বন্ধ করতে পারেন।"),
-                    FAQItem(question: "একটি জিকিরের বিভিন্ন সংস্করণের মধ্যে কীভাবে পরিবর্তন করব?", answer: "আরবি লেখার ওপর ডান বা বামে সোয়াইপ করুন। ওপরের বিন্দুগুলো নির্দেশ করে কয়টি সংস্করণ রয়েছে – যেমন ইস্তেগফার বা সালাওয়াতে।"),
-                    FAQItem(question: "স্বয়ংক্রিয় গণনার গতি কীভাবে নির্ধারণ করব?", answer: "কাউন্টার স্ক্রিনের নিচে মাইনাস এবং প্লাসের মাঝে: কচ্ছপ (ধীর), সাধারণ, অথবা খরগোশ (দ্রুত)। এই সেটিং প্রতিটি জিকিরের জন্য আলাদাভাবে সংরক্ষিত হয়।"),
-                    FAQItem(question: "প্লাস এবং মাইনাস কী কাজে লাগে?", answer: "প্লাস দিয়ে আপনি ম্যানুয়ালি সংখ্যা যোগ করতে পারেন। মাইনাস দিয়ে কাউন্টার সংশোধন করতে পারেন: নির্দিষ্ট সংখ্যা বাদ দেওয়া যায় (ভুল এন্ট্রির ক্ষেত্রে) অথবা সর্বশেষ সেশনের শতাংশ কমানো যায়।"),
-                    FAQItem(question: "কাস্টম তাসবীহ কীভাবে যোগ করব?", answer: "সেটিংস → তাসবীহ-এ গিয়ে আপনি নতুন তাসবীহ যোগ করতে পারেন এবং প্রতিটির জন্য নিজস্ব দৈনিক লক্ষ্য ঠিক করতে পারেন।")
-                ]),
-                FAQSection(title: "ফজর নামাজ", icon: "alarm.fill", iconColor: .blue, items: [
-                    FAQItem(question: "পরিসংখ্যানে \"সময়ে আদায় করা হয়েছে\" বলতে কী বোঝায়?", answer: "\"সময়ে আদায় করা হয়েছে\" মানে হলো আপনি সূর্যোদয়ের পূর্বে ফজরের নামাজ আদায় করেছেন। ফজরের সময় পার হয়ে গেলে (সূর্যোদয়ের পর) পড়লে তা \"দেরিতে পড়া (কাজা)\" হিসেবে গণ্য হবে।")
-                ]),
-                FAQSection(title: "পরিসংখ্যান", icon: "chart.bar.fill", iconColor: .indigo, items: [
-                    FAQItem(question: "পরিসংখ্যানে আমি কোন কোন সময়কাল দেখতে পারব?", answer: "সপ্তাহ, মাস এবং বছর – প্রতিটির ক্ষেত্রে পূর্ববর্তী সময়ের সাথে তুলনা প্রদর্শিত হয়।"),
-                    FAQItem(question: "লক্ষ্য পরিবর্তনের পর পূর্ববর্তী সপ্তাহের পরিসংখ্যান কেন পরিবর্তিত হলো?", answer: "পরিসংখ্যান সর্বদা আপনার বর্তমানে সক্রিয় লক্ষ্যের ভিত্তিতে হিসাব করা হয়, অতীতের লক্ষ্যের ভিত্তিতে নয়। আপনার অর্জিত প্রকৃত সংখ্যা (যেমন পঠিত পৃষ্ঠা) সম্পূর্ণ অপরিবর্তিত থাকে।"),
-                    FAQItem(question: "গ্রাফের ড্যাশ রেখাটি কী নির্দেশ করে?", answer: "এটি আপনার দৈনিক লক্ষ্যের ওপর ভিত্তি করে নির্বাচিত সময়ের জন্য নির্ধারিত লক্ষ্যমাত্রা প্রদর্শন করে।")
-                ])
-            ]
-        )
-    }
 }
+
+private final class BundleToken {}
