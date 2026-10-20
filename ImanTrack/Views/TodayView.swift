@@ -205,7 +205,7 @@ struct TodayView: View {
                                     TasbihResultRow(title: L10n.tr("tasbih_istighfar", lang), count: todayRecord.totalIstighfarCount, goal: settings.istighfarGoal)
                                 }
                                 if settings.salawatEnabled {
-                                    TasbihResultRow(title: L10n.tr("tasbih_salawat", lang), count: todayRecord.totalSalawatCount, goal: settings.salawatGoal)
+                                    TasbihResultRow(title: L10n.tr("tasbih_salawat", lang), count: todayRecord.totalSalawatCount, goal: settings.effectiveSalawatGoal(for: todayRecord.date))
                                 }
                                 if settings.subhanAllahEnabled {
                                     TasbihResultRow(title: L10n.tr("tasbih_subhanallah", lang), count: todayRecord.subhanAllahCount, goal: settings.subhanAllahGoal)

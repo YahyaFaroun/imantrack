@@ -27,6 +27,8 @@ final class UserSettings {
     // Tasbih Goals
     var istighfarGoal: Int = 1000
     var salawatGoal: Int = 500
+    var salawatFridayGoalEnabled: Bool = false
+    var salawatFridayGoal: Int = 1000
     var subhanAllahGoal: Int = 100
     var alhamdulillahGoal: Int = 100
     var allahuAkbarGoal: Int = 100
@@ -94,6 +96,18 @@ final class UserSettings {
         } else {
             self.language = "en"
         }
+    }
+    
+    func isIslamicFriday(for date: Date = Date()) -> Bool {
+        let trackingDate = LocationAndSolarManager.shared.getTrackingDate(for: date)
+        return Calendar.current.component(.weekday, from: trackingDate) == 6
+    }
+    
+    func effectiveSalawatGoal(for date: Date = Date()) -> Int {
+        if salawatFridayGoalEnabled && isIslamicFriday(for: date) {
+            return salawatFridayGoal
+        }
+        return salawatGoal
     }
 }
 

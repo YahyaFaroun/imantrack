@@ -21,6 +21,8 @@ struct TasbihSettingsView: View {
     
     @State private var salawatEnabled: Bool = true
     @State private var salawatGoal: Int = 500
+    @State private var salawatFridayGoalEnabled: Bool = false
+    @State private var salawatFridayGoal: Int = 1000
     
     @State private var subhanAllahEnabled: Bool = true
     @State private var subhanAllahGoal: Int = 100
@@ -61,6 +63,30 @@ struct TasbihSettingsView: View {
                 tasbihSettingRow(title: L10n.tr("tasbih_type_istighfar", language), arabicLabel: "أستغفر الله", isEnabled: $istighfarEnabled, goal: $istighfarGoal, saveAction: saveSettings, minVal: 100, maxVal: 50000, step: 100)
                 
                 tasbihSettingRow(title: L10n.tr("tasbih_type_salawat", language), arabicLabel: "اللهم صل على محمد", isEnabled: $salawatEnabled, goal: $salawatGoal, saveAction: saveSettings, minVal: 100, maxVal: 50000, step: 100)
+                
+                if salawatEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle(L10n.tr("salawat_friday_goal_toggle", language), isOn: $salawatFridayGoalEnabled)
+                            .onChange(of: salawatFridayGoalEnabled) { _, _ in saveSettings() }
+                        if salawatFridayGoalEnabled {
+                            Stepper(value: $salawatFridayGoal, in: 100...50000, step: 100) {
+                                HStack {
+                                    Text(L10n.tr("salawat_friday_goal_amount", language))
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                    Spacer()
+                                    Text("\(formatNumber(salawatFridayGoal))")
+                                        .font(.caption)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(Theme.islamicGreen)
+                                }
+                            }
+                            .padding(.leading)
+                            .onChange(of: salawatFridayGoal) { _, _ in saveSettings() }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
                 
                 tasbihSettingRow(title: L10n.tr("tasbih_subhanallah", language), arabicLabel: "سبحان الله وبحمده", isEnabled: $subhanAllahEnabled, goal: $subhanAllahGoal, saveAction: saveSettings, minVal: 10, maxVal: 10000, step: 10)
                 
@@ -166,6 +192,8 @@ struct TasbihSettingsView: View {
                 
                 salawatEnabled = s.salawatEnabled
                 salawatGoal = s.salawatGoal
+                salawatFridayGoalEnabled = s.salawatFridayGoalEnabled
+                salawatFridayGoal = s.salawatFridayGoal == 0 ? 1000 : s.salawatFridayGoal
                 
                 subhanAllahEnabled = s.subhanAllahEnabled
                 subhanAllahGoal = s.subhanAllahGoal
@@ -266,6 +294,8 @@ struct TasbihSettingsView: View {
         
         s.salawatEnabled = salawatEnabled
         s.salawatGoal = salawatGoal
+        s.salawatFridayGoalEnabled = salawatFridayGoalEnabled
+        s.salawatFridayGoal = salawatFridayGoal
         
         s.subhanAllahEnabled = subhanAllahEnabled
         s.subhanAllahGoal = subhanAllahGoal

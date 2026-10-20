@@ -74,12 +74,16 @@ struct DhikrDetailView: View {
         guard let type = type else { return 100 }
         switch type {
         case .istighfar: return settings.istighfarGoal
-        case .salawat: return settings.salawatGoal
+        case .salawat: return settings.effectiveSalawatGoal(for: todayRecord.date)
         case .subhanAllah: return settings.subhanAllahGoal
         case .alhamdulillah: return settings.alhamdulillahGoal
         case .allahuAkbar: return settings.allahuAkbarGoal
         case .laIlahaIllallah: return settings.laIlahaIllallahGoal
         }
+    }
+    
+    private var isFridaySalawatGoalActive: Bool {
+        type == .salawat && settings.salawatFridayGoalEnabled && settings.isIslamicFriday(for: todayRecord.date)
     }
     
     private var currentTempo: Int {
@@ -517,9 +521,16 @@ struct DhikrDetailView: View {
                             .font(.system(size: 40, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
                         
-                        Text(formatNumber(currentGoal))
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(.gray.opacity(0.8))
+                        HStack(spacing: 4) {
+                            Text(formatNumber(currentGoal))
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .foregroundColor(.gray.opacity(0.8))
+                            if isFridaySalawatGoalActive {
+                                Text(L10n.tr("salawat_friday_goal", settings.language))
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(Theme.islamicGreen)
+                            }
+                        }
                             
                         if settings.tasbihAutoCount {
                             let iconName = counterState == .running ? "stop.fill" : "play.fill"

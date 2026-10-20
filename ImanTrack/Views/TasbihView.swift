@@ -43,13 +43,15 @@ struct TasbihView: View {
                         }
                         
                         if settings.salawatEnabled {
+                            let isFridaySalawat = settings.salawatFridayGoalEnabled && settings.isIslamicFriday(for: todayRecord.date)
                             DhikrMainCard(
                                 titleAr: "الصلاة على النبي",
                                 titleDe: L10n.tr("tasbih_salawat", settings.language),
                                 transliteration: "Salawat",
                                 count: todayRecord.totalSalawatCount,
-                                goal: settings.salawatGoal,
-                                type: .salawat
+                                goal: settings.effectiveSalawatGoal(for: todayRecord.date),
+                                type: .salawat,
+                                isFridayGoal: isFridaySalawat
                             )
                         }
                         
@@ -131,6 +133,7 @@ struct DhikrMainCard: View {
     let count: Int
     let goal: Int
     let type: DhikrType
+    var isFridayGoal: Bool = false
     
     private var settings: UserSettings {
         allSettings.first ?? UserSettings()
@@ -151,10 +154,23 @@ struct DhikrMainCard: View {
         NavigationLink(destination: DhikrDetailView(type: type, titleAr: titleAr, titleDe: titleDe, transliteration: transliteration)) {
             HStack {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(typeTitle)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .multilineTextAlignment(.leading)
+                    HStack(spacing: 6) {
+                        Text(typeTitle)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                            .multilineTextAlignment(.leading)
+                        
+                        if isFridayGoal {
+                            Text(L10n.tr("salawat_friday_goal", settings.language))
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                                .foregroundColor(Theme.islamicGreen)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Theme.islamicGreen.opacity(0.12))
+                                .cornerRadius(6)
+                        }
+                    }
                     
                     if settings.language != "ar" {
                         Text(titleAr)

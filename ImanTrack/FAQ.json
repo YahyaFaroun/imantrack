@@ -148,6 +148,10 @@
           {
             "question": "Wie kann ich einen eigenen Tasbih hinzufügen?",
             "answer": "Unter Einstellungen → Tasbih kannst du weitere Tasbih hinzufügen und für jeden ein eigenes Tagesziel festlegen."
+          },
+          {
+            "question": "Kann ich am Freitag ein höheres Salawat-Ziel setzen?",
+            "answer": "Ja. Unter Einstellungen → Tasbih kannst du beim Salawat ein eigenes Freitagsziel festlegen. Es gilt von Maghrib am Donnerstag bis Maghrib am Freitag."
           }
         ]
       },
@@ -332,6 +336,10 @@
           {
             "question": "How can I add a custom Tasbih?",
             "answer": "Under Settings → Tasbih you can add custom Tasbih and set an individual daily target for each."
+          },
+          {
+            "question": "Can I set a higher Salawat goal on Friday?",
+            "answer": "Yes. Under Settings → Tasbih, you can set a custom Friday goal for Salawat. It applies from Maghrib on Thursday until Maghrib on Friday."
           }
         ]
       },
@@ -516,6 +524,10 @@
           {
             "question": "كيف يمكنني إضافة ذكر مخصص؟",
             "answer": "من خلال الإعدادات ← التسبيح يمكنك إضافة أذكار جديدة وتحديد هدف يومي خاص بكل ذكر."
+          },
+          {
+            "question": "هل يمكنني تحديد هدف أعلى للصلاة على النبي يوم الجمعة؟",
+            "answer": "نعم. من الإعدادات ← تسبيح، يمكنك تحديد هدف خاص ليوم الجمعة عند الصلاة على النبي. يسري الهدف من مغرب يوم الخميس حتى مغرب يوم الجمعة."
           }
         ]
       },
@@ -700,6 +712,10 @@
           {
             "question": "Nasıl özel bir tesbih ekleyebilirim?",
             "answer": "Ayarlar → Tesbih bölümünden yeni tesbihler ekleyebilir ve her biri için özel günlük hedef belirleyebilirsiniz."
+          },
+          {
+            "question": "Cuma günü için daha yüksek bir Salavat hedefi belirleyebilir miyim?",
+            "answer": "Evet. Ayarlar → Tesbih bölümünden Salavat için özel bir Cuma hedefi belirleyebilirsiniz. Bu hedef Perşembe Akşamından Cuma Akşamına kadar geçerlidir."
           }
         ]
       },
@@ -884,6 +900,10 @@
           {
             "question": "Bagaimana cara menambahkan tasbih kustom?",
             "answer": "Di Pengaturan → Tasbih, Anda dapat menambahkan tasbih baru dan menentukan target harian masing-masing."
+          },
+          {
+            "question": "Bisakah saya menetapkan target Salawat yang lebih tinggi pada hari Jumat?",
+            "answer": "Ya. Di Pengaturan → Tasbih, Anda dapat menetapkan target khusus hari Jumat untuk Salawat. Target ini berlaku mulai Maghrib hari Kamis hingga Maghrib hari Jumat."
           }
         ]
       },
@@ -1068,6 +1088,10 @@
           {
             "question": "Bagaimanakah cara menambah tasbih sendiri?",
             "answer": "Di Tetapan → Tasbih, anda boleh menambah zikir baharu dan menetapkan sasaran harian tersendiri bagi setiap satunya."
+          },
+          {
+            "question": "Bolehkah saya menetapkan sasaran Selawat yang lebih tinggi pada hari Jumaat?",
+            "answer": "Ya. Di Tetapan → Tasbih, anda boleh menetapkan sasaran khas hari Jumaat untuk Selawat. Ia terpakai dari Maghrib pada hari Khamis sehingga Maghrib pada hari Jumaat."
           }
         ]
       },
@@ -1252,6 +1276,10 @@
           {
             "question": "Comment ajouter un Tasbih personnalisé ?",
             "answer": "Sous Paramètres → Tasbih, vous pouvez ajouter d'autres Tasbih et définir un objectif quotidien propre à chacun."
+          },
+          {
+            "question": "Puis-je définir un objectif de Salawat plus élevé le vendredi ?",
+            "answer": "Oui. Dans Réglages → Tasbih, vous pouvez définir un objectif spécifique pour le vendredi pour la Salawat. Il s'applique du Maghrib le jeudi jusqu'au Maghrib le vendredi."
           }
         ]
       },
@@ -1436,6 +1464,10 @@
           {
             "question": "¿Cómo puedo añadir un Tasbih personalizado?",
             "answer": "En Ajustes → Tasbih puedes añadir más Tasbih y definir una meta diaria propia para cada uno."
+          },
+          {
+            "question": "¿Puedo establecer una meta de Salawat más alta el viernes?",
+            "answer": "Sí. En Ajustes → Tasbih puedes fijar una meta personalizada para el viernes en Salawat. Se aplica desde el Maghrib del jueves hasta el Maghrib del viernes."
           }
         ]
       },
@@ -1620,6 +1652,10 @@
           {
             "question": "میں اپنی مرضی کی تسبیح کیسے شامل کروں؟",
             "answer": "ترتیبات ← تسبیح کے تحت آپ مزید تسبیحات شامل کر سکتے ہیں اور ہر ایک کے لیے الگ روزانہ ہدف مقرر کر سکتے ہیں۔"
+          },
+          {
+            "question": "کیا میں جمعہ کے دن درود شریف (صلوات) کا زیادہ ہدف مقرر کر سکتا ہوں؟",
+            "answer": "ہاں۔ ترتیبات ← تسبیح میں آپ درود شریف کے لیے جمعہ کا الگ ہدف مقرر کر سکتے ہیں۔ یہ جمعرات کے مغرب سے لے کر جمعہ کے مغرب تک لاگو ہوتا ہے۔"
           }
         ]
       },
@@ -1804,6 +1840,10 @@
           {
             "question": "Как добавить свой тасбих?",
             "answer": "В Настройки → Тасбих можно добавить новые зикры и задать для каждого индивидуальную суточную цель."
+          },
+          {
+            "question": "Могу ли я установить более высокую цель для Салавата в пятницу?",
+            "answer": "Да. В Настройки → Тасбих вы можете установить особую цель на пятницу для Салавата. Она действует с Магриба в четверг до Магриба в пятницу."
           }
         ]
       },
@@ -1988,6 +2028,10 @@
           {
             "question": "কাস্টম তাসবীহ কীভাবে যোগ করব?",
             "answer": "সেটিংস → তাসবীহ-এ গিয়ে আপনি নতুন তাসবীহ যোগ করতে পারেন এবং প্রতিটির জন্য নিজস্ব দৈনিক লক্ষ্য ঠিক করতে পারেন।"
+          },
+          {
+            "question": "আমি কি শুক্রবারে সালাওয়াতের জন্য উচ্চতর লক্ষ্য নির্ধারণ করতে পারি?",
+            "answer": "হ্যাঁ। সেটিংস → তাসবীহ-এ গিয়ে আপনি সালাওয়াতের জন্য একটি পৃথক শুক্রবারের লক্ষ্য নির্ধারণ করতে পারেন। এটি বৃহস্পতিবারের মাগরিব থেকে শুক্রবারের মাগরিব পর্যন্ত কার্যকর থাকে।"
           }
         ]
       },

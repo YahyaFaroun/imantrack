@@ -413,11 +413,16 @@ struct StatsView: View {
         var tRows: [TasbihRowData] = []
         for type in TasbihCategory.allCases {
             let totalCount = currentRecords.map { type.getValue(from: $0) }.reduce(0, +)
-            let dailyGoal = Double(max(1, type.getGoal(from: settings)))
             let periodGoal: Double
-            switch selectedPeriod {
-            case .week: periodGoal = dailyGoal * 7
-            case .month: periodGoal = dailyGoal * Double(totalDays)
+            if type == .salawat && settings.salawatFridayGoalEnabled {
+                let normalDays = max(0, totalDays - totalFridays)
+                periodGoal = Double(normalDays * settings.salawatGoal + totalFridays * settings.salawatFridayGoal)
+            } else {
+                let dailyGoal = Double(max(1, type.getGoal(from: settings)))
+                switch selectedPeriod {
+                case .week: periodGoal = dailyGoal * 7
+                case .month: periodGoal = dailyGoal * Double(totalDays)
+                }
             }
             let safeGoal = max(1, periodGoal)
             let progress = min(totalCount / safeGoal, 1.0)

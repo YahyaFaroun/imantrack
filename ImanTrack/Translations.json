@@ -3469,5 +3469,44 @@
     "ur": "گنتے وقت وائبریشن",
     "ru": "Вибрация при счете",
     "bn": "গণনার সময় কম্পন"
+  },
+  "salawat_friday_goal_toggle": {
+    "de": "Eigenes Ziel am Freitag",
+    "en": "Custom goal on Friday",
+    "ar": "هدف خاص يوم الجمعة",
+    "tr": "Cuma günü için özel hedef",
+    "id": "Target khusus di hari Jumat",
+    "ms": "Sasaran khusus pada hari Jumaat",
+    "fr": "Objectif personnalisé le vendredi",
+    "es": "Meta personalizada los viernes",
+    "ur": "جمعہ کے لیے مخصوص ہدف",
+    "ru": "Особая цель в пятницу",
+    "bn": "শুক্রবারের জন্য কাস্টম লক্ষ্য"
+  },
+  "salawat_friday_goal": {
+    "de": "Freitagsziel",
+    "en": "Friday Goal",
+    "ar": "هدف الجمعة",
+    "tr": "Cuma Hedefi",
+    "id": "Target Jumat",
+    "ms": "Sasaran Jumaat",
+    "fr": "Objectif du vendredi",
+    "es": "Meta de viernes",
+    "ur": "جمعہ کا ہدف",
+    "ru": "Цель на пятницу",
+    "bn": "শুক্রবারের লক্ষ্য"
+  },
+  "salawat_friday_goal_amount": {
+    "de": "Ziel am Freitag",
+    "en": "Goal on Friday",
+    "ar": "الهدف يوم الجمعة",
+    "tr": "Cuma Günü Hedefi",
+    "id": "Target di Hari Jumat",
+    "ms": "Sasaran pada Hari Jumaat",
+    "fr": "Objectif le vendredi",
+    "es": "Meta el viernes",
+    "ur": "جمعہ کا ہدف",
+    "ru": "Цель в пятницу",
+    "bn": "শুক্রবারের লক্ষ্য"
   }
 }
