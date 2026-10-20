@@ -534,8 +534,8 @@ struct AdhkarSessionView: View {
     
     private func autoCountInterval(for item: AdhkarItem) -> TimeInterval {
         let normalVal = item.normalInterval ?? item.defaultInterval
-        let slowVal = item.slowInterval ?? (normalVal * 1.35)
-        let quickVal = item.quickInterval ?? (normalVal * 0.70)
+        let slowVal = item.slowInterval ?? (normalVal * 1.184)
+        let quickVal = item.quickInterval ?? (normalVal * 0.816)
         
         switch item.customSpeedStep {
         case 0: return slowVal                          // Langsam

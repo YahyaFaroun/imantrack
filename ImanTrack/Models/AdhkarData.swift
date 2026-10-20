@@ -38,9 +38,9 @@ struct AdhkarItem: Identifiable {
         if customSpeedStep > 2 {
             return max(40, customSpeedStep)
         }
-        let slowVal = slowInterval ?? ((normalInterval ?? 2.0) * 1.35)
+        let slowVal = slowInterval ?? ((normalInterval ?? 2.0) * 1.184)
         let normalVal = normalInterval ?? 2.0
-        let quickVal = quickInterval ?? ((normalInterval ?? 2.0) * 0.70)
+        let quickVal = quickInterval ?? ((normalInterval ?? 2.0) * 0.816)
         let sec: TimeInterval
         switch customSpeedStep {
         case 0: sec = slowVal
@@ -61,7 +61,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Allah – es gibt keinen Gott außer Ihm, dem Lebendigen und Beständigen. Ihn überkommt weder Schlummer noch Schlaf. Ihm gehört, was in den Himmeln und was auf der Erde ist. Wer ist es, der bei Ihm Fürsprache einlegen könnte außer mit Seiner Erlaubnis? Er weiß, was vor ihnen und was hinter ihnen liegt; sie aber begreifen nichts von Seinem Wissen, es sei denn das, was Er will. Sein Thronschemel umfasst die Himmel und die Erde, und ihre Bewahrung beschwert Ihn nicht. Und Er ist der Erhabene, der Allgewaltige.",
         english: "Allah! There is no deity except Him, the Ever-Living, the Sustainer of all existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is presently before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursi extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.",
         count: 1,
-        quickInterval: 17.7, normalInterval: 22.1, slowInterval: 26.5),
+        quickInterval: 15.52, normalInterval: 19.02, slowInterval: 22.52),
     // 2. Sure Al-Ikhlas
     AdhkarItem(
         arabic: "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ. قُلْ هُوَ اللَّهُ أَحَدٌ، اللَّهُ الصَّمَدُ، لَمْ يَلِدْ وَلَمْ يُولَدْ، وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ",
@@ -69,7 +69,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Im Namen Allahs, des Allerbarmers, des Barmherzigen. Sprich: Er ist Allah, ein Einziger, Allah, der Überlegene. Er hat nicht gezeugt und ist nicht gezeugt worden, und niemand ist Ihm jemals gleich.",
         english: "In the Name of Allah, the Most Gracious, the Most Merciful. Say: He is Allah, (who is) One, Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent.",
         count: 3,
-        quickInterval: 5.04, normalInterval: 7.05, slowInterval: 9.06),
+        quickInterval: 5.79, normalInterval: 7.09, slowInterval: 8.39),
     // 3. Sure Al-Falaq
     AdhkarItem(
         arabic: "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ. قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ، مِن شَرِّ مَا خَلَقَ، وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ، وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ، وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ",
@@ -77,7 +77,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Im Namen Allahs, des Allerbarmers, des Barmherzigen. Sprich: Ich nehme Zuflucht beim Herrn des Frühlichts, vor dem Übel dessen, was Er erschaffen hat, und vor dem Übel der Dunkelheit, wenn sie hereinbricht, und vor dem Übel der Knotenbläserinnen, und vor dem Übel eines Neiders, wenn er neidet.",
         english: "In the Name of Allah, the Most Gracious, the Most Merciful. Say: I seek refuge in the Lord of daybreak, from the evil of that which He created, and from the evil of darkness when it settles, and from the evil of the blowers in knots, and from the evil of an envier when he envies.",
         count: 3,
-        quickInterval: 8.4, normalInterval: 9.77, slowInterval: 11.15),
+        quickInterval: 8.09, normalInterval: 9.91, slowInterval: 11.73),
     // 4. Sure An-Nas
     AdhkarItem(
         arabic: "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ. قُلْ أَعُوذُ بِرَبِّ النَّاسِ، مَلِكِ النَّاسِ، إِلَٰهِ النَّاسِ، مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ، الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ، مِنَ الْجِنَّةِ وَالنَّاسِ",
@@ -85,7 +85,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Im Namen Allahs, des Allerbarmers, des Barmherzigen. Sprich: Ich nehme Zuflucht beim Herrn der Menschen, dem König der Menschen, dem Gott der Menschen, vor dem Übel des Einflüsterers, der entweicht und wiederkehrt, der den Menschen in die Brüste einflüstert, von den Dschinn und den Menschen.",
         english: "In the Name of Allah, the Most Gracious, the Most Merciful. Say: I seek refuge in the Lord of mankind, the Sovereign of mankind, the God of mankind, from the evil of the retreating whisperer, who whispers into the breasts of mankind, from among the jinn and mankind.",
         count: 3,
-        quickInterval: 7.63, normalInterval: 9.92, slowInterval: 12.2),
+        quickInterval: 8.42, normalInterval: 10.32, slowInterval: 12.22),
     // 5. Asbahna wa asbaha al-mulku lillah
     AdhkarItem(
         arabic: "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذَا الْيَوْمِ وَخَيْرَ مَا بَعْدَهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ",
@@ -93,7 +93,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Wir haben den Morgen erreicht, und die Herrschaft gehört Allah. Alles Lob gebührt Allah. Es gibt keinen Gott außer Allah, dem Einzigen, der keinen Teilhaber hat. Ihm gehört die Herrschaft und Ihm gebührt das Lob, und Er ist über alle Dinge mächtig. Mein Herr, ich bitte Dich um das Gute dieses Tages und um das Gute, das danach kommt. Und ich suche Zuflucht bei Dir vor dem Übel dieses Tages und dem Übel, das danach kommt. Mein Herr, ich suche Zuflucht bei Dir vor Faulheit und einem schlechten Alter. Mein Herr, ich suche Zuflucht bei Dir vor der Strafe im Höllenfeuer und der Strafe im Grab.",
         english: "We have reached the morning and at this very time unto Allah belongs all sovereignty, and all praise is for Allah. None has the right to be worshipped except Allah, alone, without partner, to Him belongs all sovereignty and praise and He is over all things omnipotent. My Lord, I ask You for the good of this day and the good of what follows it and I take refuge in You from the evil of this day and the evil of what follows it. My Lord, I take refuge in You from laziness and senility. My Lord, I take refuge in You from torment in the Fire and punishment in the grave.",
         count: 1,
-        quickInterval: 17.33, normalInterval: 19.55, slowInterval: 21.77),
+        quickInterval: 17.82, normalInterval: 21.84, slowInterval: 25.86),
     // 6. Allahumma bika asbahna
     AdhkarItem(
         arabic: "اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ",
@@ -101,7 +101,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "O Allah, durch Dich haben wir den Morgen erreicht, und durch Dich haben wir den Abend erreicht. Durch Dich leben wir, und durch Dich sterben wir, und zu Dir ist die Auferstehung.",
         english: "O Allah, by You we enter the morning and by You we enter the evening, by You we live and by You we die, and to You is the Final Return.",
         count: 1,
-        quickInterval: 4.87, normalInterval: 5.97, slowInterval: 7.07),
+        quickInterval: 3.95, normalInterval: 4.84, slowInterval: 5.73),
     // 7. Sayyidul Istighfar
     AdhkarItem(
         arabic: "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلاَّ أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لاَ يَغْفِرُ الذُّنوبَ إِلاَّ أَنْتَ",
@@ -118,7 +118,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "O Allah, ich habe den Morgen erreicht und rufe Dich als Zeugen an, ebenso wie die Träger Deines Thrones, Deine Engel und Deine gesamte Schöpfung, dass Du Allah bist, es gibt keinen Gott außer Dir allein, Du hast keinen Teilhaber, und dass Muhammad Dein Diener und Gesandter ist.",
         english: "O Allah, I have entered the morning calling You to witness, and calling the bearers of Your Throne to witness, Your angels and all of Your creation, that You are Allah, none has the right to be worshipped but You alone, without partner, and that Muhammad is Your servant and Messenger.",
         count: 4,
-        quickInterval: 7.87, normalInterval: 9.23, slowInterval: 10.6),
+        quickInterval: 8.42, normalInterval: 10.32, slowInterval: 12.22),
     // 9. Allahumma ma asbaha bi min ni'matin
     AdhkarItem(
         arabic: "اللَّهُمَّ مَا أَصْبَحَ بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لاَ شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ",
@@ -126,7 +126,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "O Allah, welche Gnade auch immer mich oder eines Deiner Geschöpfe an diesem Morgen erreicht hat, sie ist von Dir allein, Du hast keinen Teilhaber. Dir gebührt alles Lob und Dir gebührt der Dank.",
         english: "O Allah, whatever blessing has been received by me or anyone of Your creation this morning, is from You alone, You have no partner. All praise is for You and thanks is to You.",
         count: 1,
-        quickInterval: 5.79, normalInterval: 6.81, slowInterval: 7.83),
+        quickInterval: 5.39, normalInterval: 6.61, slowInterval: 7.83),
     // 10. Allahumma 'afini fi badani
     AdhkarItem(
         arabic: "اللَّهُمَّ عَافِنِي فِي بَدَنِي، اللَّهُمَّ عَافِنِي فِي سَمْعِي، اللَّهُمَّ عَافِنِي فِي بَصَرِي، لاَ إِلَهَ إِلاَّ أَنْتَ. اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْكُفْرِ، وَالفَقْرِ، وَأَعُوذُ بِكَ مِنْ عَذَابِ القَبْرِ، لاَ إِلَهَ إِلاَّ أَنْتَ",
@@ -134,7 +134,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "O Allah, gib mir Gesundheit in meinem Körper. O Allah, gib mir Gesundheit in meinem Gehör. O Allah, gib mir Gesundheit in meinem Augenlicht. Es gibt keinen Gott außer Dir. O Allah, ich suche Zuflucht bei Dir vor dem Unglauben und der Armut. Und ich suche Zuflucht bei Dir vor der Strafe im Grab. Es gibt keinen Gott außer Dir.",
         english: "O Allah, grant my body health. O Allah, grant my hearing health. O Allah, grant my sight health. None has the right to be worshipped but You. O Allah, I take refuge with You from disbelief and poverty, and I take refuge with You from the punishment of the grave. None has the right to be worshipped but You.",
         count: 3,
-        quickInterval: 8.25, normalInterval: 10.44, slowInterval: 12.63),
+        quickInterval: 10.06, normalInterval: 12.33, slowInterval: 14.60),
     // 11. Hasbiyallahu
     AdhkarItem(
         arabic: "حَسْبِيَ اللَّهُ لاَ إِلَهَ إِلاَّ هُوَ عَلَيهِ تَوَكَّلتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
@@ -142,7 +142,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Allah genügt mir. Es gibt keinen Gott außer Ihm. Auf Ihn vertraue ich, und Er ist der Herr des gewaltigen Thrones.",
         english: "Allah is sufficient for me. There is none worthy of worship but Him. I have placed my trust in Him, and He is the Lord of the Majestic Throne.",
         count: 7,
-        quickInterval: 3.3, normalInterval: 4.17, slowInterval: 5.04),
+        quickInterval: 3.55, normalInterval: 4.35, slowInterval: 5.15),
     // 12. Allahumma inni as'aluka al-'afwa
     AdhkarItem(
         arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ، اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي دِينِي وَدُنْيَايَ وَأَهْلِي، وَمَالِي، اللَّهُمَّ اسْتُرْ عَوْرَاتِي، وَآمِنْ رَوْعَاتِي، اللَّهُمَّ احْفَظْنِي مِنْ بَينِ يَدَيَّ، وَمِنْ خَلْفِي، وَعَنْ يَمِينِي، وَعَنْ شِمَالِي، وَمِنْ فَوْقِي، وَأَعُوذُ بِعَظَمَتِكَ أَنْ أُغْتَالَ مِنْ تَحْتِي",
@@ -150,7 +150,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "O Allah, ich bitte Dich um Vergebung und Wohlergehen im Diesseits und im Jenseits. O Allah, ich bitte Dich um Vergebung und Wohlergehen für meine Religion, mein weltliches Leben, meine Familie und mein Vermögen. O Allah, bedecke meine Blößen und beruhige meine Ängste. O Allah, beschütze mich von vorn, von hinten, von rechts, von links und von oben. Und ich suche Zuflucht bei Deiner Erhabenheit davor, dass ich von unten her meuchlings vernichtet werde.",
         english: "O Allah, I ask You for pardon and well-being in this life and the next. O Allah, I ask You for pardon and well-being in my religious and worldly affairs, and my family and my wealth. O Allah, veil my weaknesses and set at ease my dismay. O Allah, preserve me from the front and from behind and on my right and on my left and from above, and I take refuge with You lest I be swallowed up by the earth.",
         count: 1,
-        quickInterval: 15.83, normalInterval: 18.42, slowInterval: 21.0),
+        quickInterval: 15.65, normalInterval: 19.18, slowInterval: 22.71),
     // 13. Allahumma 'alimal-ghaybi
     AdhkarItem(
         arabic: "اللَّهُمَّ عَالِمَ الغَيْبِ وَالشَّهَادَةِ فَاطِرَ السَّمَوَاتِ وَالْأَرْضِ، رَبَّ كُلِّ شَيْءٍ وَمَلِيكَهُ، أَشْهَدُ أَنْ لاَ إِلَهَ إِلاَّ أَنْتَ، أَعُوذُ بِكَ مِنْ شَرِّ نَفْسِي، وَمِنْ شَرِّ الشَّيْطانِ وَشِـرْكِهِ، وَأَنْ أَقْتَرِفَ عَلَى نَفْسِي سُوءاً، أَوْ أَجُرَّهُ إِلَى مُسْلِمٍ",
@@ -158,7 +158,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "O Allah, Kenner des Verborgenen und des Offenbaren, Schöpfer der Himmel und der Erde, Herr und König von allem. Ich bezeuge, dass es keinen Gott gibt außer Dir. Ich suche Zuflucht bei Dir vor dem Übel meiner eigenen Seele, vor dem Übel des Satans und seiner Verführung zur Beigesellung (Schirk), und davor, dass ich mir selbst Böses antue oder es über einen Muslim bringe.",
         english: "O Allah, Knower of the unseen and the evident, Maker of the heavens and the earth, Lord of all things and their Sovereign, I bear witness that there is none worthy of worship but You. I seek refuge in You from the evil of my soul and from the evil of Satan and his helpers, and (I seek refuge in You) from bringing evil upon my soul or from harming a Muslim.",
         count: 1,
-        quickInterval: 11.2, normalInterval: 12.91, slowInterval: 14.62),
+        quickInterval: 11.38, normalInterval: 13.94, slowInterval: 16.50),
     // 14. Bismillah-illadhi la yadurru
     AdhkarItem(
         arabic: "بِسْمِ اللَّهِ الَّذِي لاَ يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلاَ فِي السّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ",
@@ -166,7 +166,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Im Namen Allahs, mit Dessen Namen nichts auf der Erde oder im Himmel Schaden zufügen kann, und Er ist der Allhörende, der Allwissende.",
         english: "In the Name of Allah, Who with His Name nothing can cause harm in the earth nor in the heavens, and He is the All-Hearing, the All-Knowing.",
         count: 3,
-        quickInterval: 4.42, normalInterval: 5.32, slowInterval: 6.22),
+        quickInterval: 4.80, normalInterval: 5.88, slowInterval: 6.96),
     // 15. Radiytu billahi
     AdhkarItem(
         arabic: "رَضِيتُ بِاللَّهِ رَبَّاً، وَبِالْإِسْلاَمِ دِيناً، وَبِمُحَمَّدٍ صلى الله عليه وسلم نَبِيّاً",
@@ -174,7 +174,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Ich bin zufrieden mit Allah als meinem Herrn, mit dem Islam als meiner Religion und mit Muhammad, Allahs Segen und Frieden seien auf ihm, als meinem Propheten.",
         english: "I am pleased with Allah as my Lord, with Islam as my religion and with Muhammad (peace and blessings of Allah be upon him) as my Prophet.",
         count: 3,
-        quickInterval: 4.17, normalInterval: 5.28, slowInterval: 6.4),
+        quickInterval: 4.08, normalInterval: 5.00, slowInterval: 5.92),
     // 16. Ya Hayyu ya Qayyum
     AdhkarItem(
         arabic: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغيثُ أَصْلِحْ لِي شَأْنِيَ كُلَّهُ وَلاَ تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ",
@@ -182,7 +182,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "O Ewiglebender, O Beständiger, durch Deine Barmherzigkeit rufe ich um Hilfe. Bringe all meine Angelegenheiten in Ordnung und überlasse mich nicht mir selbst, nicht einmal für den Wimpernschlag eines Auges.",
         english: "O Ever Living One, O Sustainer, by Your mercy I call on You to set right all my affairs, do not place me in charge of my soul even for the blinking of an eye.",
         count: 1,
-        quickInterval: 5.1, normalInterval: 6.5, slowInterval: 7.9),
+        quickInterval: 4.73, normalInterval: 5.80, slowInterval: 6.87),
     // 17. Asbahna wa asbahal-mulku lillahi rabbil-'alamin
     AdhkarItem(
         arabic: "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ رَبِّ الْعَالَمِينَ، اللَّهُـمَّ إِنِّي أَسْأَلُكَ خَيْرَ هَذَا الْيَوْمِ فَتْحَهُ، وَنَصْرَهُ، وَنورَهُ، وَبَرَكَتَهُ، وَهُدَاهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهِ وَشَرِّ مَا بَعْدَهُ",
@@ -190,7 +190,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Wir haben den Morgen erreicht, und die Herrschaft gehört Allah, dem Herrn der Welten. O Allah, ich bitte Dich um das Gute dieses Tages: seinen Erfolg, seinen Sieg, sein Licht, seinen Segen und seine Rechtleitung. Und ich suche Zuflucht bei Dir vor dem Übel, das darin ist, und dem Übel, das danach kommt.",
         english: "We have reached the morning and at this very time unto Allah, Lord of the worlds, belongs all sovereignty. O Allah, I ask You for the good of this day, its victories, its help, its light, its blessings, and its guidance. I take refuge in You from the evil that is in it and from the evil that follows it.",
         count: 1,
-        quickInterval: 8.77, normalInterval: 11.0, slowInterval: 13.23),
+        quickInterval: 8.88, normalInterval: 10.88, slowInterval: 12.88),
     // 18. Asbahna 'ala fitratil-Islam
     AdhkarItem(
         arabic: "أَصْبَحْنا عَلَى فِطْرَةِ الْإِسْلاَمِ، وَعَلَى كَلِمَةِ الْإِخْلاَصِ، وَعَلَى دِينِ نَبِيِّنَا مُحَمَّدٍ صلى الله عليه وسلم، وَعَلَى مِلَّةِ أَبِينَا إِبْرَاهِيمَ، حَنِيفاً مُسْلِماً وَمَا كَانَ مِنَ الْمُشرِكِينَ",
@@ -198,7 +198,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Wir haben den Morgen erreicht in der natürlichen Veranlagung des Islam, auf dem Wort der reinen Ergebenheit, auf der Religion unseres Propheten Muhammad, Allahs Segen und Frieden seien auf ihm, und der Glaubensgemeinschaft unseres Vaters Ibrahim. Er war rechtgläubig, gottergeben und keiner der Götzendiener.",
         english: "We have entered a new day upon the natural religion of Islam, the word of sincere devotion, the religion of our Prophet Muhammad (peace and blessings of Allah be upon him), and the faith of our father Ibrahim. He was upright (in worshipping Allah), and a Muslim. He was not of those who worship others besides Allah.",
         count: 1,
-        quickInterval: 9.1, normalInterval: 10.13, slowInterval: 11.17),
+        quickInterval: 9.14, normalInterval: 11.20, slowInterval: 13.26),
     // 19. Subhanallahi wa bihamdihi (100)
     AdhkarItem(
         arabic: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ",
@@ -206,7 +206,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Preis sei Allah, und Ihm gebührt Sein Lob.",
         english: "Glory is to Allah and praise is to Him.",
         count: 100,
-        quickInterval: 1.01, normalInterval: 1.47, slowInterval: 1.92),
+        quickInterval: 1.12, normalInterval: 1.37, slowInterval: 1.62),
     // 20. La ilaha illallah (10)
     AdhkarItem(
         arabic: "لاَ إِلَهَ إِلاَّ اللَّهُ، وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
@@ -223,7 +223,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Preis sei Allah, und Ihm gebührt Sein Lob: In der Anzahl Seiner Schöpfung, nach Seinem Wohlgefallen, dem Gewicht Seines Thrones und der Menge der Tinte Seiner Worte.",
         english: "Glory is to Allah and praise is to Him, by the multitude of His creation, by His Pleasure, by the weight of His Throne, and by the extent of His Words.",
         count: 3,
-        quickInterval: 4.8, normalInterval: 6.45, slowInterval: 8.1),
+        quickInterval: 4.21, normalInterval: 5.16, slowInterval: 6.11),
     // 22. Allahumma inni as'aluka 'ilman nafi'an
     AdhkarItem(
         arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْماً نَافِعاً، وَرِزْقاً طَيِّباً، وَعَمَلاً مُتَقَبَّلاً",
@@ -231,7 +231,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "O Allah, ich bitte Dich um nützliches Wissen, guten Lebensunterhalt und Taten, die von Dir angenommen werden.",
         english: "O Allah, I ask You for knowledge that is of benefit, a good provision, and deeds that will be accepted.",
         count: 1,
-        quickInterval: 3.67, normalInterval: 4.68, slowInterval: 5.7),
+        quickInterval: 3.42, normalInterval: 4.19, slowInterval: 4.96),
     // 23. Astaghfirullah
     AdhkarItem(
         arabic: "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ",
@@ -248,7 +248,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Ich suche Zuflucht bei den vollkommenen Worten Allahs vor dem Übel dessen, was Er erschaffen hat.",
         english: "I seek refuge in the Perfect Words of Allah from the evil of what He has created.",
         count: 3,
-        quickInterval: 2.63, normalInterval: 3.43, slowInterval: 4.22),
+        quickInterval: 2.43, normalInterval: 2.98, slowInterval: 3.53),
     // 25. Allahumma salli
     AdhkarItem(
         arabic: "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبَيِّنَا مُحَمَّدٍ",
@@ -268,7 +268,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Allah – es gibt keinen Gott außer Ihm, dem Lebendigen und Beständigen. Ihn überkommt weder Schlummer noch Schlaf. Ihm gehört, was in den Himmeln und was auf der Erde ist. Wer ist es, der bei Ihm Fürsprache einlegen könnte außer mit Seiner Erlaubnis? Er weiß, was vor ihnen und was hinter ihnen liegt; sie aber begreifen nichts von Seinem Wissen, es sei denn das, was Er will. Sein Thronschemel umfasst die Himmel und die Erde, und ihre Bewahrung beschwert Ihn nicht. Und Er ist der Erhabene, der Allgewaltige.",
         english: "Allah! There is no deity except Him, the Ever-Living, the Sustainer of all existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is presently before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursi extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.",
         count: 1,
-        quickInterval: 17.7, normalInterval: 22.1, slowInterval: 26.5),
+        quickInterval: 15.52, normalInterval: 19.02, slowInterval: 22.52),
     // 2. Sure Al-Ikhlas
     AdhkarItem(
         arabic: "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ. قُلْ هُوَ اللَّهُ أَحَدٌ، اللَّهُ الصَّمَدُ، لَمْ يَلِدْ وَلَمْ يُولَدْ، وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ",
@@ -276,7 +276,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Im Namen Allahs, des Allerbarmers, des Barmherzigen. Sprich: Er ist Allah, ein Einziger, Allah, der Überlegene. Er hat nicht gezeugt und ist nicht gezeugt worden, und niemand ist Ihm jemals gleich.",
         english: "In the Name of Allah, the Most Gracious, the Most Merciful. Say: He is Allah, (who is) One, Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent.",
         count: 3,
-        quickInterval: 5.04, normalInterval: 7.05, slowInterval: 9.06),
+        quickInterval: 5.79, normalInterval: 7.09, slowInterval: 8.39),
     // 3. Sure Al-Falaq
     AdhkarItem(
         arabic: "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ. قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ، مِن شَرِّ مَا خَلَقَ، وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ، وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ، وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ",
@@ -284,7 +284,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Im Namen Allahs, des Allerbarmers, des Barmherzigen. Sprich: Ich nehme Zuflucht beim Herrn des Frühlichts, vor dem Übel dessen, was Er erschaffen hat, und vor dem Übel der Dunkelheit, wenn sie hereinbricht, und vor dem Übel der Knotenbläserinnen, und vor dem Übel eines Neiders, wenn er neidet.",
         english: "In the Name of Allah, the Most Gracious, the Most Merciful. Say: I seek refuge in the Lord of daybreak, from the evil of that which He created, and from the evil of darkness when it settles, and from the evil of the blowers in knots, and from the evil of an envier when he envies.",
         count: 3,
-        quickInterval: 8.4, normalInterval: 9.77, slowInterval: 11.15),
+        quickInterval: 8.09, normalInterval: 9.91, slowInterval: 11.73),
     // 4. Sure An-Nas
     AdhkarItem(
         arabic: "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ. قُلْ أَعُوذُ بِرَبِّ النَّاسِ، مَلِكِ النَّاسِ، إِلَٰهِ النَّاسِ، مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ، الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ، مِنَ الْجِنَّةِ وَالنَّاسِ",
@@ -292,7 +292,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Im Namen Allahs, des Allerbarmers, des Barmherzigen. Sprich: Ich nehme Zuflucht beim Herrn der Menschen, dem König der Menschen, dem Gott der Menschen, vor dem Übel des Einflüsterers, der entweicht und wiederkehrt, der den Menschen in die Brüste einflüstert, von den Dschinn und den Menschen.",
         english: "In the Name of Allah, the Most Gracious, the Most Merciful. Say: I seek refuge in the Lord of mankind, the Sovereign of mankind, the God of mankind, from the evil of the retreating whisperer, who whispers into the breasts of mankind, from among the jinn and mankind.",
         count: 3,
-        quickInterval: 7.63, normalInterval: 9.92, slowInterval: 12.2),
+        quickInterval: 8.42, normalInterval: 10.32, slowInterval: 12.22),
     // 5. Amsayna wa amsal-mulku lillah (Abend)
     AdhkarItem(
         arabic: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ",
@@ -300,7 +300,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Wir haben den Abend erreicht, und die Herrschaft gehört Allah. Alles Lob gebührt Allah. Es gibt keinen Gott außer Allah, dem Einzigen, der keinen Teilhaber hat. Ihm gehört die Herrschaft und Ihm gebührt das Lob, und Er ist über alle Dinge mächtig. Mein Herr, ich bitte Dich um das Gute dieser Nacht und um das Gute, das danach kommt. Und ich suche Zuflucht bei Dir vor dem Übel dieser Nacht und dem Übel, das danach kommt. Mein Herr, ich suche Zuflucht bei Dir vor Faulheit und einem schlechten Alter. Mein Herr, ich suche Zuflucht bei Dir vor der Strafe im Höllenfeuer und der Strafe im Grab.",
         english: "We have reached the evening and at this very time unto Allah belongs all sovereignty, and all praise is for Allah. None has the right to be worshipped except Allah, alone, without partner, to Him belongs all sovereignty and praise and He is over all things omnipotent. My Lord, I ask You for the good of this night and the good of what follows it and I take refuge in You from the evil of this night and the evil of what follows it. My Lord, I take refuge in You from laziness and senility. My Lord, I take refuge in You from torment in the Fire and punishment in the grave.",
         count: 1,
-        quickInterval: 17.33, normalInterval: 19.55, slowInterval: 21.77),
+        quickInterval: 18.09, normalInterval: 22.17, slowInterval: 26.25),
     // 6. Allahumma bika amsayna (Abend)
     AdhkarItem(
         arabic: "اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ الْمَصِيرُ",
@@ -308,7 +308,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "O Allah, durch Dich haben wir den Abend erreicht, und durch Dich haben wir den Morgen erreicht. Durch Dich leben wir, und durch Dich sterben wir, und zu Dir ist die Heimkehr.",
         english: "O Allah, by You we enter the evening and by You we enter the morning, by You we live and by You we die, and to You is the Final Return.",
         count: 1,
-        quickInterval: 4.87, normalInterval: 5.97, slowInterval: 7.07),
+        quickInterval: 3.95, normalInterval: 4.84, slowInterval: 5.73),
     // 7. Sayyidul Istighfar (Abend)
     AdhkarItem(
         arabic: "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلاَّ أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لاَ يَغْفِرُ الذُّنوبَ إِلاَّ أَنْتَ",
@@ -325,7 +325,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "O Allah, ich habe den Abend erreicht und rufe Dich als Zeugen an, ebenso wie die Träger Deines Thrones, Deine Engel und Deine gesamte Schöpfung, dass Du Allah bist, es gibt keinen Gott außer Dir allein, Du hast keinen Teilhaber, und dass Muhammad Dein Diener und Gesandter ist.",
         english: "O Allah, I have entered the evening calling You to witness, and calling the bearers of Your Throne to witness, Your angels and all of Your creation, that You are Allah, none has the right to be worshipped but You alone, without partner, and that Muhammad is Your servant and Messenger.",
         count: 4,
-        quickInterval: 7.87, normalInterval: 9.23, slowInterval: 10.6),
+        quickInterval: 8.42, normalInterval: 10.32, slowInterval: 12.22),
     // 9. Allahumma ma amsa bi min ni'matin (Abend)
     AdhkarItem(
         arabic: "اللَّهُمَّ مَا أَمْسَى بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لاَ شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ",
@@ -333,7 +333,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "O Allah, welche Gnade auch immer mich oder eines Deiner Geschöpfe an diesem Abend erreicht hat, sie ist von Dir allein, Du hast keinen Teilhaber. Dir gebührt alles Lob und Dir gebührt der Dank.",
         english: "O Allah, whatever blessing has been received by me or anyone of Your creation this evening, is from You alone, You have no partner. All praise is for You and thanks is to You.",
         count: 1,
-        quickInterval: 5.79, normalInterval: 6.81, slowInterval: 7.83),
+        quickInterval: 5.39, normalInterval: 6.61, slowInterval: 7.83),
     // 10. Allahumma 'afini fi badani (Abend)
     AdhkarItem(
         arabic: "اللَّهُمَّ عَافِنِي فِي بَدَنِي، اللَّهُمَّ عَافِنِي فِي سَمْعِي، اللَّهُمَّ عَافِنِي فِي بَصَرِي، لاَ إِلَهَ إِلاَّ أَنْتَ. اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْكُفْرِ، وَالفَقْرِ، وَأَعُوذُ بِكَ مِنْ عَذَابِ القَبْرِ، لاَ إِلَهَ إِلاَّ أَنْتَ",
@@ -341,7 +341,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "O Allah, gib mir Gesundheit in meinem Körper. O Allah, gib mir Gesundheit in meinem Gehör. O Allah, gib mir Gesundheit in meinem Augenlicht. Es gibt keinen Gott außer Dir. O Allah, ich suche Zuflucht bei Dir vor dem Unglauben und der Armut. Und ich suche Zuflucht bei Dir vor der Strafe im Grab. Es gibt keinen Gott außer Dir.",
         english: "O Allah, grant my body health. O Allah, grant my hearing health. O Allah, grant my sight health. None has the right to be worshipped but You. O Allah, I take refuge with You from disbelief and poverty, and I take refuge with You from the punishment of the grave. None has the right to be worshipped but You.",
         count: 3,
-        quickInterval: 8.25, normalInterval: 10.44, slowInterval: 12.63),
+        quickInterval: 10.06, normalInterval: 12.33, slowInterval: 14.60),
     // 11. Hasbiyallahu (Abend)
     AdhkarItem(
         arabic: "حَسْبِيَ اللَّهُ لاَ إِلَهَ إِلاَّ هُوَ عَلَيهِ تَوَكَّلتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
@@ -349,7 +349,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Allah genügt mir. Es gibt keinen Gott außer Ihm. Auf Ihn vertraue ich, und Er ist der Herr des gewaltigen Thrones.",
         english: "Allah is sufficient for me. There is none worthy of worship but Him. I have placed my trust in Him, and He is the Lord of the Majestic Throne.",
         count: 7,
-        quickInterval: 3.3, normalInterval: 4.17, slowInterval: 5.04),
+        quickInterval: 3.55, normalInterval: 4.35, slowInterval: 5.15),
     // 12. Allahumma inni as'aluka al-'afwa (Abend)
     AdhkarItem(
         arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ، اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي دِينِي وَدُنْيَايَ وَأَهْلِي، وَمَالِي، اللَّهُمَّ اسْتُرْ عَوْرَاتِي، وَآمِنْ رَوْعَاتِي، اللَّهُمَّ احْفَظْنِي مِنْ بَينِ يَدَيَّ، وَمِنْ خَلْفِي، وَعَنْ يَمِينِي، وَعَنْ شِمَالِي، وَمِنْ فَوْقِي، وَأَعُوذُ بِعَظَمَتِكَ أَنْ أُغْتَالَ مِنْ تَحْتِي",
@@ -357,7 +357,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "O Allah, ich bitte Dich um Vergebung und Wohlergehen im Diesseits und im Jenseits. O Allah, ich bitte Dich um Vergebung und Wohlergehen für meine Religion, mein weltliches Leben, meine Familie und mein Vermögen. O Allah, bedecke meine Blößen und beruhige meine Ängste. O Allah, beschütze mich von vorn, von hinten, von rechts, von links und von oben. Und ich suche Zuflucht bei Deiner Erhabenheit davor, dass ich von unten her meuchlings vernichtet werde.",
         english: "O Allah, I ask You for pardon and well-being in this life and the next. O Allah, I ask You for pardon and well-being in my religious and worldly affairs, and my family and my wealth. O Allah, veil my weaknesses and set at ease my dismay. O Allah, preserve me from the front and from behind and on my right and on my left and from above, and I take refuge with You lest I be swallowed up by the earth.",
         count: 1,
-        quickInterval: 15.83, normalInterval: 18.42, slowInterval: 21.0),
+        quickInterval: 15.65, normalInterval: 19.18, slowInterval: 22.71),
     // 13. Allahumma 'alimal-ghaybi (Abend)
     AdhkarItem(
         arabic: "اللَّهُمَّ عَالِمَ الْغَيْبِ وَالشَّهَادَةِ فَاطِرَ السَّمَوَاتِ وَالْأَرْضِ، رَبَّ كُلِّ شَيْءٍ وَمَلِيكَهُ، أَشْهَدُ أَنْ لاَ إِلَهَ إِلاَّ أَنْتَ، أَعُوذُ بِكَ مِنْ شَرِّ نَفْسِي، وَمِنْ شَرِّ الشَّيْطانِ وَشِـرْكِهِ، وَأَنْ أَقْتَرِفَ عَلَى نَفْسِي سُوءاً، أَوْ أَجُرَّهُ إِلَى مُسْلِمٍ",
@@ -365,7 +365,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "O Allah, Kenner des Verborgenen und des Offenbaren, Schöpfer der Himmel und der Erde, Herr und König von allem. Ich bezeuge, dass es keinen Gott gibt außer Dir. Ich suche Zuflucht bei Dir vor dem Übel meiner eigenen Seele, vor dem Übel des Satans und seiner Verführung zur Beigesellung (Schirk), und davor, dass ich mir selbst Böses antue oder es über einen Muslim bringe.",
         english: "O Allah, Knower of the unseen and the evident, Maker of the heavens and the earth, Lord of all things and their Sovereign, I bear witness that there is none worthy of worship but You. I seek refuge in You from the evil of my soul and from the evil of Satan and his helpers, and (I seek refuge in You) from bringing evil upon my soul or from harming a Muslim.",
         count: 1,
-        quickInterval: 11.2, normalInterval: 12.91, slowInterval: 14.62),
+        quickInterval: 11.38, normalInterval: 13.94, slowInterval: 16.50),
     // 14. Bismillah-illadhi la yadurru (Abend)
     AdhkarItem(
         arabic: "بِسْمِ اللَّهِ الَّذِي لاَ يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلاَ فِي السّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ",
@@ -373,7 +373,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Im Namen Allahs, mit Dessen Namen nichts auf der Erde oder im Himmel Schaden zufügen kann, und Er ist der Allhörende, der Allwissende.",
         english: "In the Name of Allah, Who with His Name nothing can cause harm in the earth nor in the heavens, and He is the All-Hearing, the All-Knowing.",
         count: 3,
-        quickInterval: 4.42, normalInterval: 5.32, slowInterval: 6.22),
+        quickInterval: 4.80, normalInterval: 5.88, slowInterval: 6.96),
     // 15. Radiytu billahi (Abend)
     AdhkarItem(
         arabic: "رَضِيتُ بِاللَّهِ رَبَّاً، وَبِالْإِسْلاَمِ دِيناً، وَبِمُحَمَّدٍ صلى الله عليه وسلم نَبِيّاً",
@@ -381,7 +381,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Ich bin zufrieden mit Allah als meinem Herrn, mit dem Islam als meiner Religion und mit Muhammad, Allahs Segen und Frieden seien auf ihm, als meinem Propheten.",
         english: "I am pleased with Allah as my Lord, with Islam as my religion and with Muhammad (peace and blessings of Allah be upon him) as my Prophet.",
         count: 3,
-        quickInterval: 4.17, normalInterval: 5.28, slowInterval: 6.4),
+        quickInterval: 4.08, normalInterval: 5.00, slowInterval: 5.92),
     // 16. Ya Hayyu ya Qayyum (Abend)
     AdhkarItem(
         arabic: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغيثُ أَصْلِحْ لِي شَأْنِيَ كُلَّهُ وَلاَ تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ",
@@ -389,7 +389,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "O Ewiglebender, O Beständiger, durch Deine Barmherzigkeit rufe ich um Hilfe. Bringe all meine Angelegenheiten in Ordnung und überlasse mich nicht mir selbst, nicht einmal für den Wimpernschlag eines Auges.",
         english: "O Ever Living One, O Sustainer, by Your mercy I call on You to set right all my affairs, do not place me in charge of my soul even for the blinking of an eye.",
         count: 1,
-        quickInterval: 5.1, normalInterval: 6.5, slowInterval: 7.9),
+        quickInterval: 4.73, normalInterval: 5.80, slowInterval: 6.87),
     // 17. Amsayna wa amsal-mulku lillahi rabbil-'alamin
     AdhkarItem(
         arabic: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ رَبِّ الْعَالَمِينَ، اللَّهُـمَّ إِنِّي أَسْأَلُكَ خَيْرَ هَذِهِ اللَّيْلَةِ فَتْحَهَا، وَنَصْرَهَا، وَنورَهَا، وَبَرَكَتَهَا، وَهُدَاهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهَا وَشَرِّ مَا بَعْدَهَا",
@@ -397,7 +397,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Wir haben den Abend erreicht, und die Herrschaft gehört Allah, dem Herrn der Welten. O Allah, ich bitte Dich um das Gute dieser Nacht: ihren Erfolg, ihren Sieg, ihr Licht, ihren Segen und ihre Rechtleitung. Und ich suche Zuflucht bei Dir vor dem Übel, das darin ist, und dem Übel, das danach kommt.",
         english: "We have reached the evening and at this very time unto Allah, Lord of the worlds, belongs all sovereignty. O Allah, I ask You for the good of this night, its victories, its help, its light, its blessings, and its guidance. I take refuge in You from the evil that is in it and from the evil that follows it.",
         count: 1,
-        quickInterval: 8.77, normalInterval: 11.0, slowInterval: 13.23),
+        quickInterval: 9.41, normalInterval: 11.53, slowInterval: 13.65),
     // 18. Amsayna 'ala fitratil-Islam
     AdhkarItem(
         arabic: "أَمْسَيْنَا عَلَى فِطْرَةِ الْإِسْلاَمِ، وَعَلَى كَلِمَةِ الْإِخْلاَصِ، وَعَلَى دِينِ نَبِيِّنَا مُحَمَّدٍ صلى الله عليه وسلم، وَعَلَى مِلَّةِ أَبِينَا إِبْرَاهِيمَ، حَنِيفاً مُسْلِماً وَمَا كَانَ مِنَ الْمُشرِكِينَ",
@@ -405,7 +405,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Wir haben den Abend erreicht in der natürlichen Veranlagung des Islam, auf dem Wort der reinen Ergebenheit, auf der Religion unseres Propheten Muhammad, Allahs Segen und Frieden seien auf ihm, und der Glaubensgemeinschaft unseres Vaters Ibrahim. Er war rechtgläubig, gottergeben und keiner der Götzendiener.",
         english: "We have entered a new night upon the natural religion of Islam, the word of sincere devotion, the religion of our Prophet Muhammad (peace and blessings of Allah be upon him), and the faith of our father Ibrahim. He was upright (in worshipping Allah), and a Muslim. He was not of those who worship others besides Allah.",
         count: 1,
-        quickInterval: 9.1, normalInterval: 10.13, slowInterval: 11.17),
+        quickInterval: 9.14, normalInterval: 11.20, slowInterval: 13.26),
     // 19. Subhanallahi wa bihamdihi (Abend)
     AdhkarItem(
         arabic: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ",
@@ -413,7 +413,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Preis sei Allah, und Ihm gebührt Sein Lob.",
         english: "Glory is to Allah and praise is to Him.",
         count: 100,
-        quickInterval: 1.01, normalInterval: 1.47, slowInterval: 1.92),
+        quickInterval: 1.12, normalInterval: 1.37, slowInterval: 1.62),
     // 20. La ilaha illallah (Abend)
     AdhkarItem(
         arabic: "لاَ إِلَهَ إِلاَّ اللَّهُ، وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
@@ -439,7 +439,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Ich suche Zuflucht bei den vollkommenen Worten Allahs vor dem Übel dessen, was Er erschaffen hat.",
         english: "I seek refuge in the Perfect Words of Allah from the evil of what He has created.",
         count: 3,
-        quickInterval: 2.63, normalInterval: 3.43, slowInterval: 4.22),
+        quickInterval: 2.43, normalInterval: 2.98, slowInterval: 3.53),
     // 23. Allahumma salli (Abend)
     AdhkarItem(
         arabic: "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبَيِّنَا مُحَمَّدٍ",
@@ -448,7 +448,7 @@ let abendAdhkar: [AdhkarItem] = [
         english: "O Allah, send blessings and peace upon our Prophet Muhammad.",
         count: 10,
         linkedTasbihCategory: .salawat
-    , quickInterval: 1.56, normalInterval: 3.85)
+    , quickInterval: 1.56, normalInterval: 2.70, slowInterval: 3.85)
 ]
 
 let schlafAdhkar: [AdhkarItem] = [
@@ -575,7 +575,7 @@ extension AdhkarItem {
         
         let letterCount = cleanedText.count
         // 85 Millisekunden (0.085s) pro Buchstabe/Leerzeichen ist ein sehr natürliches mittleres Tempo.
-        return max(1.2, Double(letterCount) * 0.085)
+        return max(1.2, Double(letterCount) * 0.0806)
     }
 
     func translation(for lang: String) -> String {
