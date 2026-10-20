@@ -152,6 +152,14 @@ struct AdhkarSessionView: View {
         case .evening: return todayRecord.abendAdhkarDone
         }
     }
+    
+    private var hasSnapshot: Bool {
+        todayRecord.getAdhkarSnapshot(for: type.idStr) != nil
+    }
+    
+    private var canUndoCompletion: Bool {
+        isSessionAlreadyDone && hasSnapshot
+    }
 
     var body: some View {
         NavigationStack {
@@ -178,20 +186,17 @@ struct AdhkarSessionView: View {
                             }
                             
                             if adhkarState != .future {
-                                Button(action: {
-                                        #if os(iOS) && !SKIP
-                                        let impact = UIImpactFeedbackGenerator(style: .medium)
-                                        impact.impactOccurred()
-                                        #endif
-                                        withAnimation(.easeInOut(duration: 0.25)) {
-                                            if isSessionAlreadyDone {
+                                if isSessionAlreadyDone {
+                                    if canUndoCompletion {
+                                        Button(action: {
+                                            #if os(iOS) && !SKIP
+                                            let impact = UIImpactFeedbackGenerator(style: .medium)
+                                            impact.impactOccurred()
+                                            #endif
+                                            withAnimation(.easeInOut(duration: 0.25)) {
                                                 markAsUncompleted()
-                                            } else {
-                                                markAllAsCompleted()
                                             }
-                                        }
-                                    }) {
-                                        if isSessionAlreadyDone {
+                                        }) {
                                             VStack(spacing: 3) {
                                                 Text(L10n.tr("adhkar_read_done", language))
                                                     .font(.subheadline)
@@ -206,26 +211,47 @@ struct AdhkarSessionView: View {
                                             .background(Theme.islamicGreen)
                                             .foregroundColor(.white)
                                             .cornerRadius(12)
-                                        } else {
-                                            let isExpired = (adhkarState == .expired)
-                                            Text(L10n.tr("adhkar_already_read_prompt", language))
-                                                .font(isExpired ? .subheadline : .footnote)
-                                                .fontWeight(isExpired ? .medium : .regular)
-                                                .foregroundColor(isExpired ? .primary : .secondary)
-                                                .multilineTextAlignment(.center)
-                                                .frame(maxWidth: .infinity)
-                                                .padding(.vertical, isExpired ? 10 : 7)
-                                                .background(
-                                                    RoundedRectangle(cornerRadius: 10)
-                                                        .fill(isExpired ? Color.gray.opacity(0.16) : Color.gray.opacity(0.08))
-                                                )
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 10)
-                                                        .stroke(isExpired ? Color.secondary.opacity(0.35) : Color.gray.opacity(0.2), lineWidth: isExpired ? 1.0 : 0.8)
-                                                )
                                         }
+                                        .buttonStyle(.plain)
+                                    } else {
+                                        Text(L10n.tr("adhkar_read_done", language))
+                                            .font(.subheadline)
+                                            .fontWeight(.bold)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 10)
+                                            .background(Theme.islamicGreen)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(12)
+                                    }
+                                } else {
+                                    Button(action: {
+                                        #if os(iOS) && !SKIP
+                                        let impact = UIImpactFeedbackGenerator(style: .medium)
+                                        impact.impactOccurred()
+                                        #endif
+                                        withAnimation(.easeInOut(duration: 0.25)) {
+                                            markAllAsCompleted()
+                                        }
+                                    }) {
+                                        let isExpired = (adhkarState == .expired)
+                                        Text(L10n.tr("adhkar_already_read_prompt", language))
+                                            .font(isExpired ? .subheadline : .footnote)
+                                            .fontWeight(isExpired ? .medium : .regular)
+                                            .foregroundColor(isExpired ? .primary : .secondary)
+                                            .multilineTextAlignment(.center)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, isExpired ? 10 : 7)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(isExpired ? Color.gray.opacity(0.16) : Color.gray.opacity(0.08))
+                                            )
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .stroke(isExpired ? Color.secondary.opacity(0.35) : Color.gray.opacity(0.2), lineWidth: isExpired ? 1.0 : 0.8)
+                                            )
                                     }
                                     .buttonStyle(.plain)
+                                }
                             }
                             
                             ForEach(Array(adhkarList.enumerated()), id: \.element.id) { index, item in
@@ -682,6 +708,7 @@ struct AdhkarSessionView: View {
     }
     
     private func markAsUncompleted() {
+        guard canUndoCompletion else { return }
         #if os(iOS) && !SKIP
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
