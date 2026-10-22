@@ -243,13 +243,13 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
     }
     
     // Berechnet die Fajr-Zeit für ein Datum
-    nonisolated func getFajrDate(for date: Date) -> Date? {
+    nonisolated func getFajrDate(for date: Date, method: CalculationMethod? = nil) -> Date? {
         let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
         let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
         let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
         let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
-        let method = LocationAndSolarManager.getSelectedCalculationMethod()
-        return LocationAndSolarManager.calculateFajrDateStatic(for: date, latitude: lat, longitude: lon, method: method)
+        let calcMethod = method ?? LocationAndSolarManager.getSelectedCalculationMethod()
+        return LocationAndSolarManager.calculateFajrDateStatic(for: date, latitude: lat, longitude: lon, method: calcMethod)
     }
     
     // Berechnet die Dhuhr-Zeit (Solar Noon) für ein Datum
@@ -267,13 +267,13 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
     }
     
     // Berechnet die Asr-Zeit für ein Datum (Nachmittagsgebet)
-    nonisolated func getAsrDate(for date: Date) -> Date? {
+    nonisolated func getAsrDate(for date: Date, school: String? = nil) -> Date? {
         let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
         let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
         let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
         let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
-        let school = LocationAndSolarManager.getSelectedAsrSchool()
-        return LocationAndSolarManager.calculateAsrDateStatic(for: date, latitude: lat, longitude: lon, school: school)
+        let asrSchool = school ?? LocationAndSolarManager.getSelectedAsrSchool()
+        return LocationAndSolarManager.calculateAsrDateStatic(for: date, latitude: lat, longitude: lon, school: asrSchool)
     }
 
     // Berechnet die Maghrib-Zeit (Sonnenuntergang) für ein Datum
@@ -286,13 +286,13 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
     }
     
     // Berechnet die Isha-Zeit für ein Datum
-    nonisolated func getIshaDate(for date: Date) -> Date? {
+    nonisolated func getIshaDate(for date: Date, method: CalculationMethod? = nil) -> Date? {
         let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
         let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
         let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
         let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
-        let method = LocationAndSolarManager.getSelectedCalculationMethod()
-        return LocationAndSolarManager.calculateIshaDateStatic(for: date, latitude: lat, longitude: lon, method: method)
+        let calcMethod = method ?? LocationAndSolarManager.getSelectedCalculationMethod()
+        return LocationAndSolarManager.calculateIshaDateStatic(for: date, latitude: lat, longitude: lon, method: calcMethod)
     }
 
     nonisolated static func getSelectedCalculationMethod() -> CalculationMethod {
@@ -333,40 +333,104 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
 }
 
 public enum CalculationMethod: String, CaseIterable, Codable, Sendable {
-    case mwl = "mwl"               // MWL: Fajr 18.0°, Isha 17.0°
-    case isna = "isna"             // ISNA: Fajr 15.0°, Isha 15.0°
-    case ummAlQura = "ummAlQura"   // Umm al-Qura: Fajr 18.5°, Isha = Maghrib + 90 min
-    case karachi = "karachi"       // Karachi: Fajr 18.0°, Isha 18.0°
-    case egyptian = "egyptian"     // Egyptian: Fajr 19.5°, Isha 17.5°
-    case uoif = "uoif"             // UOIF: Fajr 12.0°, Isha 12.0°
+    case ummAlQura = "ummAlQura"
+    case mwl = "mwl"
+    case egyptian = "egyptian"
+    case karachi = "karachi"
+    case uae = "uae"
+    case kuwait = "kuwait"
+    case qatar = "qatar"
+    case diyanet = "diyanet"
+    case singapore = "singapore"
+    case malaysia = "malaysia"
+    case indonesia = "indonesia"
+    case morocco = "morocco"
+    case tunisia = "tunisia"
+    case algeria = "algeria"
+    case isna = "isna"
+    case moonsighting = "moonsighting"
+    case france18 = "france18"
+    case france15 = "france15"
+    case uoif = "uoif"
+    case tehran = "tehran"
     
     public nonisolated var fajrAngle: Double {
         switch self {
-        case .mwl: return 18.0
-        case .isna: return 15.0
         case .ummAlQura: return 18.5
-        case .karachi: return 18.0
+        case .mwl: return 18.0
         case .egyptian: return 19.5
+        case .karachi: return 18.0
+        case .uae: return 18.2
+        case .kuwait: return 18.0
+        case .qatar: return 18.0
+        case .diyanet: return 18.0
+        case .singapore: return 20.0
+        case .malaysia: return 20.0
+        case .indonesia: return 20.0
+        case .morocco: return 19.0
+        case .tunisia: return 18.0
+        case .algeria: return 18.0
+        case .isna: return 15.0
+        case .moonsighting: return 18.0
+        case .france18: return 18.0
+        case .france15: return 15.0
         case .uoif: return 12.0
+        case .tehran: return 17.7
         }
     }
     
     public nonisolated var ishaAngle: Double? {
         switch self {
+        case .ummAlQura, .qatar: return nil
         case .mwl: return 17.0
-        case .isna: return 15.0
-        case .ummAlQura: return nil
-        case .karachi: return 18.0
         case .egyptian: return 17.5
+        case .karachi: return 18.0
+        case .uae: return 18.0
+        case .kuwait: return 17.5
+        case .diyanet: return 17.0
+        case .singapore: return 18.0
+        case .malaysia: return 18.0
+        case .indonesia: return 18.0
+        case .morocco: return 17.0
+        case .tunisia: return 18.0
+        case .algeria: return 17.0
+        case .isna: return 15.0
+        case .moonsighting: return 18.0
+        case .france18: return 18.0
+        case .france15: return 15.0
         case .uoif: return 12.0
+        case .tehran: return 14.0
         }
     }
     
     public nonisolated var ishaIntervalMinutes: Double? {
         switch self {
-        case .ummAlQura: return 90.0
+        case .ummAlQura, .qatar: return 90.0
         default: return nil
         }
+    }
+    
+    private nonisolated func formatAngle(_ angle: Double) -> String {
+        if angle.truncatingRemainder(dividingBy: 1.0) == 0 {
+            return "\(Int(angle))°"
+        } else {
+            return String(format: "%.1f°", angle)
+        }
+    }
+    
+    public nonisolated func subtitle(language: String) -> String {
+        let fajrPart = "Fajr \(formatAngle(fajrAngle))"
+        let ishaPart: String
+        if let interval = ishaIntervalMinutes {
+            let mins = Int(interval)
+            let template = L10n.tr("prayer_interval_after_maghrib", language)
+            ishaPart = String(format: template, mins)
+        } else if let angle = ishaAngle {
+            ishaPart = "Isha \(formatAngle(angle))"
+        } else {
+            ishaPart = ""
+        }
+        return "\(fajrPart) · \(ishaPart)"
     }
 }
 

@@ -18,19 +18,36 @@ struct PrayerSettingsView: View {
         return formatter
     }
     
+    private var currentMethod: CalculationMethod {
+        CalculationMethod(rawValue: calculationMethodRaw) ?? .mwl
+    }
+    
     var body: some View {
         Form {
             Section(header: Text(L10n.tr("prayer_settings_sec", language))) {
-                Picker(L10n.tr("calculation_method", language), selection: $calculationMethodRaw) {
-                    Text(L10n.tr("method_mwl", language)).tag("mwl")
-                    Text(L10n.tr("method_isna", language)).tag("isna")
-                    Text(L10n.tr("method_umm_al_qura", language)).tag("ummAlQura")
-                    Text(L10n.tr("method_karachi", language)).tag("karachi")
-                    Text(L10n.tr("method_egyptian", language)).tag("egyptian")
-                    Text(L10n.tr("method_uoif", language)).tag("uoif")
-                }
-                .onChange(of: calculationMethodRaw) { _, _ in
-                    saveSettings()
+                NavigationLink {
+                    CalculationMethodSelectionView(
+                        selectedMethodRaw: $calculationMethodRaw,
+                        language: language,
+                        onSelect: {
+                            saveSettings()
+                        }
+                    )
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(L10n.tr("calculation_method", language))
+                            .foregroundColor(.primary)
+                        
+                        Text(L10n.tr("method_\(currentMethod.rawValue)", language))
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(Theme.islamicGreen)
+                        
+                        Text(currentMethod.subtitle(language: language))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 3)
                 }
                 
                 Picker(L10n.tr("asr_school", language), selection: $asrSchoolRaw) {
@@ -49,7 +66,7 @@ struct PrayerSettingsView: View {
                 HStack {
                     Text(L10n.tr("prayer_fajr", language))
                     Spacer()
-                    Text(formattedTime(solarManager.getFajrDate(for: today)))
+                    Text(formattedTime(solarManager.getFajrDate(for: today, method: currentMethod)))
                         .fontWeight(.semibold)
                         .foregroundColor(Theme.islamicGreen)
                 }
@@ -65,7 +82,7 @@ struct PrayerSettingsView: View {
                 HStack {
                     Text(L10n.tr("prayer_asr", language))
                     Spacer()
-                    Text(formattedTime(solarManager.getAsrDate(for: today)))
+                    Text(formattedTime(solarManager.getAsrDate(for: today, school: asrSchoolRaw)))
                         .fontWeight(.semibold)
                         .foregroundColor(Theme.islamicGreen)
                 }
@@ -81,7 +98,7 @@ struct PrayerSettingsView: View {
                 HStack {
                     Text(L10n.tr("prayer_isha", language))
                     Spacer()
-                    Text(formattedTime(solarManager.getIshaDate(for: today)))
+                    Text(formattedTime(solarManager.getIshaDate(for: today, method: currentMethod)))
                         .fontWeight(.semibold)
                         .foregroundColor(Theme.islamicGreen)
                 }
@@ -138,5 +155,83 @@ struct PrayerSettingsView: View {
         // Re-calculate & reschedule reminders and tracking date immediately
         LocationAndSolarManager.shared.updateTrackingDate()
         AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
+    }
+}
+
+struct CalculationMethodSelectionView: View {
+    @Binding var selectedMethodRaw: String
+    let language: String
+    let onSelect: () -> Void
+    @State private var searchText: String = ""
+    
+    private var filteredMethods: [CalculationMethod] {
+        let cleanQuery = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if cleanQuery.isEmpty {
+            return CalculationMethod.allCases
+        }
+        return CalculationMethod.allCases.filter { method in
+            let title = L10n.tr("method_\(method.rawValue)", language).lowercased()
+            let sub = method.subtitle(language: language).lowercased()
+            let raw = method.rawValue.lowercased()
+            return title.contains(cleanQuery) || sub.contains(cleanQuery) || raw.contains(cleanQuery)
+        }
+    }
+    
+    var body: some View {
+        List {
+            Section {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(Theme.islamicGreen)
+                        .font(.title3)
+                    Text(L10n.tr("calculation_method_desc", language))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineSpacing(3)
+                }
+                .padding(.vertical, 4)
+            }
+            
+            Section {
+                ForEach(filteredMethods, id: \.rawValue) { method in
+                    Button {
+                        selectedMethodRaw = method.rawValue
+                        onSelect()
+                    } label: {
+                        HStack(alignment: .center, spacing: 14) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(L10n.tr("method_\(method.rawValue)", language))
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.leading)
+                                
+                                Text(method.subtitle(language: language))
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            if selectedMethodRaw == method.rawValue {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(Theme.islamicGreen)
+                                    .font(.title3)
+                            } else {
+                                Image(systemName: "circle")
+                                    .foregroundColor(Color.secondary.opacity(0.35))
+                                    .font(.title3)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .searchable(text: $searchText, prompt: L10n.tr("search_calculation_methods", language))
+        .navigationTitle(L10n.tr("calculation_method", language))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
