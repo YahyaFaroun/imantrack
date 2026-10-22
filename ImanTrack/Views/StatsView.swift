@@ -587,19 +587,22 @@ struct StatsView: View {
                 .animation(.spring(), value: selectedPeriod)
             }
             
-            if computedData.khatmCount > 0 {
-                Divider()
-                    .background(Color.gray.opacity(0.2))
-                HStack {
+            Divider()
+                .background(Color.gray.opacity(0.2))
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(L10n.tr("stats_khatm_count", settings.language))
                         .font(.subheadline)
                         .foregroundColor(.primary)
-                    Spacer()
-                    Text("\(computedData.khatmCount)")
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.islamicGreen)
+                    Text(L10n.tr("stats_khatm_count_desc", settings.language))
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                 }
+                Spacer()
+                Text("\(computedData.khatmCount)")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.islamicGreen)
             }
         }
         .padding()
