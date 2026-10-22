@@ -17,6 +17,10 @@ class QuranProgressStore: ObservableObject {
     
     @Published private(set) var readFrontier: Int = 0
     @Published var khatmResetToken: UUID = UUID()
+    @Published var showRestoreNotice: Bool = false
+    @Published var restoredLocationInfo: (surah: Int, ayah: Int, page: Int)? = nil
+    @Published private(set) var khatmCount: Int = UserDefaults.standard.integer(forKey: "quranKhatmCount")
+    
     private let oldBookmarkKey = "quranBookmark"
     private let bookmarkKey = "quranFrontierBookmark_v1"
     private(set) var bookmark: QuranBookmark? = nil
@@ -26,8 +30,9 @@ class QuranProgressStore: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     private init() {
-        // Alten Lesezeichen-Key endgültig löschen
+        // Alten Lesezeichen-Key löschen, alte Lesestandsdaten (currentKhatmReadVerseIds etc.) NIE löschen!
         UserDefaults.standard.removeObject(forKey: oldBookmarkKey)
+        UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
         
         let stored = UserDefaults.standard.integer(forKey: "quranReadFrontier")
         self.readFrontier = stored
@@ -37,10 +42,9 @@ class QuranProgressStore: ObservableObject {
         }
         let bmStr = bookmark != nil ? "Vers #\(bookmark!.verseIndex) delta=\(String(format: "%.1f", bookmark!.delta))pt" : "keines"
         print("[QURAN_STATE] Store-init: readFrontier im Speicher = \(readFrontier), Wert in UserDefaults = \(stored), Lesezeichen=\(bmStr)")
-        // Altlasten endgültig entfernen
-        UserDefaults.standard.removeObject(forKey: "lastReadVerseId")
-        UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
+        
         migrateIfNeeded()
+        checkAndPerformRepairV2()
         setupBackgroundSaveObserver()
     }
     
@@ -239,11 +243,89 @@ class QuranProgressStore: ObservableObject {
         UserDefaults.standard.removeObject(forKey: oldBookmarkKey)
         UserDefaults.standard.removeObject(forKey: bookmarkKey)
         UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
+        
+        // Khatm-Zähler zuverlässig inkrementieren
+        let currentKhatm = UserDefaults.standard.integer(forKey: "quranKhatmCount")
+        let updatedKhatm = currentKhatm + 1
+        UserDefaults.standard.set(updatedKhatm, forKey: "quranKhatmCount")
+        self.khatmCount = updatedKhatm
+        
         UserDefaults.standard.synchronize()
         try? modelContext.save()
         self.khatmResetToken = UUID()
-        print("[QURAN_STATE] resetKhatm: alt \(oldVal) -> neu 0, UserDefaults = \(UserDefaults.standard.integer(forKey: "quranReadFrontier")), token = \(self.khatmResetToken)")
+        print("[QURAN_STATE] resetKhatm: alt \(oldVal) -> neu 0, KhatmCount=\(updatedKhatm), token = \(self.khatmResetToken)")
         NotificationCenter.default.post(name: Notification.Name("ResetQuranStartPage"), object: nil)
+    }
+    
+    /// Manuelles Festlegen der Lesestelle (ohne die Tagesstatistiken zu berühren!)
+    func setReadFrontierManually(toIndex: Int) {
+        let clamped = max(0, min(toIndex, 6236))
+        let oldVal = readFrontier
+        self.readFrontier = clamped
+        self.bookmark = QuranBookmark(verseIndex: clamped, delta: 0, fontSize: 30)
+        self.cachedTodayRecord = nil
+        self.cachedTrackingDateString = nil
+        UserDefaults.standard.set(clamped, forKey: "quranReadFrontier")
+        if let data = try? JSONEncoder().encode(self.bookmark) {
+            UserDefaults.standard.set(data, forKey: bookmarkKey)
+        }
+        UserDefaults.standard.removeObject(forKey: oldBookmarkKey)
+        UserDefaults.standard.removeObject(forKey: "quranResumeAnchor")
+        UserDefaults.standard.synchronize()
+        self.khatmResetToken = UUID()
+        print("[QURAN_STATE] setReadFrontierManually: alt \(oldVal) -> neu \(clamped)")
+        NotificationCenter.default.post(name: Notification.Name("ResetQuranStartPage"), object: nil)
+    }
+    
+    func dismissRestoreNotice() {
+        self.showRestoreNotice = false
+        self.restoredLocationInfo = nil
+    }
+    
+    // MARK: - Einmalige Reparatur V2 für 3.0.0-Nutzer
+    func checkAndPerformRepairV2() {
+        let repairKey = "hasRepairedMigration_v2"
+        guard !UserDefaults.standard.bool(forKey: repairKey) else { return }
+        
+        guard let restored = QuranMigrationV2.findRobustPreUpdatePosition() else {
+            UserDefaults.standard.set(true, forKey: repairKey)
+            UserDefaults.standard.synchronize()
+            return
+        }
+        
+        let currentFrontier = self.readFrontier
+        let shouldRestore: Bool
+        
+        if currentFrontier < 100 && restored.frontierIndex >= 100 {
+            // Eindeutiger Fehl-Reset auf Al-Fatiha!
+            shouldRestore = true
+        } else if currentFrontier > restored.frontierIndex + 300 {
+            // Großer Sprung nach vorne (z. B. am Koran-Ende gestrandet)
+            shouldRestore = true
+        } else {
+            shouldRestore = false
+        }
+        
+        if shouldRestore {
+            self.readFrontier = restored.frontierIndex
+            UserDefaults.standard.set(restored.frontierIndex, forKey: "quranReadFrontier")
+            
+            let bm = QuranBookmark(verseIndex: restored.frontierIndex, delta: 0, fontSize: 30)
+            self.bookmark = bm
+            if let data = try? JSONEncoder().encode(bm) {
+                UserDefaults.standard.set(data, forKey: bookmarkKey)
+            }
+            UserDefaults.standard.synchronize()
+            
+            self.showRestoreNotice = true
+            self.restoredLocationInfo = (surah: restored.surah, ayah: restored.ayah, page: restored.page)
+            print("[MIGRATION_V2] Erfolgreich wiederhergestellt auf Vers \(restored.surah):\(restored.ayah) (S. \(restored.page), Index \(restored.frontierIndex), Grund: \(restored.reason))")
+        } else {
+            print("[MIGRATION_V2] Keine Wiederherstellung nötig. Stand \(currentFrontier) plausibel zu historischem Stand \(restored.frontierIndex).")
+        }
+        
+        UserDefaults.standard.set(true, forKey: repairKey)
+        UserDefaults.standard.synchronize()
     }
     
     func setReadFrontier(_ newIndex: Int, modelContext: ModelContext) {
@@ -345,4 +427,163 @@ public final class QuranPerf {
         }
     }
 }
+
+// MARK: - Robuste Migration & Reparatur V2
+struct QuranMigrationV2 {
+    struct RestoreResult {
+        let frontierIndex: Int
+        let surah: Int
+        let ayah: Int
+        let page: Int
+        let reason: String
+    }
+    
+    @MainActor
+    static func findRobustPreUpdatePosition() -> RestoreResult? {
+        // 1. HAUPTQUELLE: Jüngste Lesetage VOR dem 3.0.0-Update
+        if let result = findFromRecentDailyPages() {
+            return result
+        }
+        
+        // 2. FALLBACK: Kontinuitäts-Scan auf Vers-Sets (Lücken-Toleranz)
+        if let result = findFromVerseSets() {
+            return result
+        }
+        
+        // 3. LETZTER FALLBACK: quranLastReadPage oder quranHighestReadPage
+        let lastPage = UserDefaults.standard.integer(forKey: "quranLastReadPage")
+        let highest = UserDefaults.standard.integer(forKey: "quranHighestReadPage")
+        let candidatePage = (lastPage > 0 && lastPage < 604) ? lastPage : ((highest > 0 && highest < 604) ? highest : 0)
+        if candidatePage > 0 {
+            let verses = QuranAPIService.shared.getVersesForPage(pageNumber: candidatePage)
+            if let v = verses.first, let idx = QuranAPIService.shared.getVerseIndex(id: v.id) {
+                return RestoreResult(frontierIndex: idx, surah: v.surah, ayah: v.ayah, page: candidatePage, reason: "fallbackPage(\(candidatePage))")
+            }
+        }
+        
+        return nil
+    }
+    
+    @MainActor
+    private static func findFromRecentDailyPages() -> RestoreResult? {
+        let allKeys = UserDefaults.standard.dictionaryRepresentation().keys
+        let pageKeys = allKeys.filter { $0.hasPrefix("quran_read_pages_") }
+        guard !pageKeys.isEmpty else { return nil }
+        
+        var dateToPages: [(dateStr: String, pages: [Int])] = []
+        for key in pageKeys {
+            let dateStr = String(key.dropFirst("quran_read_pages_".count))
+            if let pages = UserDefaults.standard.array(forKey: key) as? [Int], !pages.isEmpty {
+                dateToPages.append((dateStr, pages))
+            }
+        }
+        
+        // Absteigend sortieren (neueste Tage zuerst)
+        dateToPages.sort { $0.dateStr > $1.dateStr }
+        
+        // Post-Reset Tage ausschließen: Tage ab 2026-10-20, an denen nur Seiten <= 10 gelesen wurden,
+        // während frühere Tage Seiten >= 20 enthalten.
+        let hasEarlierHighPages = dateToPages.contains { entry in
+            entry.pages.contains { $0 >= 20 }
+        }
+        
+        var preUpdateDays: [(dateStr: String, pages: [Int])] = []
+        for entry in dateToPages {
+            let isPostReset = hasEarlierHighPages && entry.dateStr >= "2026-10-20" && entry.pages.allSatisfy { $0 <= 10 }
+            if !isPostReset {
+                preUpdateDays.append(entry)
+            }
+        }
+        
+        guard !preUpdateDays.isEmpty else { return nil }
+        
+        // Jüngste Lesetage betrachten (bis zu 14 aktive Tage)
+        let recentDays = Array(preUpdateDays.prefix(14))
+        var recentPages = Set<Int>()
+        for day in recentDays {
+            recentPages.formUnion(day.pages)
+        }
+        guard !recentPages.isEmpty else { return nil }
+        
+        let sortedPages = recentPages.sorted()
+        
+        // Cluster bilden: Seiten gruppieren, deren Abstand <= 10 ist
+        var clusters: [[Int]] = []
+        var currentCluster: [Int] = []
+        for p in sortedPages {
+            if let last = currentCluster.last, p - last > 10 {
+                clusters.append(currentCluster)
+                currentCluster = [p]
+            } else {
+                currentCluster.append(p)
+            }
+        }
+        if !currentCluster.isEmpty {
+            clusters.append(currentCluster)
+        }
+        
+        // Das Cluster der jüngsten Lesesitzung finden (enthält Seiten des allerletzten Pre-Update-Tages)
+        let latestDayPages = Set(preUpdateDays[0].pages)
+        var bestCluster: [Int]? = nil
+        for cluster in clusters {
+            let overlap = Set(cluster).intersection(latestDayPages)
+            if !overlap.isEmpty {
+                if bestCluster == nil || cluster.count > (bestCluster?.count ?? 0) {
+                    bestCluster = cluster
+                }
+            }
+        }
+        
+        let activeCluster = bestCluster ?? clusters.last ?? sortedPages
+        guard let targetPage = activeCluster.max() else { return nil }
+        
+        // Lesefront auf die Folgeseite bzw. Anfang der nächsten Lesestelle
+        let resolvedPage = min(604, targetPage + 1)
+        let verses = QuranAPIService.shared.getVersesForPage(pageNumber: resolvedPage)
+        if let v = verses.first, let idx = QuranAPIService.shared.getVerseIndex(id: v.id) {
+            return RestoreResult(frontierIndex: idx, surah: v.surah, ayah: v.ayah, page: resolvedPage, reason: "recentDailyPages(S.\(targetPage))")
+        }
+        
+        return nil
+    }
+    
+    @MainActor
+    private static func findFromVerseSets() -> RestoreResult? {
+        let rawData = UserDefaults.standard.data(forKey: "currentKhatmReadVerseIds") ??
+                      UserDefaults.standard.data(forKey: "globalReadVerseIds")
+        guard let data = rawData,
+              let ids = try? JSONDecoder().decode([String].self, from: data),
+              !ids.isEmpty else { return nil }
+        
+        var readIndices = Set<Int>()
+        for id in ids {
+            if let idx = QuranAPIService.shared.getVerseIndex(id: id) {
+                readIndices.insert(idx)
+            }
+        }
+        guard !readIndices.isEmpty else { return nil }
+        
+        var highestContinuousIndex = 0
+        var consecutiveUnread = 0
+        
+        for idx in 0..<6236 {
+            if readIndices.contains(idx) {
+                highestContinuousIndex = idx
+                consecutiveUnread = 0
+            } else {
+                consecutiveUnread += 1
+                if consecutiveUnread >= 15 {
+                    break
+                }
+            }
+        }
+        
+        let targetIdx = highestContinuousIndex + 1
+        if let v = QuranAPIService.shared.getVerseAtIndex(targetIdx) {
+            return RestoreResult(frontierIndex: targetIdx, surah: v.surah, ayah: v.ayah, page: v.pageNumber, reason: "verseSetContinuity")
+        }
+        return nil
+    }
+}
+
 
