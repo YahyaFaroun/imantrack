@@ -42,6 +42,8 @@ struct QuranView: View {
     @State private var showKhatmCelebrationAnimation: Bool = false
     @State private var showGapNoticeBanner: Bool = false
     @State private var gapVerseTarget: Verse? = nil
+    @State private var showKhatmConfirmAlert: Bool = false
+    @State private var showManualSetPositionSheet: Bool = false
 
     @State private var minAllowedOffsetY: CGFloat = 0
     @State private var hasRestoredInitialPosition: Bool = false
@@ -143,47 +145,7 @@ struct QuranView: View {
                                 #endif
                                 LazyVStack(spacing: 0) {
                                     ForEach(start...604, id: \.self) { pageNum in
-                                        QuranPageView(
-                                            pageNumber: pageNum,
-                                            fontSize: viewModel.fontSize,
-                                            readFrontier: progressStore.readFrontier,
-                                            isUserScrolling: isCurrentlyUserScrolling,
-                                            hasRestoredInitialPosition: hasRestoredInitialPosition,
-                                            isZoomActive: isZoomActive,
-                                            language: settings.language,
-                                            useTajweedHarakat: settings.useTajweedHarakat,
-                                            onPageBoundsCalculated: { boundsMap, topBoundsMap in
-                                                self.renderedPageBounds[pageNum] = boundsMap
-                                                self.renderedPageTopBounds[pageNum] = topBoundsMap
-                                                if pageNum == start && !hasRestoredInitialPosition {
-                                                    restoreInitialPosition()
-                                                }
-                                            },
-                                            onPageScrollGeometryChanged: { pNum, minY in
-                                                self.renderedPageMinY[pNum] = minY
-                                                if pNum == start && !hasRestoredInitialPosition && self.renderedPageTopBounds[pNum] != nil {
-                                                    restoreInitialPosition()
-                                                }
-                                            },
-                                            onPageDisappeared: { pNum in
-                                                self.renderedPageMinY.removeValue(forKey: pNum)
-                                                self.renderedPageTopBounds.removeValue(forKey: pNum)
-                                                self.renderedPageBounds.removeValue(forKey: pNum)
-                                            },
-                                            onMarkVersesAsRead: { verses, maxVerseMaxY in
-                                                markVersesAsRead(verses, maxVerseMaxYInPage: maxVerseMaxY)
-                                            },
-                                            onTopVisible: { surahName in
-                                                if viewModel.navTitle != surahName {
-                                                    viewModel.navTitle = surahName
-                                                }
-                                            },
-                                            onCompleteKhatm: {
-                                                completeKhatm()
-                                            },
-                                            onPageScrollUpdate: { _, _ in }
-                                        )
-                                        .id(pageNum)
+                                        pageItem(for: pageNum, start: start)
                                     }
                                 }
                             }
@@ -214,96 +176,11 @@ struct QuranView: View {
                             }
                     )
                     
-                    if showGapNoticeBanner {
-                        ZStack {
-                            Color.black.opacity(0.65).ignoresSafeArea()
-                            
-                            VStack(spacing: 20) {
-                                Text("📖")
-                                    .font(.system(size: 64))
-                                
-                                Text(L10n.tr("khatm_gap_title", settings.language))
-                                    .font(.title2.bold())
-                                    .foregroundColor(.white)
-                                
-                                Text(L10n.tr("khatm_gap_desc", settings.language))
-                                    .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.85))
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 16)
-                                
-                                Button(action: {
-                                    withAnimation(.easeOut(duration: 0.25)) {
-                                        showGapNoticeBanner = false
-                                    }
-                                }) {
-                                    Text(L10n.tr("done", settings.language))
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
-                                        .background(Theme.islamicGreen)
-                                        .cornerRadius(14)
-                                }
-                                .padding(.top, 8)
-                            }
-                            .padding(28)
-                            .background(Theme.cardBackground)
-                            .cornerRadius(28)
-                            .padding(.horizontal, 30)
-                            .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
-                        }
-                        .transition(.scale(scale: 0.9).combined(with: .opacity))
-                        .zIndex(100)
-                    }
+                    gapNoticeOverlay
                 }
 
-                if showKhatmCelebrationAnimation {
-                    ZStack {
-                        Color.black.opacity(0.65).ignoresSafeArea()
-                        
-                        VStack(spacing: 20) {
-                            Text("🎉")
-                                .font(.system(size: 64))
-                            
-                            Text("ما شاء الله")
-                                .font(Theme.quranFont(type: quranFontType, size: 36))
-                                .foregroundColor(Theme.islamicGreen)
-                            
-                            Text(L10n.tr("khatm_title", settings.language))
-                                .font(.title2.bold())
-                                .foregroundColor(.white)
-                            
-                            Text(L10n.tr("khatm_desc", settings.language))
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.85))
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 16)
-                            
-                            Button(action: {
-                                withAnimation(.easeOut(duration: 0.25)) {
-                                    showKhatmCelebrationAnimation = false
-                                }
-                            }) {
-                                Text(L10n.tr("done", settings.language))
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(Theme.islamicGreen)
-                                    .cornerRadius(14)
-                            }
-                            .padding(.top, 8)
-                        }
-                        .padding(28)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(28)
-                        .padding(.horizontal, 30)
-                        .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
-                    }
-                    .transition(.scale(scale: 0.9).combined(with: .opacity))
-                    .zIndex(100)
-                }
+                khatmCelebrationOverlay
+                restoreNoticeOverlay
 
             }
             .navigationTitle(viewModel.navTitle.isEmpty ? L10n.tr("tab_quran", settings.language) : viewModel.navTitle)
@@ -311,7 +188,21 @@ struct QuranView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Theme.getQuranBackgroundColor(for: quranTheme, systemColorScheme: colorScheme), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                quranToolbarContent
+            }
             #endif
+            .alert(L10n.tr("khatm_confirm_title", settings.language), isPresented: $showKhatmConfirmAlert) {
+                Button(L10n.tr("khatm_confirm_action", settings.language), role: .destructive) {
+                    triggerKhatmCompletion()
+                }
+                Button(L10n.tr("cancel", settings.language), role: .cancel) {}
+            } message: {
+                Text(L10n.tr("khatm_confirm_msg", settings.language))
+            }
+            .sheet(isPresented: $showManualSetPositionSheet) {
+                SetQuranPositionSheet(language: settings.language)
+            }
         }
         .onAppear {
             let storedUD = UserDefaults.standard.integer(forKey: "quranReadFrontier")
@@ -683,6 +574,230 @@ struct QuranView: View {
         }
     }
     
+    // MARK: - Page Scroll & Bounds Handlers
+    private func handlePageBoundsCalculated(pageNum: Int, boundsMap: [String: CGFloat], topBoundsMap: [String: CGFloat], start: Int) {
+        self.renderedPageBounds[pageNum] = boundsMap
+        self.renderedPageTopBounds[pageNum] = topBoundsMap
+        if pageNum == start && !hasRestoredInitialPosition {
+            restoreInitialPosition()
+        }
+    }
+    
+    private func handlePageScrollGeometry(pNum: Int, minY: CGFloat, start: Int) {
+        self.renderedPageMinY[pNum] = minY
+        let isStart = (pNum == start)
+        let needsRestore = !hasRestoredInitialPosition
+        let hasBounds = (self.renderedPageTopBounds[pNum] != nil)
+        if isStart && needsRestore && hasBounds {
+            restoreInitialPosition()
+        }
+    }
+    
+    private func handlePageDisappeared(pNum: Int) {
+        self.renderedPageMinY.removeValue(forKey: pNum)
+        self.renderedPageTopBounds.removeValue(forKey: pNum)
+        self.renderedPageBounds.removeValue(forKey: pNum)
+    }
+    
+    private func handleTopVisible(_ surahName: String) {
+        if viewModel.navTitle != surahName {
+            viewModel.navTitle = surahName
+        }
+    }
+    
+    @ViewBuilder
+    private func pageItem(for pageNum: Int, start: Int) -> some View {
+        QuranPageView(
+            pageNumber: pageNum,
+            fontSize: viewModel.fontSize,
+            readFrontier: progressStore.readFrontier,
+            isUserScrolling: isCurrentlyUserScrolling,
+            hasRestoredInitialPosition: hasRestoredInitialPosition,
+            isZoomActive: isZoomActive,
+            language: settings.language,
+            useTajweedHarakat: settings.useTajweedHarakat,
+            onPageBoundsCalculated: { boundsMap, topBoundsMap in
+                handlePageBoundsCalculated(pageNum: pageNum, boundsMap: boundsMap, topBoundsMap: topBoundsMap, start: start)
+            },
+            onPageScrollGeometryChanged: { pNum, minY in
+                handlePageScrollGeometry(pNum: pNum, minY: minY, start: start)
+            },
+            onPageDisappeared: { pNum in
+                handlePageDisappeared(pNum: pNum)
+            },
+            onMarkVersesAsRead: { verses, maxVerseMaxY in
+                markVersesAsRead(verses, maxVerseMaxYInPage: maxVerseMaxY)
+            },
+            onTopVisible: { surahName in
+                handleTopVisible(surahName)
+            },
+            onCompleteKhatm: {
+                completeKhatm()
+            },
+            onPageScrollUpdate: { _, _ in }
+        )
+        .id(pageNum)
+    }
+    
+    // MARK: - Overlays
+    @ViewBuilder
+    private var gapNoticeOverlay: some View {
+        if showGapNoticeBanner {
+            ZStack {
+                Color.black.opacity(0.65).ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    Text("📖")
+                        .font(.system(size: 64))
+                    
+                    Text(L10n.tr("khatm_gap_title", settings.language))
+                        .font(.title2.bold())
+                        .foregroundColor(.white)
+                    
+                    Text(L10n.tr("khatm_gap_desc", settings.language))
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.85))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
+                    
+                    Button(action: {
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            showGapNoticeBanner = false
+                        }
+                    }) {
+                        Text(L10n.tr("done", settings.language))
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Theme.islamicGreen)
+                            .cornerRadius(14)
+                    }
+                    .padding(.top, 8)
+                }
+                .padding(28)
+                .background(Theme.cardBackground)
+                .cornerRadius(28)
+                .padding(.horizontal, 30)
+                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+            }
+            .transition(.scale(scale: 0.9).combined(with: .opacity))
+            .zIndex(100)
+        }
+    }
+
+    @ViewBuilder
+    private var khatmCelebrationOverlay: some View {
+        if showKhatmCelebrationAnimation {
+            ZStack {
+                Color.black.opacity(0.65).ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    Text("🎉")
+                        .font(.system(size: 64))
+                    
+                    Text("ما شاء الله")
+                        .font(Theme.quranFont(type: quranFontType, size: 36))
+                        .foregroundColor(Theme.islamicGreen)
+                    
+                    Text(L10n.tr("khatm_title", settings.language))
+                        .font(.title2.bold())
+                        .foregroundColor(.white)
+                    
+                    Text(L10n.tr("khatm_desc", settings.language))
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.85))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
+                    
+                    Button(action: {
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            showKhatmCelebrationAnimation = false
+                        }
+                    }) {
+                        Text(L10n.tr("done", settings.language))
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Theme.islamicGreen)
+                            .cornerRadius(14)
+                    }
+                    .padding(.top, 8)
+                }
+                .padding(28)
+                .background(Theme.cardBackground)
+                .cornerRadius(28)
+                .padding(.horizontal, 30)
+                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+            }
+            .transition(.scale(scale: 0.9).combined(with: .opacity))
+            .zIndex(100)
+        }
+    }
+
+    @ViewBuilder
+    private var restoreNoticeOverlay: some View {
+        if progressStore.showRestoreNotice, let info = progressStore.restoredLocationInfo {
+            ZStack {
+                Color.black.opacity(0.65).ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    Text("📖")
+                        .font(.system(size: 60))
+                    
+                    Text(L10n.tr("quran_restore_notice_title", settings.language))
+                        .font(.title2.bold())
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                    
+                    Text(String(format: L10n.tr("quran_restore_notice_body", settings.language), QuranSurah.getName(info.surah), info.ayah, info.page))
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.85))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
+                    
+                    VStack(spacing: 12) {
+                        Button(action: {
+                            withAnimation(.easeOut(duration: 0.25)) {
+                                progressStore.dismissRestoreNotice()
+                            }
+                        }) {
+                            Text(L10n.tr("quran_restore_ok", settings.language))
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Theme.islamicGreen)
+                                .cornerRadius(14)
+                        }
+                        
+                        Button(action: {
+                            progressStore.dismissRestoreNotice()
+                            showManualSetPositionSheet = true
+                        }) {
+                            Text(L10n.tr("quran_set_position", settings.language))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.white.opacity(0.9))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color.white.opacity(0.12))
+                                .cornerRadius(14)
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+                .padding(28)
+                .background(Theme.cardBackground)
+                .cornerRadius(28)
+                .padding(.horizontal, 30)
+                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+            }
+            .transition(.scale(scale: 0.9).combined(with: .opacity))
+            .zIndex(110)
+        }
+    }
+    
     private func triggerKhatmCompletion() {
         guard !showKhatmCelebrationAnimation else { return }
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
@@ -691,6 +806,34 @@ struct QuranView: View {
         progressStore.resetKhatm(modelContext: modelContext)
     }
     
+    #if os(iOS)
+    @ToolbarContentBuilder
+    private var quranToolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            if progressStore.khatmCount > 0 {
+                khatmBadgeView
+            }
+        }
+    }
+    
+    private var khatmBadgeView: some View {
+        let label = "\(progressStore.khatmCount) " + L10n.tr("quran_completed_khatmat", settings.language)
+        return HStack(spacing: 4) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 13))
+                .foregroundColor(Theme.islamicGreen)
+            Text("\(progressStore.khatmCount)")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(Theme.islamicGreen)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Theme.islamicGreen.opacity(0.12))
+        .cornerRadius(12)
+        .accessibilityLabel(label)
+    }
+    #endif
+
     private func completeKhatm() {
         if progressStore.readFrontier < 6236 {
             if let unreadVerse = quranAPIService.getVerseAtIndex(progressStore.readFrontier) {
@@ -700,7 +843,7 @@ struct QuranView: View {
                 }
             }
         } else {
-            triggerKhatmCompletion()
+            showKhatmConfirmAlert = true
         }
     }
 }
@@ -779,6 +922,13 @@ struct QuranPageView: View {
             
             if pageNumber == 604 {
                 khatmCompletionCard
+                #if os(iOS) && !SKIP
+                Spacer()
+                    .frame(height: UIScreen.main.bounds.height * 0.75)
+                #else
+                Spacer()
+                    .frame(height: 500)
+                #endif
             }
         }
         #if os(iOS)
@@ -975,6 +1125,17 @@ struct QuranPageView: View {
                 // Wenn globalVerseMaxY <= threshold (1 Zeilenhöhe), ist nur noch maximal 1 Zeile im sichtbaren Bereich
                 if globalVerseMaxY <= threshold {
                     readVersesOnPage.append(verse)
+                }
+            }
+        }
+        
+        // Auto-Complete für Seite 604: Wenn der Nutzer auf der letzten Seite bis zur Khatm-Karte heruntergescrollt hat
+        if pageNumber == 604 && minY < -150 {
+            if let lastVerse = verses.last, let maxIdx = QuranAPIService.shared.getVerseIndex(id: lastVerse.id) {
+                if maxIdx + 1 > readFrontier && hasRestoredInitialPosition && !isZoomActive && isUserScrolling {
+                    let lastVerseMaxY = verseBoundsMap[lastVerse.id]
+                    onMarkVersesAsRead(verses, lastVerseMaxY)
+                    return
                 }
             }
         }
