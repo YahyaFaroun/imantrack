@@ -13,8 +13,9 @@ struct AdhkarItem: Identifiable {
     let quickInterval: TimeInterval?
     let normalInterval: TimeInterval?
     let slowInterval: TimeInterval?
+    var audioFileName: String? = nil
 
-    init(arabic: String, transliteration: String = "", german: String, english: String = "", count: Int, linkedTasbihCategory: TasbihCategory? = nil, isMandatory: Bool = true, customSpeedStep: Int = 1, quickInterval: TimeInterval? = nil, normalInterval: TimeInterval? = nil, slowInterval: TimeInterval? = nil) {
+    init(arabic: String, transliteration: String = "", german: String, english: String = "", count: Int, linkedTasbihCategory: TasbihCategory? = nil, isMandatory: Bool = true, customSpeedStep: Int = 1, quickInterval: TimeInterval? = nil, normalInterval: TimeInterval? = nil, slowInterval: TimeInterval? = nil, audioFileName: String? = nil) {
         self.arabic = arabic
         self.transliteration = transliteration
         self.german = german
@@ -26,6 +27,7 @@ struct AdhkarItem: Identifiable {
         self.quickInterval = quickInterval
         self.normalInterval = normalInterval
         self.slowInterval = slowInterval
+        self.audioFileName = audioFileName
     }
 
     var defaultBpm: Int {

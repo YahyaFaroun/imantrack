@@ -25,6 +25,8 @@ struct AdhkarSessionView: View {
     @State var mulkItemToComplete: AdhkarItem? = nil
     @State var localAdhkarList: [AdhkarItem]
     @State var isEditMode: Bool = false
+    @StateObject private var audioPlayer = AdhkarAudioPlayer.shared
+    @State private var isVoiceMode: Bool = false
     
     init(type: AdhkarSessionType) {
         self.type = type
@@ -50,6 +52,12 @@ struct AdhkarSessionView: View {
             } else {
                 let defaultSpeed = UserDefaults.standard.object(forKey: "defaultAdhkarSpeedStep") as? Int ?? 1
                 list[i].customSpeedStep = defaultSpeed
+            }
+            
+            if type == .sleep && i == 11 {
+                list[i].audioFileName = nil
+            } else {
+                list[i].audioFileName = "\(type.idStr)_\(i + 1)"
             }
         }
         
@@ -269,12 +277,18 @@ struct AdhkarSessionView: View {
                                     isEditMode: isEditMode,
                                     isFirstInList: index == 0,
                                     isLastInList: index == adhkarList.count - 1,
+                                    isVoiceMode: isVoiceMode,
+                                    audioProgress: audioPlayer.activeItemId == item.id ? audioPlayer.progress : 0.0,
                                     onIncrement: {
-                                        let useAuto = settingsList.first?.adhkarAutoCount ?? true
-                                        if useAuto {
-                                            toggleAutoCount(item: item, proxy: proxy)
+                                        if isVoiceMode {
+                                            toggleVoicePlayback(item: item, proxy: proxy)
                                         } else {
-                                            incrementCount(item: item, proxy: proxy)
+                                            let useAuto = settingsList.first?.adhkarAutoCount ?? true
+                                            if useAuto {
+                                                toggleAutoCount(item: item, proxy: proxy)
+                                            } else {
+                                                incrementCount(item: item, proxy: proxy)
+                                            }
                                         }
                                     },
                                     onInfoTap: {
@@ -347,6 +361,11 @@ struct AdhkarSessionView: View {
                     }
                     .onAppear {
                         loadProgressFromDatabase(proxy: proxy)
+                        if let s = settingsList.first {
+                            isVoiceMode = s.adhkarVoiceEnabled
+                        } else {
+                            isVoiceMode = UserDefaults.standard.bool(forKey: "adhkarVoiceEnabled")
+                        }
                     }
                 }
                 
@@ -365,7 +384,10 @@ struct AdhkarSessionView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(action: { cancelSession() }) {
+                    Button(action: {
+                        audioPlayer.stop()
+                        cancelSession()
+                    }) {
                         Image(systemName: "xmark")
                             .foregroundColor(.primary)
                     }
@@ -392,10 +414,34 @@ struct AdhkarSessionView: View {
                                 .cornerRadius(14)
                         }
                     } else if isTrackingAllowed {
-                        Text(progressText)
-                            .foregroundColor(.gray)
-                            .font(.subheadline)
-                            .fontWeight(.bold)
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                #if os(iOS) && !SKIP
+                                let impact = UIImpactFeedbackGenerator(style: .light)
+                                impact.impactOccurred()
+                                #endif
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                                    isVoiceMode.toggle()
+                                    if !isVoiceMode {
+                                        audioPlayer.stop()
+                                        activeAutoCountItemId = nil
+                                    }
+                                }
+                            }) {
+                                Image(systemName: isVoiceMode ? "speaker.wave.2.fill" : "speaker.slash")
+                                    .font(.subheadline)
+                                    .foregroundColor(isVoiceMode ? Theme.islamicGreen : .gray)
+                                    .padding(6)
+                                    .background(isVoiceMode ? Theme.islamicGreen.opacity(0.12) : Color.gray.opacity(0.1))
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Text(progressText)
+                                .foregroundColor(.gray)
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                        }
                     }
                 }
             }
@@ -418,6 +464,7 @@ struct AdhkarSessionView: View {
 
             .onDisappear {
                 stopAutoCount()
+                audioPlayer.stop()
             }
             .onChange(of: scenePhase) { _, newPhase in
                 if newPhase == .background {
@@ -506,6 +553,9 @@ struct AdhkarSessionView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     withAnimation {
                         showMashaAllah = nil
+                    }
+                    if isVoiceMode {
+                        return
                     }
                     let settings = settingsList.first
                     
@@ -661,6 +711,81 @@ struct AdhkarSessionView: View {
         #endif
     }
     
+    private func toggleVoicePlayback(item: AdhkarItem, proxy: ScrollViewProxy) {
+        guard item.isMandatory else { return }
+        
+        if completedItems.contains(item.id) { return }
+        
+        stopAutoCount()
+        
+        if audioPlayer.activeItemId == item.id && audioPlayer.isPlaying {
+            audioPlayer.stop()
+            activeAutoCountItemId = nil
+            return
+        }
+        
+        guard item.audioFileName != nil else {
+            if item.german.contains("Al-Mulk") || item.arabic.contains("الْمُلْكِ") {
+                mulkItemToComplete = item
+                showAlMulkReader = true
+            } else {
+                toggleAutoCount(item: item, proxy: proxy)
+            }
+            return
+        }
+        
+        let reader = settingsList.first?.adhkarVoiceReader ?? .alDuraihim
+        let current = counts[item.id] ?? 0
+        activeAutoCountItemId = item.id
+        
+        #if os(iOS) && !SKIP
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
+        #endif
+        
+        audioPlayer.play(
+            item: item,
+            reader: reader,
+            startRepetition: current,
+            targetRepetitions: item.count,
+            onRepetitionCompleted: { repetition in
+                incrementCount(item: item, proxy: proxy, isAuto: true)
+            },
+            onFinished: {
+                activeAutoCountItemId = nil
+                
+                let settings = settingsList.first
+                if settings?.adhkarAutoAdvance == true {
+                    if let index = adhkarList.firstIndex(where: { $0.id == item.id }) {
+                        var nextIndex = index + 1
+                        while nextIndex < adhkarList.count && (completedItems.contains(adhkarList[nextIndex].id) || !adhkarList[nextIndex].isMandatory) {
+                            nextIndex += 1
+                        }
+                        
+                        if nextIndex < adhkarList.count {
+                            let nextItem = adhkarList[nextIndex]
+                            lastActiveDhikrIndex = nextIndex
+                            lastActiveDhikrCount = todayRecord.getAdhkarCount(for: safeKey(for: nextItem))
+                            withAnimation {
+                                proxy.scrollTo(nextItem.id, anchor: .center)
+                            }
+                            
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                if isVoiceMode {
+                                    toggleVoicePlayback(item: nextItem, proxy: proxy)
+                                }
+                            }
+                        } else {
+                            withAnimation {
+                                proxy.scrollTo(adhkarList.last?.id, anchor: .bottom)
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    }
+    
     private func finishSession() {
         let record = todayRecord
         let now = Date()
@@ -796,6 +921,8 @@ struct AdhkarCard: View {
     var isEditMode: Bool = false
     var isFirstInList: Bool = false
     var isLastInList: Bool = false
+    var isVoiceMode: Bool = false
+    var audioProgress: Double = 0.0
     let onIncrement: () -> Void
     let onInfoTap: () -> Void
     var onOpenReader: (() -> Void)? = nil
@@ -901,6 +1028,46 @@ struct AdhkarCard: View {
                                     .font(.title)
                                     .fontWeight(.bold)
                                     .foregroundColor(.white)
+                            }
+                        } else if isVoiceMode {
+                            let isPlayingAudio = isActive
+                            let effectiveProgress: CGFloat = {
+                                if !isPlayingAudio { return CGFloat(currentCount) / CGFloat(max(1, item.count)) }
+                                if item.count == 1 { return CGFloat(audioProgress) }
+                                return (CGFloat(currentCount) + CGFloat(audioProgress)) / CGFloat(item.count)
+                            }()
+                            
+                            ZStack {
+                                Circle()
+                                    .stroke(Color.primary.opacity(0.1), lineWidth: 5)
+                                    .frame(width: 80, height: 80)
+                                
+                                Circle()
+                                    .trim(from: 0, to: min(1.0, max(0.0, effectiveProgress)))
+                                    .stroke(Theme.islamicGreen, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                                    .frame(width: 80, height: 80)
+                                    .rotationEffect(.degrees(-90))
+                                    .scaleEffect(isPlayingAudio ? 1.05 : 1.0)
+                                    .animation(isPlayingAudio ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default, value: isPlayingAudio)
+                                
+                                VStack(spacing: 2) {
+                                    if isPlayingAudio {
+                                        Image(systemName: "pause.fill")
+                                            .font(.title2)
+                                            .foregroundColor(Theme.islamicGreen)
+                                    } else {
+                                        Image(systemName: "speaker.wave.2.fill")
+                                            .font(.title3)
+                                            .foregroundColor(Theme.islamicGreen)
+                                    }
+                                    
+                                    if item.count > 1 {
+                                        Text("\(currentCount)/\(item.count)")
+                                            .font(.caption2)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.gray)
+                                    }
+                                }
                             }
                         } else if item.count == 1 {
                             ZStack {
