@@ -734,7 +734,6 @@ struct AdhkarSessionView: View {
             return
         }
         
-        let reader = settingsList.first?.adhkarVoiceReader ?? .alDuraihim
         let current = counts[item.id] ?? 0
         activeAutoCountItemId = item.id
         
@@ -745,7 +744,6 @@ struct AdhkarSessionView: View {
         
         audioPlayer.play(
             item: item,
-            reader: reader,
             startRepetition: current,
             targetRepetitions: item.count,
             onRepetitionCompleted: { repetition in

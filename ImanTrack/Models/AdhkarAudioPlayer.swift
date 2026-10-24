@@ -5,38 +5,6 @@ import Combine
 import UIKit
 #endif
 
-enum AdhkarVoiceReader: String, CaseIterable, Codable, Identifiable, Sendable {
-    case alDuraihim = "alDuraihim"
-    case alGhamdi = "alGhamdi"
-    
-    var id: String { rawValue }
-    
-    var filePrefix: String {
-        switch self {
-        case .alDuraihim: return "duraihim_"
-        case .alGhamdi: return "ghamdi_"
-        }
-    }
-    
-    func displayName(for lang: String) -> String {
-        switch self {
-        case .alDuraihim:
-            return L10n.tr("reader_al_duraihim", lang)
-        case .alGhamdi:
-            return L10n.tr("reader_al_ghamdi", lang)
-        }
-    }
-    
-    func subtitle(for lang: String) -> String {
-        switch self {
-        case .alDuraihim:
-            return L10n.tr("reader_al_duraihim_desc", lang)
-        case .alGhamdi:
-            return L10n.tr("reader_al_ghamdi_desc", lang)
-        }
-    }
-}
-
 @MainActor
 final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     static let shared = AdhkarAudioPlayer()
@@ -55,7 +23,6 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
     private var onFinished: (() -> Void)?
     
     private var currentFileName: String?
-    private var currentReader: AdhkarVoiceReader = .alDuraihim
     
     override init() {
         super.init()
@@ -74,7 +41,6 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
     
     func play(
         item: AdhkarItem,
-        reader: AdhkarVoiceReader,
         startRepetition: Int = 0,
         targetRepetitions: Int? = nil,
         onRepetitionCompleted: @escaping (Int) -> Void,
@@ -86,7 +52,6 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         }
         
         self.currentFileName = fileName
-        self.currentReader = reader
         self.activeItemId = item.id
         self.currentRepetition = startRepetition
         self.targetRepetitions = targetRepetitions ?? item.count
@@ -98,9 +63,9 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
     
     private func playCurrentFile() {
         guard let fileName = currentFileName else { return }
-        let resourceName = "\(currentReader.filePrefix)\(fileName)"
+        let resourceName = "duraihim_\(fileName)"
         
-        guard let url = Bundle.main.url(forResource: resourceName, withExtension: "m4a") else {
+        guard let url = Bundle.main.url(forResource: resourceName, withExtension: "m4a") ?? Bundle.main.url(forResource: fileName, withExtension: "m4a") else {
             print("Audio file not found: \(resourceName).m4a")
             stop()
             return
@@ -175,10 +140,8 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
             self.onRepetitionCompleted?(self.currentRepetition)
             
             if self.currentRepetition < self.targetRepetitions {
-                // Play next repetition
                 self.playCurrentFile()
             } else {
-                // All repetitions completed!
                 let finishHandler = self.onFinished
                 self.stop()
                 finishHandler?()

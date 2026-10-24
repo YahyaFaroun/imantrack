@@ -78,12 +78,6 @@ final class UserSettings {
     
     // Adhkar Voice Mode
     var adhkarVoiceEnabled: Bool = false
-    var adhkarVoiceReaderRaw: String = "alDuraihim"
-    
-    var adhkarVoiceReader: AdhkarVoiceReader {
-        get { AdhkarVoiceReader(rawValue: adhkarVoiceReaderRaw) ?? .alDuraihim }
-        set { adhkarVoiceReaderRaw = newValue.rawValue }
-    }
     
     // Tasbih vibration
     var tasbihVibrationEnabled: Bool = true

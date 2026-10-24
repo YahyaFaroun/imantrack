@@ -9,7 +9,6 @@ struct DhikrSettingsView: View {
     @State private var adhkarAutoAdvance: Bool = true
     @State private var defaultAdhkarSpeedStep: Int = 1
     @State private var adhkarVoiceEnabled: Bool = false
-    @State private var adhkarVoiceReader: AdhkarVoiceReader = .alDuraihim
     
     @State private var isMorningAdhkarReminderEnabled: Bool = true
     @State private var isEveningAdhkarReminderEnabled: Bool = true
@@ -115,22 +114,6 @@ struct DhikrSettingsView: View {
                 }
                 .padding(.vertical, 4)
                 .onChange(of: adhkarVoiceEnabled) { _, _ in saveSettings() }
-                
-                if adhkarVoiceEnabled {
-                    Picker(L10n.tr("adhkar_voice_reciter", language), selection: $adhkarVoiceReader) {
-                        ForEach(AdhkarVoiceReader.allCases) { reader in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(reader.displayName(for: language))
-                                    .font(.body)
-                                Text(reader.subtitle(for: language))
-                                    .font(.caption2)
-                                    .foregroundColor(.gray)
-                            }
-                            .tag(reader)
-                        }
-                    }
-                    .onChange(of: adhkarVoiceReader) { _, _ in saveSettings() }
-                }
             }
             
             if adhkarAutoCount {
@@ -155,14 +138,9 @@ struct DhikrSettingsView: View {
                 adhkarAutoAdvance = s.adhkarAutoAdvance
                 defaultAdhkarSpeedStep = s.defaultAdhkarSpeedStep
                 adhkarVoiceEnabled = s.adhkarVoiceEnabled
-                adhkarVoiceReader = s.adhkarVoiceReader
             } else {
                 defaultAdhkarSpeedStep = UserDefaults.standard.integer(forKey: "defaultAdhkarSpeedStep")
                 adhkarVoiceEnabled = UserDefaults.standard.bool(forKey: "adhkarVoiceEnabled")
-                if let raw = UserDefaults.standard.string(forKey: "adhkarVoiceReaderRaw"),
-                   let r = AdhkarVoiceReader(rawValue: raw) {
-                    adhkarVoiceReader = r
-                }
             }
             isMorningAdhkarReminderEnabled = UserDefaults.standard.object(forKey: "isMorningAdhkarReminderEnabled") != nil ? UserDefaults.standard.bool(forKey: "isMorningAdhkarReminderEnabled") : true
             isEveningAdhkarReminderEnabled = UserDefaults.standard.object(forKey: "isEveningAdhkarReminderEnabled") != nil ? UserDefaults.standard.bool(forKey: "isEveningAdhkarReminderEnabled") : true
@@ -201,11 +179,9 @@ struct DhikrSettingsView: View {
         s.adhkarAutoAdvance = adhkarAutoAdvance
         s.defaultAdhkarSpeedStep = defaultAdhkarSpeedStep
         s.adhkarVoiceEnabled = adhkarVoiceEnabled
-        s.adhkarVoiceReader = adhkarVoiceReader
         
         UserDefaults.standard.set(defaultAdhkarSpeedStep, forKey: "defaultAdhkarSpeedStep")
         UserDefaults.standard.set(adhkarVoiceEnabled, forKey: "adhkarVoiceEnabled")
-        UserDefaults.standard.set(adhkarVoiceReader.rawValue, forKey: "adhkarVoiceReaderRaw")
         UserDefaults.standard.set(isMorningAdhkarReminderEnabled, forKey: "isMorningAdhkarReminderEnabled")
         UserDefaults.standard.set(isEveningAdhkarReminderEnabled, forKey: "isEveningAdhkarReminderEnabled")
         UserDefaults.standard.set(isSleepAdhkarReminderEnabled, forKey: "isSleepAdhkarReminderEnabled")
