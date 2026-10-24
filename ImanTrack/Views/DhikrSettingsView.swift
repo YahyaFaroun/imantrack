@@ -114,6 +114,23 @@ struct DhikrSettingsView: View {
                 }
                 .padding(.vertical, 4)
                 .onChange(of: adhkarVoiceEnabled) { _, _ in saveSettings() }
+                
+                if adhkarVoiceEnabled {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(L10n.tr("adhkar_voice_reciter", language))
+                                .font(.body)
+                            Text(L10n.tr("reader_al_ghamdi_desc", language))
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                        Text(L10n.tr("reader_al_ghamdi", language))
+                            .font(.subheadline)
+                            .foregroundColor(Theme.islamicGreen)
+                    }
+                    .padding(.vertical, 2)
+                }
             }
             
             if adhkarAutoCount {

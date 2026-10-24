@@ -63,10 +63,14 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
     
     private func playCurrentFile() {
         guard let fileName = currentFileName else { return }
-        let resourceName = "duraihim_\(fileName)"
         
-        guard let url = Bundle.main.url(forResource: resourceName, withExtension: "m4a") ?? Bundle.main.url(forResource: fileName, withExtension: "m4a") else {
-            print("Audio file not found: \(resourceName).m4a")
+        let ghamdiResource = "ghamdi_\(fileName)"
+        let duraihimResource = "duraihim_\(fileName)"
+        
+        guard let url = Bundle.main.url(forResource: ghamdiResource, withExtension: "m4a")
+            ?? Bundle.main.url(forResource: duraihimResource, withExtension: "m4a")
+            ?? Bundle.main.url(forResource: fileName, withExtension: "m4a") else {
+            print("Audio file not found for: \(fileName)")
             stop()
             return
         }

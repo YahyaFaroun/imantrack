@@ -3952,17 +3952,17 @@
     "bn": "ক্বারীর কণ্ঠে শুনুন"
   },
   "adhkar_voice_mode_desc": {
-    "de": "Liest Adhkar mit der Stimme von Hamad Al-Duraihim (Hisn al-Muslim) vor und hakt sie nach Beendigung automatisch ab.",
-    "en": "Plays recitation audio by Hamad Al-Duraihim (Hisn al-Muslim) and automatically checks off each Dhikr when finished.",
-    "ar": "يقرأ الأذكار بصوت الشيخ حمد الدريهم (حصن المسلم) ويحددها تلقائياً عند الانتهاء.",
-    "tr": "Zikirleri Hamad Al-Duraihim'in sesiyle (Hisn al-Muslim) okur ve bittiğinde otomatik olarak işaretler.",
-    "id": "Memutar audio dzikir oleh Hamad Al-Duraihim (Hisn al-Muslim) dan mencentangnya otomatis saat selesai.",
-    "ms": "Memainkan audio zikir oleh Hamad Al-Duraihim (Hisn al-Muslim) dan menandakannya secara automatik.",
-    "fr": "Lit les adhkar avec la voix de Hamad Al-Duraihim (Hisn al-Muslim) et les valide automatiquement.",
-    "es": "Lee los adhkar con la voz de Hamad Al-Duraihim (Hisn al-Muslim) y los marca automáticamente.",
-    "ur": "حمد الدریہم (حصن المسلم) کی آواز میں اذکار سناتا ہے اور مکمل ہونے پر خودکار نشان زد کرتا ہے۔",
-    "ru": "Воспроизводит чтение голосом Хамада ад-Дурайхима (Крепость мусульманина) и автоматически отмечает аскары.",
-    "bn": "হামাদ আল-দুরিহিম (হিসনুল মুসলিম) এর কণ্ঠে জিকির পড়ে এবং শেষ হলে স্বয়ংক্রিয়ভাবে চিহ্নিত করে।"
+    "de": "Liest Adhkar mit der Stimme von Sheikh Saad Al-Ghamdi vor und hakt sie nach Beendigung automatisch ab.",
+    "en": "Plays recitation audio by Sheikh Saad Al-Ghamdi and automatically checks off each Dhikr when finished.",
+    "ar": "يقرأ الأذكار بصوت الشيخ سعد الغامدي ويحددها تلقائياً عند الانتهاء.",
+    "tr": "Zikirleri Şeyh Saad Al-Ghamdi'nin sesiyle okur ve bittiğinde otomatik olarak işaretler.",
+    "id": "Memutar audio dzikir oleh Syaikh Saad Al-Ghamdi dan mencentangnya otomatis saat selesai.",
+    "ms": "Memainkan audio zikir oleh Syeikh Saad Al-Ghamdi dan menandakannya secara automatik.",
+    "fr": "Lit les adhkar avec la voix de Cheikh Saad Al-Ghamdi et les valide automatiquement.",
+    "es": "Lee los adhkar con la voz de Jeque Saad Al-Ghamdi y los marca automáticamente.",
+    "ur": "شیخ سعد الغامدی کی آواز میں اذکار سناتا ہے اور مکمل ہونے پر خودکار نشان زد کرتا ہے۔",
+    "ru": "Воспроизводит чтение голосом Шейха Саада аль-Гамди и автоматически отмечает аскары.",
+    "bn": "শায়খ সাদ আল-গামদির কণ্ঠে জিকির পড়ে এবং শেষ হলে স্বয়ংক্রিয়ভাবে চিহ্নিত করে।"
   },
   "adhkar_voice_reciter": {
     "de": "Rezitator",
