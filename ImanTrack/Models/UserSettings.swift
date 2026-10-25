@@ -92,6 +92,16 @@ final class UserSettings {
     var calculationMethodRaw: String = "mwl"
     var asrSchoolRaw: String = "standard"
     
+    // Prayer Notifications & Adhan
+    var prayerAdhanEnabled: Bool = false
+    var prayerReminder10MinEnabled: Bool = false
+    var prayerAdhanSound: String = "azan.caf"
+    var prayerFajrEnabled: Bool = true
+    var prayerDhuhrEnabled: Bool = true
+    var prayerAsrEnabled: Bool = true
+    var prayerMaghribEnabled: Bool = true
+    var prayerIshaEnabled: Bool = true
+    
     init() {
         let locale = Locale.current.language.languageCode?.identifier ?? "en"
         if ["de", "en", "ar", "tr", "id", "ms", "fr", "es", "ur", "ru", "bn"].contains(locale) {

@@ -1,12 +1,31 @@
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 struct PrayerSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var settingsList: [UserSettings]
+    @ObservedObject private var prayerNotifManager = PrayerNotificationManager.shared
     
     @State private var calculationMethodRaw: String = "mwl"
     @State private var asrSchoolRaw: String = "standard"
+    
+    // Notifications & Adhan
+    @State private var prayerAdhanEnabled: Bool = false
+    @State private var prayerReminder10MinEnabled: Bool = false
+    @State private var prayerAdhanSound: String = "azan.caf"
+    @State private var prayerFajrEnabled: Bool = true
+    @State private var prayerDhuhrEnabled: Bool = true
+    @State private var prayerAsrEnabled: Bool = true
+    @State private var prayerMaghribEnabled: Bool = true
+    @State private var prayerIshaEnabled: Bool = true
+    @State private var notificationStatus: UNAuthorizationStatus = .authorized
+    
+    private let soundOptions: [(id: String, titleKey: String)] = [
+        ("azan.caf", "prayer_adhan_sound_standard"),
+        ("azan_holy_makkah.caf", "prayer_adhan_sound_makkah"),
+        ("beautifull_azan.caf", "prayer_adhan_sound_melodic")
+    ]
     
     private var language: String {
         settingsList.first?.language ?? "de"
@@ -24,6 +43,108 @@ struct PrayerSettingsView: View {
     
     var body: some View {
         Form {
+            // MARK: - Benachrichtigungen & Adhan
+            Section(header: Text(L10n.tr("prayer_notifications_sec", language))) {
+                if notificationStatus == .denied {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                            Text(L10n.tr("prayer_notif_denied_banner", language))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Button {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Text(L10n.tr("open_settings", language))
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(Theme.islamicGreen)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                
+                Toggle(isOn: $prayerAdhanEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(L10n.tr("prayer_adhan_toggle", language))
+                            .font(.body)
+                        Text(L10n.tr("prayer_adhan_desc", language))
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.vertical, 4)
+                .onChange(of: prayerAdhanEnabled) { _, newValue in
+                    handleToggleChange(enabled: newValue)
+                }
+                
+                Toggle(isOn: $prayerReminder10MinEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(L10n.tr("prayer_reminder_10min_toggle", language))
+                            .font(.body)
+                        Text(L10n.tr("prayer_reminder_10min_desc", language))
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.vertical, 4)
+                .onChange(of: prayerReminder10MinEnabled) { _, newValue in
+                    handleToggleChange(enabled: newValue)
+                }
+                
+                if prayerAdhanEnabled {
+                    Picker(L10n.tr("prayer_adhan_sound", language), selection: $prayerAdhanSound) {
+                        ForEach(soundOptions, id: \.id) { opt in
+                            Text(L10n.tr(opt.titleKey, language)).tag(opt.id)
+                        }
+                    }
+                    .onChange(of: prayerAdhanSound) { _, _ in
+                        saveSettings()
+                    }
+                    
+                    HStack {
+                        Text(L10n.tr("preview", language))
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Button {
+                            prayerNotifManager.togglePlayPreview(soundName: prayerAdhanSound)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: prayerNotifManager.isPlayingPreview ? "stop.circle.fill" : "play.circle.fill")
+                                    .font(.title3)
+                                Text(prayerNotifManager.isPlayingPreview ? L10n.tr("stop", language) : L10n.tr("play", language))
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                            }
+                            .foregroundColor(Theme.islamicGreen)
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            
+            if prayerAdhanEnabled || prayerReminder10MinEnabled {
+                Section(header: Text(L10n.tr("prayer_custom_prayers", language))) {
+                    Toggle(L10n.tr("prayer_fajr", language), isOn: $prayerFajrEnabled)
+                        .onChange(of: prayerFajrEnabled) { _, _ in saveSettings() }
+                    Toggle(L10n.tr("prayer_dhuhr", language), isOn: $prayerDhuhrEnabled)
+                        .onChange(of: prayerDhuhrEnabled) { _, _ in saveSettings() }
+                    Toggle(L10n.tr("prayer_asr", language), isOn: $prayerAsrEnabled)
+                        .onChange(of: prayerAsrEnabled) { _, _ in saveSettings() }
+                    Toggle(L10n.tr("prayer_maghrib", language), isOn: $prayerMaghribEnabled)
+                        .onChange(of: prayerMaghribEnabled) { _, _ in saveSettings() }
+                    Toggle(L10n.tr("prayer_isha", language), isOn: $prayerIshaEnabled)
+                        .onChange(of: prayerIshaEnabled) { _, _ in saveSettings() }
+                }
+            }
+            
+            // MARK: - Berechnungsmethode
             Section(header: Text(L10n.tr("prayer_settings_sec", language))) {
                 NavigationLink {
                     CalculationMethodSelectionView(
@@ -59,6 +180,7 @@ struct PrayerSettingsView: View {
                 }
             }
             
+            // MARK: - Heutige Gebetszeiten
             Section(header: Text(L10n.tr("prayer_preview_header", language))) {
                 let today = Date()
                 let solarManager = LocationAndSolarManager.shared
@@ -121,6 +243,10 @@ struct PrayerSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             loadSettings()
+            checkPermissionStatus()
+        }
+        .onDisappear {
+            prayerNotifManager.stopPreview()
         }
     }
     
@@ -129,13 +255,53 @@ struct PrayerSettingsView: View {
         return timeFormatter.string(from: date)
     }
     
+    private func checkPermissionStatus() {
+        prayerNotifManager.getAuthorizationStatus { status in
+            self.notificationStatus = status
+        }
+    }
+    
+    private func handleToggleChange(enabled: Bool) {
+        if enabled {
+            prayerNotifManager.getAuthorizationStatus { status in
+                if status == .notDetermined {
+                    prayerNotifManager.requestAuthorization { granted in
+                        checkPermissionStatus()
+                        saveSettings()
+                    }
+                } else {
+                    checkPermissionStatus()
+                    saveSettings()
+                }
+            }
+        } else {
+            saveSettings()
+        }
+    }
+    
     private func loadSettings() {
         if let s = settingsList.first {
             calculationMethodRaw = s.calculationMethodRaw
             asrSchoolRaw = s.asrSchoolRaw
+            prayerAdhanEnabled = s.prayerAdhanEnabled
+            prayerReminder10MinEnabled = s.prayerReminder10MinEnabled
+            prayerAdhanSound = s.prayerAdhanSound
+            prayerFajrEnabled = s.prayerFajrEnabled
+            prayerDhuhrEnabled = s.prayerDhuhrEnabled
+            prayerAsrEnabled = s.prayerAsrEnabled
+            prayerMaghribEnabled = s.prayerMaghribEnabled
+            prayerIshaEnabled = s.prayerIshaEnabled
         } else {
             calculationMethodRaw = UserDefaults.standard.string(forKey: "calculationMethodRaw") ?? "mwl"
             asrSchoolRaw = UserDefaults.standard.string(forKey: "asrSchoolRaw") ?? "standard"
+            prayerAdhanEnabled = UserDefaults.standard.bool(forKey: "prayerAdhanEnabled")
+            prayerReminder10MinEnabled = UserDefaults.standard.bool(forKey: "prayerReminder10MinEnabled")
+            prayerAdhanSound = UserDefaults.standard.string(forKey: "prayerAdhanSound") ?? "azan.caf"
+            prayerFajrEnabled = UserDefaults.standard.object(forKey: "prayer_fajr_enabled") != nil ? UserDefaults.standard.bool(forKey: "prayer_fajr_enabled") : true
+            prayerDhuhrEnabled = UserDefaults.standard.object(forKey: "prayer_dhuhr_enabled") != nil ? UserDefaults.standard.bool(forKey: "prayer_dhuhr_enabled") : true
+            prayerAsrEnabled = UserDefaults.standard.object(forKey: "prayer_asr_enabled") != nil ? UserDefaults.standard.bool(forKey: "prayer_asr_enabled") : true
+            prayerMaghribEnabled = UserDefaults.standard.object(forKey: "prayer_maghrib_enabled") != nil ? UserDefaults.standard.bool(forKey: "prayer_maghrib_enabled") : true
+            prayerIshaEnabled = UserDefaults.standard.object(forKey: "prayer_isha_enabled") != nil ? UserDefaults.standard.bool(forKey: "prayer_isha_enabled") : true
         }
     }
     
@@ -146,14 +312,31 @@ struct PrayerSettingsView: View {
         }
         s.calculationMethodRaw = calculationMethodRaw
         s.asrSchoolRaw = asrSchoolRaw
+        s.prayerAdhanEnabled = prayerAdhanEnabled
+        s.prayerReminder10MinEnabled = prayerReminder10MinEnabled
+        s.prayerAdhanSound = prayerAdhanSound
+        s.prayerFajrEnabled = prayerFajrEnabled
+        s.prayerDhuhrEnabled = prayerDhuhrEnabled
+        s.prayerAsrEnabled = prayerAsrEnabled
+        s.prayerMaghribEnabled = prayerMaghribEnabled
+        s.prayerIshaEnabled = prayerIshaEnabled
         
         UserDefaults.standard.set(calculationMethodRaw, forKey: "calculationMethodRaw")
         UserDefaults.standard.set(asrSchoolRaw, forKey: "asrSchoolRaw")
+        UserDefaults.standard.set(prayerAdhanEnabled, forKey: "prayerAdhanEnabled")
+        UserDefaults.standard.set(prayerReminder10MinEnabled, forKey: "prayerReminder10MinEnabled")
+        UserDefaults.standard.set(prayerAdhanSound, forKey: "prayerAdhanSound")
+        UserDefaults.standard.set(prayerFajrEnabled, forKey: "prayer_fajr_enabled")
+        UserDefaults.standard.set(prayerDhuhrEnabled, forKey: "prayer_dhuhr_enabled")
+        UserDefaults.standard.set(prayerAsrEnabled, forKey: "prayer_asr_enabled")
+        UserDefaults.standard.set(prayerMaghribEnabled, forKey: "prayer_maghrib_enabled")
+        UserDefaults.standard.set(prayerIshaEnabled, forKey: "prayer_isha_enabled")
         
         try? modelContext.save()
         
-        // Re-calculate & reschedule reminders and tracking date immediately
+        // Re-calculate & reschedule prayer & adhkar notifications immediately
         LocationAndSolarManager.shared.updateTrackingDate()
+        PrayerNotificationManager.shared.schedulePrayerNotifications(container: modelContext.container)
         AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
     }
 }

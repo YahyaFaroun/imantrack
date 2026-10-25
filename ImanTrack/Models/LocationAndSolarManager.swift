@@ -103,6 +103,7 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         locationManager.stopUpdatingLocation()
         self.updateTrackingDate()
         AdhkarReminderManager.shared.scheduleReminders()
+        PrayerNotificationManager.shared.schedulePrayerNotifications()
     }
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -139,6 +140,7 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         if currentTrackingDate != startOfNewDate {
             self.currentTrackingDate = startOfNewDate
             AdhkarReminderManager.shared.scheduleReminders()
+            PrayerNotificationManager.shared.schedulePrayerNotifications()
         }
         
         let newNight = calculateIsNightTime(now: now)

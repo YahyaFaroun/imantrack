@@ -97,6 +97,7 @@ struct ImanTrackApp: App {
                 if newPhase == .active {
                     LocationAndSolarManager.shared.updateTrackingDate()
                     AdhkarReminderManager.shared.scheduleReminders(container: sharedModelContainer)
+                    PrayerNotificationManager.shared.schedulePrayerNotifications(container: sharedModelContainer)
                 } else if newPhase == .background || newPhase == .inactive {
                     saveReadingStateOnLifecycleChange()
                 }
