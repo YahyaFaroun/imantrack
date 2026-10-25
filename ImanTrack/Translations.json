@@ -3183,6 +3183,58 @@
     "ru": "Субхан Аллахи ва бихамдихи",
     "bn": "সুবহানাল্লাহি ওয়া বিহামদিহী"
   },
+  "tasbih_correct_last_action": {
+    "de": "%@ entfernen (-100%)",
+    "en": "Remove %@ (-100%)",
+    "ar": "إزالة %@ (-100%)",
+    "tr": "%@ sil (-%100)",
+    "id": "Hapus %@ (-100%)",
+    "ms": "Buang %@ (-100%)",
+    "fr": "Supprimer %@ (-100%)",
+    "es": "Eliminar %@ (-100%)",
+    "ur": "%@ ختم کریں (-100%)",
+    "ru": "Удалить %@ (-100%)",
+    "bn": "%@ মুছুন (-100%)"
+  },
+  "tasbih_correct_last_desc": {
+    "de": "Möchtest du die letzte Zählung von %@ komplett entfernen (-100%)?",
+    "en": "Do you want to completely remove the last count of %@ (-100%)?",
+    "ar": "هل ترغب في إزالة آخر عد (%@) بالكامل (-100%)؟",
+    "tr": "Son %@ sayımını tamamen silmek (-%100) istiyor musunuz?",
+    "id": "Apakah Anda ingin menghapus hitungan terakhir %@ sepenuhnya (-100%)?",
+    "ms": "Adakah anda ingin membuang kiraan terakhir %@ sepenuhnya (-100%)?",
+    "fr": "Voulez-vous supprimer complètement le dernier compte de %@ (-100%) ?",
+    "es": "¿Deseas eliminar por completo el último conteo de %@ (-100%)?",
+    "ur": "کیا آپ آخری %@ کی گنتی کو مکمل طور پر ختم کرنا چاہتے ہیں (-100%)؟",
+    "ru": "Удалить последний счет (%@) полностью (-100%)?",
+    "bn": "আপনি কি সর্বশেষ %@ গণনা সম্পূর্ণ মুছে ফেলতে চান (-100%)?"
+  },
+  "tasbih_correct_last_title": {
+    "de": "Letzte Zählung korrigieren",
+    "en": "Correct Last Count",
+    "ar": "تصحيح آخر عد",
+    "tr": "Son Sayımı Düzelt",
+    "id": "Koreksi Hitungan Terakhir",
+    "ms": "Betulkan Kiraan Terakhir",
+    "fr": "Corriger le dernier compte",
+    "es": "Corregir último conteo",
+    "ur": "آخری گنتی درست کریں",
+    "ru": "Исправить последний счет",
+    "bn": "সর্বশেষ গণনা সংশোধন করুন"
+  },
+  "tasbih_no_recent_tracking": {
+    "de": "Keine kürzliche Zählung zum Korrigieren vorhanden",
+    "en": "No recent count available to correct",
+    "ar": "لا يوجد عد أخير متاح للتصحيح",
+    "tr": "Düzeltilecek son bir sayım bulunmuyor",
+    "id": "Tidak ada hitungan terbaru untuk dikoreksi",
+    "ms": "Tiada kiraan terkini untuk dibetulkan",
+    "fr": "Aucun compte récent à corriger",
+    "es": "No hay un conteo reciente para corregir",
+    "ur": "درست کرنے کے لیے کوئی حالیہ گنتی موجود نہیں ہے",
+    "ru": "Нет недавнего счета для исправления",
+    "bn": "সংশোধন করার মতো সাম্প্রতিক কোনো গণনা নেই"
+  },
   "tempo": {
     "de": "Tempo: %d/Min",
     "en": "Tempo: %d/min",

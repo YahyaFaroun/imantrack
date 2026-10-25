@@ -46,10 +46,18 @@ struct DhikrDetailView: View {
     @State var showStopSessionSheet = false
     @State var showManualAddAlert = false
     @State var manualAddAmount = ""
-    @State var manualSubtractAmount = ""
+    @State private var lastTrackedAmount = 0
+    @State private var showNoCorrectionToast = false
     @State var showInfoSheet = false
     @State private var speedUpdateToken = 0
     @FocusState var isTextFieldFocused: Bool
+    
+    private var amountToCorrect: Int {
+        if sessionCount > 0 {
+            return sessionCount
+        }
+        return lastTrackedAmount
+    }
     
     private var settings: UserSettings {
         allSettings.first ?? UserSettings()
@@ -558,19 +566,18 @@ struct DhikrDetailView: View {
                 HStack(alignment: .center) {
                     // Links: Korrektur-Button (Minus, sanftes Rot)
                     Button(action: {
-                        manualSubtractAmount = ""
-                        handleStopButtonTap()
+                        handleMinusButtonTap()
                     }) {
                         Image(systemName: "minus")
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(Color.red.opacity(0.85))
+                            .foregroundColor(Color.red.opacity(amountToCorrect > 0 ? 0.85 : 0.4))
                             .frame(width: 58, height: 58)
-                            .background(Color.red.opacity(0.14))
+                            .background(Color.red.opacity(amountToCorrect > 0 ? 0.14 : 0.05))
                             .clipShape(Circle())
                             .overlay(
                                 Circle()
-                                    .stroke(Color.red.opacity(0.25), lineWidth: 1.5)
+                                    .stroke(Color.red.opacity(amountToCorrect > 0 ? 0.25 : 0.1), lineWidth: 1.5)
                             )
                     }
                     .padding(.leading, 30)
@@ -635,6 +642,21 @@ struct DhikrDetailView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             
+            if showNoCorrectionToast {
+                VStack {
+                    Spacer()
+                    Text(L10n.tr("tasbih_no_recent_tracking", lang))
+                        .font(.subheadline)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(Color.black.opacity(0.85))
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .padding(.bottom, 50)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            
             // Custom-Overlay für manuelles Hinzufügen (minimalistisches Pop-up)
             if showManualAddAlert {
                 ZStack {
@@ -677,8 +699,8 @@ struct DhikrDetailView: View {
                 .zIndex(10)
             }
             
-            // Custom-Overlay für Beenden & Korrektur (Prozente + Manuelle Zahleneingabe)
-            if showStopSessionSheet {
+            // Custom-Overlay für 100% Korrektur der letzten Zählung
+            if showStopSessionSheet && amountToCorrect > 0 {
                 ZStack {
                     Color.black.opacity(0.5)
                         .ignoresSafeArea()
@@ -689,55 +711,58 @@ struct DhikrDetailView: View {
                         }
                     
                     VStack(spacing: 16) {
-                        // Prozentuale Abzüge
-                        HStack(spacing: 8) {
-                            let discounts = [10, 30, 50, 100]
-                            ForEach(discounts, id: \.self) { pct in
-                                Button(action: {
-                                    saveSession(discountPercent: pct)
-                                    withAnimation(.easeOut(duration: 0.2)) {
-                                        showStopSessionSheet = false
-                                    }
-                                }) {
-                                    Text("-\(pct)%")
-                                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                                        .foregroundColor(Color.red.opacity(0.9))
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 10)
-                                        .background(Color.red.opacity(0.12))
-                                        .cornerRadius(10)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .stroke(Color.red.opacity(0.25), lineWidth: 1)
-                                        )
-                                }
-                            }
+                        // Icon & Titel
+                        VStack(spacing: 8) {
+                            Image(systemName: "arrow.uturn.backward.circle.fill")
+                                .font(.system(size: 36))
+                                .foregroundColor(Color.red.opacity(0.85))
+                            
+                            Text(L10n.tr("tasbih_correct_last_title", lang))
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundColor(.primary)
+                                .multilineTextAlignment(.center)
+                            
+                            Text(String(format: L10n.tr("tasbih_correct_last_desc", lang), "\(amountToCorrect)"))
+                                .font(.system(size: 13))
+                                .foregroundColor(Color.primary.opacity(0.75))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 6)
                         }
                         
                         Divider()
                             .background(Color.primary.opacity(0.15))
                         
-                        // Manuelle Zahleneingabe für Abzug/Korrektur
-                        VStack(spacing: 12) {
-                            ManualAddTextField(manualAddAmount: $manualSubtractAmount, isTextFieldFocused: $isTextFieldFocused)
-                            
+                        // Aktions-Buttons
+                        VStack(spacing: 10) {
+                            // 100% Korrektur anwenden
                             Button(action: {
-                                if let amount = Int(manualSubtractAmount), amount > 0 {
-                                    applyCorrection(removeDiff: amount)
+                                confirmCorrection()
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 14, weight: .semibold))
+                                    Text(String(format: L10n.tr("tasbih_correct_last_action", lang), "\(amountToCorrect)"))
+                                        .font(.system(size: 14, weight: .bold))
                                 }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 11)
+                                .background(Color.red.opacity(0.85))
+                                .cornerRadius(12)
+                                .shadow(color: Color.red.opacity(0.25), radius: 4, x: 0, y: 2)
+                            }
+                            
+                            // Abbrechen
+                            Button(action: {
                                 withAnimation(.easeOut(duration: 0.2)) {
                                     showStopSessionSheet = false
-                                    manualSubtractAmount = ""
                                 }
                             }) {
-                                Text(L10n.tr("correct", lang))
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor(.white)
+                                Text(L10n.tr("cancel", lang))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(Color.primary.opacity(0.6))
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .background(Color.red.opacity(0.8))
-                                    .cornerRadius(12)
-                                    .shadow(color: Color.red.opacity(0.25), radius: 4, x: 0, y: 2)
+                                    .padding(.vertical, 6)
                             }
                         }
                     }
@@ -812,6 +837,7 @@ struct DhikrDetailView: View {
             pauseTimer()
             counterState = .idle
             sessionCount = 0
+            lastTrackedAmount = 0
         }
         .sheet(isPresented: $showInfoSheet) {
             TranslationSheet(
@@ -840,16 +866,6 @@ struct DhikrDetailView: View {
         }
     }
     
-    private func handleStopButtonTap() {
-        if counterState == .running {
-            counterState = .paused
-            pauseTimer()
-        }
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            showStopSessionSheet = true
-        }
-    }
-    
     private func startTimer() {
         #if os(iOS) && !SKIP
         UIApplication.shared.isIdleTimerDisabled = true
@@ -872,19 +888,42 @@ struct DhikrDetailView: View {
         #endif
     }
     
-    private func saveSession(discountPercent: Int) {
-        if discountPercent > 0 {
-            let removeDiff: Int
-            if discountPercent == 100 {
-                removeDiff = sessionCount
-            } else {
-                removeDiff = Int(round(Double(sessionCount) * Double(discountPercent) / 100.0))
-            }
-            applyCorrection(removeDiff: removeDiff)
+    private func handleMinusButtonTap() {
+        if counterState == .running {
+            counterState = .paused
+            pauseTimer()
         }
         
-        counterState = .idle
+        if amountToCorrect > 0 {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                showStopSessionSheet = true
+            }
+        } else {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showNoCorrectionToast = true
+            }
+            #if os(iOS) && !SKIP
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            #endif
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showNoCorrectionToast = false
+                }
+            }
+        }
+    }
+    
+    private func confirmCorrection() {
+        let diff = amountToCorrect
+        guard diff > 0 else { return }
+        applyCorrection(removeDiff: diff)
         sessionCount = 0
+        lastTrackedAmount = 0
+        counterState = .idle
+        
+        withAnimation(.easeOut(duration: 0.2)) {
+            showStopSessionSheet = false
+        }
         
         withAnimation(.easeInOut(duration: 0.2)) {
             flashGreen = true
@@ -894,6 +933,10 @@ struct DhikrDetailView: View {
                 flashGreen = false
             }
         }
+        
+        #if os(iOS) && !SKIP
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
     }
     
     private func applyCorrection(removeDiff: Int) {
@@ -991,6 +1034,8 @@ struct DhikrDetailView: View {
             case .laIlahaIllallah: record.laIlahaIllallahCount = min(max(0, record.laIlahaIllallahCount) + safeAmount, 500_000)
             }
         }
+        lastTrackedAmount = safeAmount
+        sessionCount = 0
         checkCompletion()
         try? modelContext.save()
     }
@@ -1019,9 +1064,8 @@ struct DhikrDetailView: View {
             }
         }
         
-        if isAuto {
-            sessionCount += 1
-        }
+        sessionCount += 1
+        lastTrackedAmount = 0
         
         triggerGreenFlash()
         
