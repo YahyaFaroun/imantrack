@@ -3235,6 +3235,32 @@
     "ru": "Нет недавнего счета для исправления",
     "bn": "সংশোধন করার মতো সাম্প্রতিক কোনো গণনা নেই"
   },
+  "tasbih_no_recent_to_remove": {
+    "de": "Keine Zählung zum Entfernen",
+    "en": "No count to remove",
+    "ar": "لا يوجد عد للإزالة",
+    "tr": "Silinecek sayım yok",
+    "id": "Tidak ada hitungan untuk dihapus",
+    "ms": "Tiada kiraan untuk dibuang",
+    "fr": "Aucun compte à supprimer",
+    "es": "No hay conteo para eliminar",
+    "ur": "ختم کرنے کے لیے کوئی گنتی نہیں ہے",
+    "ru": "Нет счета для удаления",
+    "bn": "মুছে ফেলার মতো কোনো গণনা নেই"
+  },
+  "tasbih_remove_last_count": {
+    "de": "Letzte Zählung entfernen (-%@)",
+    "en": "Remove last count (-%@)",
+    "ar": "إزالة آخر عد (-%@)",
+    "tr": "Son sayımı sil (-%@)",
+    "id": "Hapus hitungan terakhir (-%@)",
+    "ms": "Buang kiraan terakhir (-%@)",
+    "fr": "Supprimer le dernier compte (-%@)",
+    "es": "Eliminar último conteo (-%@)",
+    "ur": "آخری گنتی ختم کریں (-%@)",
+    "ru": "Удалить последний счет (-%@)",
+    "bn": "সর্বশেষ গণনা মুছুন (-%@)"
+  },
   "tempo": {
     "de": "Tempo: %d/Min",
     "en": "Tempo: %d/min",

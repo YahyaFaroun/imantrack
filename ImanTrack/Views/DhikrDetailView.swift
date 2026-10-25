@@ -47,7 +47,6 @@ struct DhikrDetailView: View {
     @State var showManualAddAlert = false
     @State var manualAddAmount = ""
     @State private var lastTrackedAmount = 0
-    @State private var showNoCorrectionToast = false
     @State var showInfoSheet = false
     @State private var speedUpdateToken = 0
     @FocusState var isTextFieldFocused: Bool
@@ -571,13 +570,13 @@ struct DhikrDetailView: View {
                         Image(systemName: "minus")
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(Color.red.opacity(amountToCorrect > 0 ? 0.85 : 0.4))
+                            .foregroundColor(Color.red.opacity(0.85))
                             .frame(width: 58, height: 58)
-                            .background(Color.red.opacity(amountToCorrect > 0 ? 0.14 : 0.05))
+                            .background(Color.red.opacity(0.14))
                             .clipShape(Circle())
                             .overlay(
                                 Circle()
-                                    .stroke(Color.red.opacity(amountToCorrect > 0 ? 0.25 : 0.1), lineWidth: 1.5)
+                                    .stroke(Color.red.opacity(0.25), lineWidth: 1.5)
                             )
                     }
                     .padding(.leading, 30)
@@ -642,21 +641,6 @@ struct DhikrDetailView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             
-            if showNoCorrectionToast {
-                VStack {
-                    Spacer()
-                    Text(L10n.tr("tasbih_no_recent_tracking", lang))
-                        .font(.subheadline)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(Color.black.opacity(0.85))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                        .padding(.bottom, 50)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            
             // Custom-Overlay für manuelles Hinzufügen (minimalistisches Pop-up)
             if showManualAddAlert {
                 ZStack {
@@ -699,8 +683,8 @@ struct DhikrDetailView: View {
                 .zIndex(10)
             }
             
-            // Custom-Overlay für 100% Korrektur der letzten Zählung
-            if showStopSessionSheet && amountToCorrect > 0 {
+            // Custom-Overlay für Beenden & Korrektur (Prozente + Letzte Zählung entfernen)
+            if showStopSessionSheet {
                 ZStack {
                     Color.black.opacity(0.5)
                         .ignoresSafeArea()
@@ -711,46 +695,59 @@ struct DhikrDetailView: View {
                         }
                     
                     VStack(spacing: 16) {
-                        // Icon & Titel
-                        VStack(spacing: 8) {
-                            Image(systemName: "arrow.uturn.backward.circle.fill")
-                                .font(.system(size: 36))
-                                .foregroundColor(Color.red.opacity(0.85))
-                            
-                            Text(L10n.tr("tasbih_correct_last_title", lang))
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.primary)
-                                .multilineTextAlignment(.center)
-                            
-                            Text(String(format: L10n.tr("tasbih_correct_last_desc", lang), "\(amountToCorrect)"))
-                                .font(.system(size: 13))
-                                .foregroundColor(Color.primary.opacity(0.75))
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 6)
+                        // Prozentuale Abzüge der laufenden Sitzung
+                        HStack(spacing: 8) {
+                            let discounts = [10, 30, 50, 100]
+                            ForEach(discounts, id: \.self) { pct in
+                                Button(action: {
+                                    saveSession(discountPercent: pct)
+                                    withAnimation(.easeOut(duration: 0.2)) {
+                                        showStopSessionSheet = false
+                                    }
+                                }) {
+                                    Text("-\(pct)%")
+                                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                                        .foregroundColor(Color.red.opacity(sessionCount > 0 ? 0.9 : 0.4))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 10)
+                                        .background(Color.red.opacity(sessionCount > 0 ? 0.12 : 0.05))
+                                        .cornerRadius(10)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color.red.opacity(sessionCount > 0 ? 0.25 : 0.1), lineWidth: 1)
+                                        )
+                                }
+                                .disabled(sessionCount == 0)
+                            }
                         }
                         
                         Divider()
                             .background(Color.primary.opacity(0.15))
                         
-                        // Aktions-Buttons
+                        // Button: Nur die letzte Zählung entfernen (keine freie Zahleneingabe)
+                        let countToRemove = lastTrackedAmount > 0 ? lastTrackedAmount : sessionCount
                         VStack(spacing: 10) {
-                            // 100% Korrektur anwenden
                             Button(action: {
-                                confirmCorrection()
+                                removeLastTrackedCount()
                             }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "trash")
                                         .font(.system(size: 14, weight: .semibold))
-                                    Text(String(format: L10n.tr("tasbih_correct_last_action", lang), "\(amountToCorrect)"))
+                                    Text(countToRemove > 0
+                                         ? String(format: L10n.tr("tasbih_remove_last_count", lang), "\(countToRemove)")
+                                         : L10n.tr("tasbih_no_recent_to_remove", lang))
                                         .font(.system(size: 14, weight: .bold))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.8)
                                 }
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 11)
-                                .background(Color.red.opacity(0.85))
+                                .background(Color.red.opacity(countToRemove > 0 ? 0.85 : 0.4))
                                 .cornerRadius(12)
-                                .shadow(color: Color.red.opacity(0.25), radius: 4, x: 0, y: 2)
+                                .shadow(color: Color.red.opacity(countToRemove > 0 ? 0.25 : 0.0), radius: 4, x: 0, y: 2)
                             }
+                            .disabled(countToRemove == 0)
                             
                             // Abbrechen
                             Button(action: {
@@ -893,32 +890,45 @@ struct DhikrDetailView: View {
             counterState = .paused
             pauseTimer()
         }
-        
-        if amountToCorrect > 0 {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                showStopSessionSheet = true
-            }
-        } else {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                showNoCorrectionToast = true
-            }
-            #if os(iOS) && !SKIP
-            UINotificationFeedbackGenerator().notificationOccurred(.warning)
-            #endif
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showNoCorrectionToast = false
-                }
-            }
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            showStopSessionSheet = true
         }
     }
     
-    private func confirmCorrection() {
-        let diff = amountToCorrect
-        guard diff > 0 else { return }
-        applyCorrection(removeDiff: diff)
+    private func saveSession(discountPercent: Int) {
+        guard sessionCount > 0 else { return }
+        let removeDiff: Int
+        if discountPercent == 100 {
+            removeDiff = sessionCount
+        } else {
+            removeDiff = max(1, Int(round(Double(sessionCount) * Double(discountPercent) / 100.0)))
+        }
+        applyCorrection(removeDiff: removeDiff)
+        
+        counterState = .idle
         sessionCount = 0
         lastTrackedAmount = 0
+        
+        withAnimation(.easeInOut(duration: 0.2)) {
+            flashGreen = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                flashGreen = false
+            }
+        }
+        
+        #if os(iOS) && !SKIP
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
+    }
+    
+    private func removeLastTrackedCount() {
+        let toRemove = lastTrackedAmount > 0 ? lastTrackedAmount : sessionCount
+        guard toRemove > 0 else { return }
+        applyCorrection(removeDiff: toRemove)
+        lastTrackedAmount = 0
+        sessionCount = 0
         counterState = .idle
         
         withAnimation(.easeOut(duration: 0.2)) {
