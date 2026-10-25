@@ -251,7 +251,9 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
         let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
         let calcMethod = method ?? LocationAndSolarManager.getSelectedCalculationMethod()
-        return LocationAndSolarManager.calculateFajrDateStatic(for: date, latitude: lat, longitude: lon, method: calcMethod)
+        guard let base = LocationAndSolarManager.calculateFajrDateStatic(for: date, latitude: lat, longitude: lon, method: calcMethod) else { return nil }
+        let offset = LocationAndSolarManager.getPrayerOffset(for: "fajr")
+        return base.addingTimeInterval(Double(offset) * 60.0)
     }
     
     // Berechnet die Dhuhr-Zeit (Solar Noon) für ein Datum
@@ -263,7 +265,9 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         if let sunrise = LocationAndSolarManager.calculateSunriseDateStatic(for: date, latitude: lat, longitude: lon),
            let sunset = LocationAndSolarManager.calculateSunsetDateStatic(for: date, latitude: lat, longitude: lon) {
             let mid = (sunrise.timeIntervalSince1970 + sunset.timeIntervalSince1970) / 2.0
-            return Date(timeIntervalSince1970: mid)
+            let base = Date(timeIntervalSince1970: mid)
+            let offset = LocationAndSolarManager.getPrayerOffset(for: "dhuhr")
+            return base.addingTimeInterval(Double(offset) * 60.0)
         }
         return nil
     }
@@ -275,7 +279,9 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
         let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
         let asrSchool = school ?? LocationAndSolarManager.getSelectedAsrSchool()
-        return LocationAndSolarManager.calculateAsrDateStatic(for: date, latitude: lat, longitude: lon, school: asrSchool)
+        guard let base = LocationAndSolarManager.calculateAsrDateStatic(for: date, latitude: lat, longitude: lon, school: asrSchool) else { return nil }
+        let offset = LocationAndSolarManager.getPrayerOffset(for: "asr")
+        return base.addingTimeInterval(Double(offset) * 60.0)
     }
 
     // Berechnet die Maghrib-Zeit (Sonnenuntergang) für ein Datum
@@ -284,7 +290,9 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
         let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
         let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
-        return LocationAndSolarManager.calculateSunsetDateStatic(for: date, latitude: lat, longitude: lon)
+        guard let base = LocationAndSolarManager.calculateSunsetDateStatic(for: date, latitude: lat, longitude: lon) else { return nil }
+        let offset = LocationAndSolarManager.getPrayerOffset(for: "maghrib")
+        return base.addingTimeInterval(Double(offset) * 60.0)
     }
     
     // Berechnet die Isha-Zeit für ein Datum
@@ -294,7 +302,17 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
         let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
         let calcMethod = method ?? LocationAndSolarManager.getSelectedCalculationMethod()
-        return LocationAndSolarManager.calculateIshaDateStatic(for: date, latitude: lat, longitude: lon, method: calcMethod)
+        guard let base = LocationAndSolarManager.calculateIshaDateStatic(for: date, latitude: lat, longitude: lon, method: calcMethod) else { return nil }
+        let offset = LocationAndSolarManager.getPrayerOffset(for: "isha")
+        return base.addingTimeInterval(Double(offset) * 60.0)
+    }
+
+    nonisolated static func getPrayerOffset(for prayer: String) -> Int {
+        UserDefaults.standard.integer(forKey: "prayer_offset_\(prayer.lowercased())")
+    }
+    
+    nonisolated static func setPrayerOffset(for prayer: String, offset: Int) {
+        UserDefaults.standard.set(offset, forKey: "prayer_offset_\(prayer.lowercased())")
     }
 
     nonisolated static func getSelectedCalculationMethod() -> CalculationMethod {

@@ -21,6 +21,15 @@ struct PrayerSettingsView: View {
     @State private var prayerIshaEnabled: Bool = true
     @State private var notificationStatus: UNAuthorizationStatus = .authorized
     
+    // Manuelle Anpassung
+    @State private var isManualAdjustmentExpanded: Bool = false
+    @State private var offsetFajr: Int = 0
+    @State private var offsetDhuhr: Int = 0
+    @State private var offsetAsr: Int = 0
+    @State private var offsetMaghrib: Int = 0
+    @State private var offsetIsha: Int = 0
+    @State private var offsetUpdateToken: Int = 0
+    
     private let soundOptions: [(id: String, titleKey: String)] = [
         ("azan.caf", "prayer_adhan_sound_standard"),
         ("azan_holy_makkah.caf", "prayer_adhan_sound_makkah"),
@@ -182,6 +191,7 @@ struct PrayerSettingsView: View {
             
             // MARK: - Heutige Gebetszeiten
             Section(header: Text(L10n.tr("prayer_preview_header", language))) {
+                let _ = offsetUpdateToken
                 let today = Date()
                 let solarManager = LocationAndSolarManager.shared
                 
@@ -223,6 +233,59 @@ struct PrayerSettingsView: View {
                     Text(formattedTime(solarManager.getIshaDate(for: today, method: currentMethod)))
                         .fontWeight(.semibold)
                         .foregroundColor(Theme.islamicGreen)
+                }
+            }
+            
+            // MARK: - Manuelle Anpassung (Minuten)
+            Section {
+                Button(action: {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isManualAdjustmentExpanded.toggle()
+                    }
+                }) {
+                    HStack {
+                        Text(L10n.tr("prayer_manual_adjustment", language))
+                            .font(.body)
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Image(systemName: isManualAdjustmentExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                
+                if isManualAdjustmentExpanded {
+                    prayerAdjustmentRow(
+                        title: L10n.tr("prayer_fajr", language),
+                        offset: offsetFajr,
+                        prayer: "fajr"
+                    )
+                    
+                    prayerAdjustmentRow(
+                        title: L10n.tr("prayer_dhuhr", language),
+                        offset: offsetDhuhr,
+                        prayer: "dhuhr"
+                    )
+                    
+                    prayerAdjustmentRow(
+                        title: L10n.tr("prayer_asr", language),
+                        offset: offsetAsr,
+                        prayer: "asr"
+                    )
+                    
+                    prayerAdjustmentRow(
+                        title: L10n.tr("prayer_maghrib", language),
+                        offset: offsetMaghrib,
+                        prayer: "maghrib"
+                    )
+                    
+                    prayerAdjustmentRow(
+                        title: L10n.tr("prayer_isha", language),
+                        offset: offsetIsha,
+                        prayer: "isha"
+                    )
                 }
             }
             
@@ -303,6 +366,75 @@ struct PrayerSettingsView: View {
             prayerMaghribEnabled = UserDefaults.standard.object(forKey: "prayer_maghrib_enabled") != nil ? UserDefaults.standard.bool(forKey: "prayer_maghrib_enabled") : true
             prayerIshaEnabled = UserDefaults.standard.object(forKey: "prayer_isha_enabled") != nil ? UserDefaults.standard.bool(forKey: "prayer_isha_enabled") : true
         }
+        
+        offsetFajr = LocationAndSolarManager.getPrayerOffset(for: "fajr")
+        offsetDhuhr = LocationAndSolarManager.getPrayerOffset(for: "dhuhr")
+        offsetAsr = LocationAndSolarManager.getPrayerOffset(for: "asr")
+        offsetMaghrib = LocationAndSolarManager.getPrayerOffset(for: "maghrib")
+        offsetIsha = LocationAndSolarManager.getPrayerOffset(for: "isha")
+    }
+    
+    private func updateOffset(prayer: String, delta: Int) {
+        #if os(iOS) && !SKIP
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        #endif
+        
+        switch prayer {
+        case "fajr":
+            offsetFajr = min(max(-60, offsetFajr + delta), 60)
+            LocationAndSolarManager.setPrayerOffset(for: "fajr", offset: offsetFajr)
+        case "dhuhr":
+            offsetDhuhr = min(max(-60, offsetDhuhr + delta), 60)
+            LocationAndSolarManager.setPrayerOffset(for: "dhuhr", offset: offsetDhuhr)
+        case "asr":
+            offsetAsr = min(max(-60, offsetAsr + delta), 60)
+            LocationAndSolarManager.setPrayerOffset(for: "asr", offset: offsetAsr)
+        case "maghrib":
+            offsetMaghrib = min(max(-60, offsetMaghrib + delta), 60)
+            LocationAndSolarManager.setPrayerOffset(for: "maghrib", offset: offsetMaghrib)
+        case "isha":
+            offsetIsha = min(max(-60, offsetIsha + delta), 60)
+            LocationAndSolarManager.setPrayerOffset(for: "isha", offset: offsetIsha)
+        default: break
+        }
+        
+        offsetUpdateToken += 1
+        
+        LocationAndSolarManager.shared.updateTrackingDate()
+        prayerNotifManager.schedulePrayerNotifications(container: modelContext.container)
+        AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
+    }
+    
+    private func formatOffset(_ val: Int) -> String {
+        if val > 0 {
+            return "+\(val) Min"
+        } else if val < 0 {
+            return "\(val) Min"
+        } else {
+            return "0 Min"
+        }
+    }
+    
+    private func prayerAdjustmentRow(title: String, offset: Int, prayer: String) -> some View {
+        HStack(alignment: .center) {
+            Text(title)
+                .font(.body)
+                .foregroundColor(.primary)
+            
+            Spacer()
+            
+            Text(formatOffset(offset))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(Theme.islamicGreen)
+                .frame(minWidth: 55, alignment: .trailing)
+                .padding(.trailing, 8)
+            
+            PrayerOffsetStepper(
+                onDecrement: { updateOffset(prayer: prayer, delta: -1) },
+                onIncrement: { updateOffset(prayer: prayer, delta: 1) }
+            )
+        }
+        .padding(.vertical, 3)
     }
     
     private func saveSettings() {
@@ -416,5 +548,38 @@ struct CalculationMethodSelectionView: View {
         .searchable(text: $searchText, prompt: L10n.tr("search_calculation_methods", language))
         .navigationTitle(L10n.tr("calculation_method", language))
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct PrayerOffsetStepper: View {
+    let onDecrement: () -> Void
+    let onIncrement: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            Button(action: onDecrement) {
+                Image(systemName: "minus")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 38, height: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            
+            Divider()
+                .frame(width: 1, height: 16)
+                .background(Color.white.opacity(0.18))
+            
+            Button(action: onIncrement) {
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 38, height: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .background(Color(UIColor.secondarySystemFill))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

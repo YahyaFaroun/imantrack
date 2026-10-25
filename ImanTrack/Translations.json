@@ -1932,6 +1932,19 @@
     "ru": "Магриб",
     "bn": "মাগরিব"
   },
+  "prayer_manual_adjustment": {
+    "de": "Manuelle Anpassung (Minuten)",
+    "en": "Manual Adjustment (Minutes)",
+    "ar": "التعديل اليدوي (بالدقائق)",
+    "tr": "Manuel Ayarlama (Dakika)",
+    "id": "Penyesuaian Manual (Menit)",
+    "ms": "Pelarasan Manual (Minit)",
+    "fr": "Ajustement manuel (minutes)",
+    "es": "Ajuste manual (minutos)",
+    "ur": "دستی ردوبدل (منٹ)",
+    "ru": "Ручная настройка (минуты)",
+    "bn": "ম্যানুয়াল সমন্বয় (মিনিট)"
+  },
   "prayer_preview_header": {
     "de": "Heutige Gebetszeiten (Exakt)",
     "en": "Today's Prayer Times (Exact)",
