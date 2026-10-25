@@ -3222,6 +3222,32 @@
     "ru": "Исправить последний счет",
     "bn": "সর্বশেষ গণনা সংশোধন করুন"
   },
+  "tasbih_maghrib_countdown": {
+    "de": "Maghrib in %@",
+    "en": "Maghrib in %@",
+    "ar": "المغرب خلال %@",
+    "tr": "Akşama %@",
+    "id": "Maghrib dalam %@",
+    "ms": "Maghrib dalam %@",
+    "fr": "Maghrib dans %@",
+    "es": "Maghrib en %@",
+    "ur": "مغرب %@ میں",
+    "ru": "Магриб через %@",
+    "bn": "মাগরিব %@ এ"
+  },
+  "tasbih_maghrib_reset_info": {
+    "de": "Maghrib steht bevor! Der Zähler wird für den neuen Tag auf 0 aktualisiert.",
+    "en": "Maghrib is approaching! The counter will reset to 0 for the new day.",
+    "ar": "اقترب موعد المغرب! سيتم تحديث العداد إلى 0 لليوم الجديد.",
+    "tr": "Akşam yaklaşıyor! Yeni gün için sayaç 0 olarak güncellenecek.",
+    "id": "Maghrib mendekat! Penghitung akan diatur ulang ke 0 untuk hari baru.",
+    "ms": "Maghrib semakin dekat! Kiraan akan dikemas kini kepada 0 untuk hari baru.",
+    "fr": "Maghrib approche ! Le compteur sera réinitialisé à 0 pour le nouveau jour.",
+    "es": "¡Se acerca el Maghrib! El contador se restablecerá a 0 para el nuevo día.",
+    "ur": "مغرب کا وقت قریب ہے! نئے دن کے لیے کاؤنٹر 0 پر ری سیٹ ہو جائے گا۔",
+    "ru": "Приближается Магриб! Счетчик обновится на 0 для нового дня.",
+    "bn": "মাগরিব ঘনিয়ে আসছে! নতুন দিনের জন্য কাউন্টার ০ তে পুনরায় সেট করা হবে।"
+  },
   "tasbih_no_recent_tracking": {
     "de": "Keine kürzliche Zählung zum Korrigieren vorhanden",
     "en": "No recent count available to correct",
