@@ -46,7 +46,7 @@ struct DhikrDetailView: View {
     @State var showStopSessionSheet = false
     @State var showManualAddAlert = false
     @State var manualAddAmount = ""
-    @State private var lastTrackedAmount = 0
+    @State private var lastManualAddAmount = 0
     @State private var maghribCountdownSeconds: Int? = nil
     @State private var isCountdownPulsing = false
     @State private var countdownTimer: Timer? = nil
@@ -54,13 +54,6 @@ struct DhikrDetailView: View {
     @State var showInfoSheet = false
     @State private var speedUpdateToken = 0
     @FocusState var isTextFieldFocused: Bool
-    
-    private var amountToCorrect: Int {
-        if sessionCount > 0 {
-            return sessionCount
-        }
-        return lastTrackedAmount
-    }
     
     private var settings: UserSettings {
         allSettings.first ?? UserSettings()
@@ -778,11 +771,11 @@ struct DhikrDetailView: View {
                         Divider()
                             .background(Color.primary.opacity(0.15))
                         
-                        // Button: Nur die letzte Zählung entfernen (keine freie Zahleneingabe)
-                        let countToRemove = lastTrackedAmount > 0 ? lastTrackedAmount : sessionCount
+                        // Button: Nur die letzte manuelle Hinzufügung entfernen (keine freie Zahleneingabe)
+                        let countToRemove = lastManualAddAmount
                         VStack(spacing: 10) {
                             Button(action: {
-                                removeLastTrackedCount()
+                                removeLastManualAdd()
                             }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "trash")
@@ -890,7 +883,7 @@ struct DhikrDetailView: View {
             pauseTimer()
             counterState = .idle
             sessionCount = 0
-            lastTrackedAmount = 0
+            lastManualAddAmount = 0
         }
         .sheet(isPresented: $showInfoSheet) {
             TranslationSheet(
@@ -989,7 +982,7 @@ struct DhikrDetailView: View {
                     counterState = .idle
                 }
                 sessionCount = 0
-                lastTrackedAmount = 0
+                lastManualAddAmount = 0
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showResetToast = true
                 }
@@ -1033,7 +1026,6 @@ struct DhikrDetailView: View {
         
         counterState = .idle
         sessionCount = 0
-        lastTrackedAmount = 0
         
         withAnimation(.easeInOut(duration: 0.2)) {
             flashGreen = true
@@ -1049,13 +1041,11 @@ struct DhikrDetailView: View {
         #endif
     }
     
-    private func removeLastTrackedCount() {
-        let toRemove = lastTrackedAmount > 0 ? lastTrackedAmount : sessionCount
-        guard toRemove > 0 else { return }
+    private func removeLastManualAdd() {
+        guard lastManualAddAmount > 0 else { return }
+        let toRemove = lastManualAddAmount
         applyCorrection(removeDiff: toRemove)
-        lastTrackedAmount = 0
-        sessionCount = 0
-        counterState = .idle
+        lastManualAddAmount = 0
         
         withAnimation(.easeOut(duration: 0.2)) {
             showStopSessionSheet = false
@@ -1170,7 +1160,7 @@ struct DhikrDetailView: View {
             case .laIlahaIllallah: record.laIlahaIllallahCount = min(max(0, record.laIlahaIllallahCount) + safeAmount, 500_000)
             }
         }
-        lastTrackedAmount = safeAmount
+        lastManualAddAmount = safeAmount
         sessionCount = 0
         checkCompletion()
         try? modelContext.save()
@@ -1201,7 +1191,6 @@ struct DhikrDetailView: View {
         }
         
         sessionCount += 1
-        lastTrackedAmount = 0
         
         triggerGreenFlash()
         
