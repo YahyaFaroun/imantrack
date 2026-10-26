@@ -152,7 +152,7 @@ struct DhikrMainCard: View {
     
     var body: some View {
         NavigationLink(destination: DhikrDetailView(type: type, titleAr: titleAr, titleDe: titleDe, transliteration: transliteration)) {
-            HStack {
+            HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
                         Text(typeTitle)
@@ -176,13 +176,11 @@ struct DhikrMainCard: View {
                         Text(titleAr)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(Theme.islamicGreen)
-                            .multilineTextAlignment(.leading)
-                            .environment(\.layoutDirection, .rightToLeft)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Spacer()
                 
                 ZStack {
                     Circle()
@@ -202,7 +200,7 @@ struct DhikrMainCard: View {
                 
                 Image(systemName: "chevron.right")
                     .foregroundColor(.gray)
-                    .padding(.leading, 8)
+                    .padding(.leading, 4)
             }
             .padding()
             .background(Theme.cardBackground)
@@ -222,7 +220,7 @@ struct DhikrMainCardCustom: View {
     
     var body: some View {
         NavigationLink(destination: DhikrDetailView(customTasbih: custom)) {
-            HStack {
+            HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(custom.title)
                         .font(.headline)
@@ -233,13 +231,11 @@ struct DhikrMainCardCustom: View {
                         Text(custom.arabic)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(Theme.islamicGreen)
-                            .multilineTextAlignment(.leading)
-                            .environment(\.layoutDirection, .rightToLeft)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Spacer()
                 
                 ZStack {
                     Circle()
@@ -259,7 +255,7 @@ struct DhikrMainCardCustom: View {
                 
                 Image(systemName: "chevron.right")
                     .foregroundColor(.gray)
-                    .padding(.leading, 8)
+                    .padding(.leading, 4)
             }
             .padding()
             .background(Theme.cardBackground)
@@ -275,7 +271,7 @@ struct SurahBaqarahTasbihCard: View {
     
     var body: some View {
         NavigationLink(destination: AlBaqarahReaderView()) {
-            HStack {
+            HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L10n.tr("surah_baqarah", language))
                         .font(.headline)
@@ -285,11 +281,10 @@ struct SurahBaqarahTasbihCard: View {
                     Text("سورة البقرة")
                         .font(.subheadline)
                         .foregroundColor(Theme.islamicGreen)
-                        .multilineTextAlignment(.leading)
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Spacer()
                 
                 ZStack {
                     Circle()
