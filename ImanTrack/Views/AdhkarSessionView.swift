@@ -217,15 +217,6 @@ struct AdhkarSessionView: View {
                                             .cornerRadius(12)
                                         }
                                         .buttonStyle(.plain)
-                                    } else {
-                                        Text(L10n.tr("adhkar_read_done", language))
-                                            .font(.subheadline)
-                                            .fontWeight(.bold)
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 10)
-                                            .background(Theme.islamicGreen)
-                                            .foregroundColor(.white)
-                                            .cornerRadius(12)
                                     }
                                 } else {
                                     Button(action: {
@@ -479,6 +470,7 @@ struct AdhkarSessionView: View {
             let record = todayRecord
             let key = safeKey(for: item)
             record.setAdhkarCount(for: key, count: next)
+            record.clearAdhkarSnapshot(for: type.idStr)
             
             if let idx = adhkarList.firstIndex(where: { $0.id == item.id }) {
                 lastActiveDhikrIndex = idx
@@ -783,6 +775,7 @@ struct AdhkarSessionView: View {
             record.abendAdhkarDone = true
             record.abendAdhkarTime = now
         }
+        record.clearAdhkarSnapshot(for: type.idStr)
         try? modelContext.save()
         AdhkarReminderManager.shared.scheduleReminders(container: modelContext.container)
         
