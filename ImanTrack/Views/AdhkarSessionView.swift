@@ -54,11 +54,7 @@ struct AdhkarSessionView: View {
                 list[i].customSpeedStep = defaultSpeed
             }
             
-            if type == .sleep && i == 11 {
-                list[i].audioFileName = nil
-            } else {
-                list[i].audioFileName = "\(type.idStr)_\(i + 1)"
-            }
+            list[i].audioFileName = "\(type.idStr)_\(i + 1)"
         }
         
         let loadedOrder = AdhkarSessionView.loadCustomOrderStatic(type: type, list: list)
@@ -317,44 +313,33 @@ struct AdhkarSessionView: View {
                                 .id(item.id)
                             }
                             
-                            if isTrackingAllowed {
-                                if isSessionAlreadyDone {
+                            if isSessionAlreadyDone {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                    Text(L10n.tr("alhamdulillah_finished", language))
+                                }
+                                .font(.headline)
+                                .foregroundColor(Theme.islamicGreen)
+                                .padding(.top, 20)
+                                .padding(.bottom, 50)
+                            } else if isTrackingAllowed {
+                                Button(action: finishSession) {
                                     HStack(spacing: 8) {
-                                        Image(systemName: "checkmark.circle.fill")
                                         Text(L10n.tr("alhamdulillah_finished", language))
                                     }
                                     .font(.headline)
-                                    .foregroundColor(Theme.islamicGreen)
+                                    .foregroundColor(allMandatoryCompleted ? .white : .secondary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(allMandatoryCompleted ? Theme.islamicGreen : Color.gray.opacity(0.3))
+                                    .cornerRadius(12)
                                     .padding(.top, 20)
-                                    .padding(.bottom, 50)
-                                } else {
-                                    Button(action: finishSession) {
-                                        HStack(spacing: 8) {
-                                            Text(L10n.tr("alhamdulillah_finished", language))
-                                        }
-                                        .font(.headline)
-                                        .foregroundColor(allMandatoryCompleted ? .white : .secondary)
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(allMandatoryCompleted ? Theme.islamicGreen : Color.gray.opacity(0.3))
-                                        .cornerRadius(12)
-                                        .padding(.top, 20)
-                                    }
-                                    .disabled(!allMandatoryCompleted)
-                                    .padding(.bottom, 50)
                                 }
-                            } else {
-                                Button(action: { dismiss() }) {
-                                    Text(L10n.tr("adhkar_done_reading", language))
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(Theme.islamicGreen)
-                                        .cornerRadius(12)
-                                        .padding(.top, 20)
-                                }
+                                .disabled(!allMandatoryCompleted)
                                 .padding(.bottom, 50)
+                            } else {
+                                Color.clear
+                                    .frame(height: 40)
                             }
                         }
                         .padding()
