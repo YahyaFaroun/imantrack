@@ -5,10 +5,8 @@ struct QuranSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @Query private var settingsList: [UserSettings]
-    @ObservedObject private var progressStore = QuranProgressStore.shared
     
     @State private var quranDailyGoal: Int = 20
-    @State private var showSetPositionSheet: Bool = false
     @AppStorage("quranFontSize") private var quranFontSize: Double = 30.0
     @AppStorage("quranFontType") private var quranFontType: String = "uthmanic"
     @AppStorage("quranTheme") private var quranTheme: String = "system"
@@ -17,50 +15,8 @@ struct QuranSettingsView: View {
         settingsList.first?.language ?? "de"
     }
     
-    private var currentPositionText: String {
-        if let verse = QuranAPIService.shared.getVerseAtIndex(progressStore.readFrontier) {
-            return "\(QuranSurah.getName(verse.surah)), \(verse.ayah) (S. \(verse.pageNumber))"
-        } else if progressStore.readFrontier >= 6236 {
-            return "\(L10n.tr("quran_completed_khatmat", language)) ✓"
-        }
-        return "\(QuranSurah.getName(1)), 1 (S. 1)"
-    }
-    
     var body: some View {
         Form {
-            Section(header: Text(L10n.tr("quran_reading_progress", language))) {
-                HStack {
-                    Text(L10n.tr("quran_current_position", language))
-                    Spacer()
-                    Text(currentPositionText)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                Button(action: {
-                    showSetPositionSheet = true
-                }) {
-                    HStack {
-                        Image(systemName: "bookmark")
-                        Text(L10n.tr("quran_set_position", language))
-                    }
-                    .foregroundColor(Theme.islamicGreen)
-                }
-                
-                Stepper(value: Binding(
-                    get: { progressStore.khatmCount },
-                    set: { progressStore.setKhatmCountManually($0) }
-                ), in: 0...100, step: 1) {
-                    HStack {
-                        Text(L10n.tr("quran_completed_khatmat", language))
-                        Spacer()
-                        Text("\(progressStore.khatmCount)")
-                            .fontWeight(.bold)
-                            .foregroundColor(Theme.islamicGreen)
-                    }
-                }
-            }
-
             Section(header: Text(L10n.tr("daily_goal", language))) {
                 Stepper(value: $quranDailyGoal, in: 1...100, step: 1) {
                     HStack {
@@ -102,9 +58,6 @@ struct QuranSettingsView: View {
         }
         .navigationTitle(L10n.tr("koran_sec", language))
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showSetPositionSheet) {
-            SetQuranPositionSheet(language: language)
-        }
         .onAppear {
             if let s = settingsList.first {
                 quranDailyGoal = s.quranDailyGoal

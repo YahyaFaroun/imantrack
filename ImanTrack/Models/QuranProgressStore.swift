@@ -46,6 +46,28 @@ class QuranProgressStore: ObservableObject {
         migrateIfNeeded()
         checkAndPerformRepairV2()
         setupBackgroundSaveObserver()
+        applyOneTimeTestReset()
+    }
+    
+    private func applyOneTimeTestReset() {
+        let testResetKey = "hasAppliedTestReset_qariah_v1"
+        guard !UserDefaults.standard.bool(forKey: testResetKey) else { return }
+        UserDefaults.standard.set(true, forKey: testResetKey)
+        
+        // KhatmCount auf 0 zurücksetzen
+        UserDefaults.standard.set(0, forKey: "quranKhatmCount")
+        self.khatmCount = 0
+        
+        // Lesestelle direkt auf Sure Al-Qari'ah (101:1, Index 6157, Seite 600) setzen
+        let targetIndex = 6157
+        self.readFrontier = targetIndex
+        self.bookmark = QuranBookmark(verseIndex: targetIndex, delta: 0, fontSize: 30)
+        UserDefaults.standard.set(targetIndex, forKey: "quranReadFrontier")
+        if let data = try? JSONEncoder().encode(self.bookmark) {
+            UserDefaults.standard.set(data, forKey: bookmarkKey)
+        }
+        UserDefaults.standard.synchronize()
+        print("[TEST_RESET] Einmaliger Reset aktiv: KhatmCount=0, Lesestelle auf Sure Al-Qari'ah (Index \(targetIndex), S. 600)")
     }
     
     func saveBookmark(_ bookmark: QuranBookmark) {
