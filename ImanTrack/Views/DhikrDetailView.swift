@@ -206,27 +206,27 @@ struct DhikrDetailView: View {
         case .istighfar:
             guard selectedIndex < activeIstighfarCases.count else { return nil }
             switch activeIstighfarCases[selectedIndex] {
-            case .kurz: return TasbihIntervals(langsam: 1.35, normal: 1.08, schnell: 0.82)
-            case .extended: return TasbihIntervals(langsam: 1.75, normal: 1.51, schnell: 1.28)
-            case .gewaltig: return TasbihIntervals(langsam: 5.26, normal: 4.95, schnell: 4.64)
-            case .yunus: return TasbihIntervals(langsam: 4.36, normal: 4.00, schnell: 3.64)
-            case .lang: return TasbihIntervals(langsam: 14.46, normal: 13.45, schnell: 12.44)
+            case .kurz: return TasbihIntervals(langsam: 1.35, normal: 1.08, schnell: 0.67)
+            case .extended: return TasbihIntervals(langsam: 1.75, normal: 1.51, schnell: 1.15)
+            case .gewaltig: return TasbihIntervals(langsam: 5.26, normal: 4.95, schnell: 4.47)
+            case .yunus: return TasbihIntervals(langsam: 4.36, normal: 4.00, schnell: 3.44)
+            case .lang: return TasbihIntervals(langsam: 14.46, normal: 13.45, schnell: 11.88)
             }
         case .salawat:
             guard selectedIndex < activeSalawatCases.count else { return nil }
             switch activeSalawatCases[selectedIndex] {
-            case .waSallim: return TasbihIntervals(langsam: 2.47, normal: 2.20, schnell: 1.93)
-            case .kurz: return TasbihIntervals(langsam: 2.94, normal: 2.63, schnell: 2.31)
-            case .lang: return TasbihIntervals(langsam: 10.97, normal: 10.45, schnell: 9.93)
+            case .waSallim: return TasbihIntervals(langsam: 2.47, normal: 2.20, schnell: 1.78)
+            case .kurz: return TasbihIntervals(langsam: 2.94, normal: 2.63, schnell: 2.14)
+            case .lang: return TasbihIntervals(langsam: 10.97, normal: 10.45, schnell: 9.64)
             }
         case .subhanAllah:
-            return TasbihIntervals(langsam: 3.50, normal: 3.28, schnell: 3.06)
+            return TasbihIntervals(langsam: 3.50, normal: 3.28, schnell: 2.94)
         case .alhamdulillah:
-            return TasbihIntervals(langsam: 5.05, normal: 4.57, schnell: 4.09)
+            return TasbihIntervals(langsam: 5.05, normal: 4.57, schnell: 3.82)
         case .allahuAkbar:
-            return TasbihIntervals(langsam: 3.04, normal: 2.80, schnell: 2.56)
+            return TasbihIntervals(langsam: 3.04, normal: 2.80, schnell: 2.43)
         case .laIlahaIllallah:
-            return TasbihIntervals(langsam: 6.10, normal: 5.63, schnell: 5.17)
+            return TasbihIntervals(langsam: 6.10, normal: 5.63, schnell: 4.91)
         }
     }
     
