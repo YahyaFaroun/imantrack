@@ -47,9 +47,6 @@ struct DhikrDetailView: View {
     @State var showManualAddAlert = false
     @State var manualAddAmount = ""
     @State private var lastManualAddAmount = 0
-    @State private var maghribCountdownSeconds: Int? = nil
-    @State private var isCountdownPulsing = false
-    @State private var countdownTimer: Timer? = nil
     @State private var showMaghribCountdownToast = false
     @State var showInfoSheet = false
     @State private var speedUpdateToken = 0
@@ -209,27 +206,27 @@ struct DhikrDetailView: View {
         case .istighfar:
             guard selectedIndex < activeIstighfarCases.count else { return nil }
             switch activeIstighfarCases[selectedIndex] {
-            case .kurz: return TasbihIntervals(langsam: 1.67, normal: 1.08, schnell: 0.50)
-            case .extended: return TasbihIntervals(langsam: 2.04, normal: 1.51, schnell: 0.99)
-            case .gewaltig: return TasbihIntervals(langsam: 5.63, normal: 4.95, schnell: 4.27)
-            case .yunus: return TasbihIntervals(langsam: 4.80, normal: 4.00, schnell: 3.20)
-            case .lang: return TasbihIntervals(langsam: 15.70, normal: 13.45, schnell: 11.20)
+            case .kurz: return TasbihIntervals(langsam: 1.35, normal: 1.08, schnell: 0.82)
+            case .extended: return TasbihIntervals(langsam: 1.75, normal: 1.51, schnell: 1.28)
+            case .gewaltig: return TasbihIntervals(langsam: 5.26, normal: 4.95, schnell: 4.64)
+            case .yunus: return TasbihIntervals(langsam: 4.36, normal: 4.00, schnell: 3.64)
+            case .lang: return TasbihIntervals(langsam: 14.46, normal: 13.45, schnell: 12.44)
             }
         case .salawat:
             guard selectedIndex < activeSalawatCases.count else { return nil }
             switch activeSalawatCases[selectedIndex] {
-            case .waSallim: return TasbihIntervals(langsam: 2.80, normal: 2.20, schnell: 1.60)
-            case .kurz: return TasbihIntervals(langsam: 3.33, normal: 2.63, schnell: 1.93)
-            case .lang: return TasbihIntervals(langsam: 11.60, normal: 10.45, schnell: 9.30)
+            case .waSallim: return TasbihIntervals(langsam: 2.47, normal: 2.20, schnell: 1.93)
+            case .kurz: return TasbihIntervals(langsam: 2.94, normal: 2.63, schnell: 2.31)
+            case .lang: return TasbihIntervals(langsam: 10.97, normal: 10.45, schnell: 9.93)
             }
         case .subhanAllah:
-            return TasbihIntervals(langsam: 3.77, normal: 3.28, schnell: 2.80)
+            return TasbihIntervals(langsam: 3.50, normal: 3.28, schnell: 3.06)
         case .alhamdulillah:
-            return TasbihIntervals(langsam: 5.63, normal: 4.57, schnell: 3.50)
+            return TasbihIntervals(langsam: 5.05, normal: 4.57, schnell: 4.09)
         case .allahuAkbar:
-            return TasbihIntervals(langsam: 3.33, normal: 2.80, schnell: 2.27)
+            return TasbihIntervals(langsam: 3.04, normal: 2.80, schnell: 2.56)
         case .laIlahaIllallah:
-            return TasbihIntervals(langsam: 6.67, normal: 5.63, schnell: 4.60)
+            return TasbihIntervals(langsam: 6.10, normal: 5.63, schnell: 5.17)
         }
     }
     
@@ -419,39 +416,27 @@ struct DhikrDetailView: View {
             Theme.background.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Maghrib 60-Sekunden-Countdown Button
-                if let sec = maghribCountdownSeconds {
-                    Button(action: {
+                // 5-Minuten-Warnung vor Maghrib
+                if solarManager.showFiveMinuteWarning {
+                    MaghribFiveMinuteWarningBanner(language: lang) {
+                        solarManager.dismissFiveMinuteWarning()
+                    }
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                
+                // Maghrib 60-Sekunden-Countdown Regler & Banner
+                if let sec = solarManager.maghribCountdownSeconds {
+                    MaghribCountdownBanner(seconds: sec, language: lang) {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             showMaghribCountdownToast = true
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 showMaghribCountdownToast = false
                             }
                         }
-                    }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "hourglass.circle.fill")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(Color.orange)
-                            Text(String(format: L10n.tr("tasbih_maghrib_countdown", lang), "\(sec)s"))
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
-                                .foregroundColor(Color.orange)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 5)
-                        .background(Color.orange.opacity(0.14))
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.orange.opacity(0.35), lineWidth: 1.5)
-                        )
-                        .shadow(color: Color.orange.opacity(0.25), radius: 6, x: 0, y: 2)
                     }
-                    .scaleEffect(isCountdownPulsing ? 1.05 : 0.95)
-                    .padding(.top, 4)
-                    .transition(.scale.combined(with: .opacity))
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 
                 // Page Indicator at the very top (feste Höhe für alle Tasbihs)
@@ -859,7 +844,6 @@ struct DhikrDetailView: View {
             }
         }
         .onAppear {
-            startCountdownChecker()
             if type == .istighfar {
                 let active = activeIstighfarCases
                 if let savedVersion = IstighfarForm(rawValue: settings.istighfarVersion),
@@ -879,11 +863,29 @@ struct DhikrDetailView: View {
             }
         }
         .onDisappear {
-            stopCountdownChecker()
             pauseTimer()
             counterState = .idle
             sessionCount = 0
             lastManualAddAmount = 0
+        }
+        .onChange(of: solarManager.currentTrackingDate) { _, _ in
+            if counterState == .running {
+                pauseTimer()
+                counterState = .idle
+            }
+            sessionCount = 0
+            lastManualAddAmount = 0
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showResetToast = true
+            }
+            #if os(iOS) && !SKIP
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            #endif
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showResetToast = false
+                }
+            }
         }
         .sheet(isPresented: $showInfoSheet) {
             TranslationSheet(
@@ -932,76 +934,6 @@ struct DhikrDetailView: View {
         #if os(iOS) && !SKIP
         UIApplication.shared.isIdleTimerDisabled = false
         #endif
-    }
-    
-    // MARK: - Maghrib Countdown
-    
-    private func startCountdownChecker() {
-        checkMaghribCountdown()
-        countdownTimer?.invalidate()
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            DispatchQueue.main.async {
-                self.checkMaghribCountdown()
-            }
-        }
-        withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-            isCountdownPulsing = true
-        }
-    }
-    
-    private func stopCountdownChecker() {
-        countdownTimer?.invalidate()
-        countdownTimer = nil
-    }
-    
-    private func checkMaghribCountdown() {
-        let now = Date()
-        guard let maghrib = solarManager.getMaghribDate(for: now) else {
-            if maghribCountdownSeconds != nil {
-                maghribCountdownSeconds = nil
-            }
-            return
-        }
-        let diff = maghrib.timeIntervalSince(now)
-        if diff > 0 && diff <= 60.0 {
-            let sec = Int(ceil(diff))
-            if maghribCountdownSeconds != sec {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    maghribCountdownSeconds = sec
-                }
-            }
-        } else if diff <= 0 && diff > -4.0 {
-            if maghribCountdownSeconds != nil {
-                withAnimation(.easeOut(duration: 0.3)) {
-                    maghribCountdownSeconds = nil
-                }
-                // Maghrib ist eingetreten: Sanfter Tageswechsel für Zähler
-                solarManager.updateTrackingDate()
-                if counterState == .running {
-                    pauseTimer()
-                    counterState = .idle
-                }
-                sessionCount = 0
-                lastManualAddAmount = 0
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    showResetToast = true
-                }
-                #if os(iOS) && !SKIP
-                UINotificationFeedbackGenerator().notificationOccurred(.warning)
-                #endif
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        showResetToast = false
-                    }
-                }
-            }
-        } else {
-            if maghribCountdownSeconds != nil {
-                withAnimation(.easeOut(duration: 0.3)) {
-                    maghribCountdownSeconds = nil
-                }
-            }
-        }
     }
     
     private func handleMinusButtonTap() {
