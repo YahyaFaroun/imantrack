@@ -61,6 +61,7 @@ struct QuranView: View {
     static let zoomMagnificationThreshold: CGFloat = 0.04   // ~4% Spreizungsänderung für eine Stufe
     static let minFontSize: CGFloat = 22.0                  // Minimale Schriftgröße
     static let maxFontSize: CGFloat = 42.0                  // Maximale Schriftgröße
+    static let topReadingMargin: CGFloat = 18.0             // Abstand zur oberen Leiste, damit die oberste Zeile nicht abgeschnitten wird
 
     @State private var isZooming: Bool = false
     @State private var isZoomLayoutPending: Bool = false
@@ -290,10 +291,10 @@ struct QuranView: View {
             return
         }
         
-        // Oberkante des sichtbaren Bereichs relativ zur Oberkante von frontierPage:
+        // Oberkante des sichtbaren Bereichs relativ zur Lese-Oberkante von frontierVerse:
         // pageMinY ist der Abstand der Seitenoberkante von der sichtbaren Oberkante (im Scroll-Koordinatenraum)
         let sichtbareOberkanteInSeite = -pageMinY
-        let delta = sichtbareOberkanteInSeite - frontierTop
+        let delta = sichtbareOberkanteInSeite - (frontierTop - QuranView.topReadingMargin)
         
         let bookmark = QuranBookmark(
             verseIndex: frontierIndex,
@@ -380,13 +381,13 @@ struct QuranView: View {
             print("[QURAN_RESUME] Erster Vers auf S.\(frontierPage) (Vers #\(frontierIndex) \(frontierVerse.surah):\(frontierVerse.ayah)): Starte am Seitenanfang (targetOffset=\(String(format: "%.1f", targetOffset))pt, topInset=\(String(format: "%.1f", topInset))pt, gespeichertes delta=\(String(format: "%.1f", bmDelta))pt ignoriert, Sperre bei \(String(format: "%.1f", targetOffset))pt).")
         } else if let bm = progressStore.bookmark, bm.verseIndex == frontierIndex {
             let scaleFactor: CGFloat = (bm.fontSize > 0) ? (viewModel.fontSize / bm.fontSize) : 1.0
-            let candidate = frontierTop + (bm.delta * scaleFactor)
-            let lowerBound = max(0, frontierTop - fontLineHeight)
-            let upperBound = max(lowerBound, frontierBottom)
+            let candidate = (frontierTop - QuranView.topReadingMargin) + (bm.delta * scaleFactor)
+            let lowerBound = max(0, frontierTop - QuranView.topReadingMargin - fontLineHeight)
+            let upperBound = max(lowerBound, frontierBottom - QuranView.topReadingMargin)
             targetOffset = min(max(candidate, lowerBound), upperBound)
             branch = "delta"
         } else {
-            targetOffset = frontierTop
+            targetOffset = max(0, frontierTop - QuranView.topReadingMargin)
             branch = "Fallback"
         }
         
@@ -488,10 +489,11 @@ struct QuranView: View {
             progressStore.advance(toIndex: maxIdx + 1, modelContext: modelContext, date: solarManager.currentTrackingDate)
             
             let currentOffset = uiScrollView?.contentOffset.y ?? 0
-            if currentOffset > self.minAllowedOffsetY {
+            let targetMinOffset = max(self.minAllowedOffsetY, currentOffset - QuranView.topReadingMargin)
+            if targetMinOffset > self.minAllowedOffsetY {
                 let (minYState, minYt0) = QuranPerf.shared.begin("4_update_minAllowedOffsetY")
-                self.minAllowedOffsetY = currentOffset
-                QuranPerf.shared.end("4_update_minAllowedOffsetY", state: minYState, t0: minYt0, extra: "\(String(format: "%.1f", currentOffset))pt")
+                self.minAllowedOffsetY = targetMinOffset
+                QuranPerf.shared.end("4_update_minAllowedOffsetY", state: minYState, t0: minYt0, extra: "\(String(format: "%.1f", targetMinOffset))pt")
             }
             
             if maxIdx + 1 >= 6236 {
@@ -1001,7 +1003,8 @@ struct QuranPageView: View {
                         #endif
                     }
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 6)
+                    .padding(.top, (segment.verses.first?.ayah != 1) ? QuranView.topReadingMargin : 6)
+                    .padding(.bottom, 6)
                     .environment(\.layoutDirection, .rightToLeft)
                 }
             }
@@ -1368,6 +1371,7 @@ struct JustifiedText: UIViewRepresentable {
         textView.backgroundColor = Theme.getQuranUIBackgroundColor(for: theme, systemColorScheme: colorScheme)
         textView.textContainer.lineFragmentPadding = 0
         textView.textContainerInset = .zero
+        textView.clipsToBounds = false
         return textView
     }
     
