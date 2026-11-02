@@ -257,6 +257,15 @@ class QuranProgressStore: ObservableObject {
         NotificationCenter.default.post(name: Notification.Name("ResetQuranStartPage"), object: nil)
     }
     
+    /// Khatm-Zähler manuell anpassen (z. B. auf 0 zurücksetzen)
+    func setKhatmCountManually(_ count: Int) {
+        let safeCount = max(0, count)
+        UserDefaults.standard.set(safeCount, forKey: "quranKhatmCount")
+        self.khatmCount = safeCount
+        UserDefaults.standard.synchronize()
+        print("[QURAN_STATE] setKhatmCountManually: neuer KhatmCount = \(safeCount)")
+    }
+    
     /// Manuelles Festlegen der Lesestelle (ohne die Tagesstatistiken zu berühren!)
     func setReadFrontierManually(toIndex: Int) {
         let clamped = max(0, min(toIndex, 6236))

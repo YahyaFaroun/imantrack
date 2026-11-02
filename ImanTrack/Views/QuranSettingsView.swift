@@ -47,12 +47,17 @@ struct QuranSettingsView: View {
                     .foregroundColor(Theme.islamicGreen)
                 }
                 
-                HStack {
-                    Text(L10n.tr("quran_completed_khatmat", language))
-                    Spacer()
-                    Text("\(progressStore.khatmCount)")
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.islamicGreen)
+                Stepper(value: Binding(
+                    get: { progressStore.khatmCount },
+                    set: { progressStore.setKhatmCountManually($0) }
+                ), in: 0...100, step: 1) {
+                    HStack {
+                        Text(L10n.tr("quran_completed_khatmat", language))
+                        Spacer()
+                        Text("\(progressStore.khatmCount)")
+                            .fontWeight(.bold)
+                            .foregroundColor(Theme.islamicGreen)
+                    }
                 }
             }
 

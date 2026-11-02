@@ -495,7 +495,7 @@ struct QuranView: View {
             }
             
             if maxIdx + 1 >= 6236 {
-                triggerKhatmCompletion()
+                showKhatmConfirmAlert = true
             }
         }
     }
