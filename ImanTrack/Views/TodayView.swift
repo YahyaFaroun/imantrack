@@ -177,14 +177,14 @@ struct TodayView: View {
                         let isRTL = ["ar", "ur", "fa"].contains(lang.lowercased())
                         let nameText = Text(next.type.localizedName(lang: lang))
                             .fontWeight(.semibold)
-                            .foregroundColor(.white)
+                            .foregroundColor(.secondary)
                         let inText = Text(L10n.tr("prayer_countdown_in", lang))
                             .fontWeight(.regular)
                             .foregroundColor(.secondary)
                         let countdownText = Text(countdownString(to: next.date, from: now))
                             .fontWeight(.bold)
                             .monospacedDigit()
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.islamicGreen)
                         
                         Text("\(nameText) \(inText) \(countdownText)")
                             .font(.system(size: 40, design: .rounded))
@@ -222,11 +222,11 @@ struct TodayView: View {
                         Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
                             .font(.headline)
                             .fontWeight(.semibold)
-                            .foregroundColor(.white)
+                            .foregroundColor(.secondary)
                         
                         Text(formattedDate(for: lang))
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(Theme.islamicGreen)
                     }
                 }
             }
@@ -249,11 +249,11 @@ struct TodayView: View {
                     Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
                         .font(.headline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.secondary)
                     
                     Text(formattedDate(for: lang))
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(Theme.islamicGreen)
                 }
             }
         }
