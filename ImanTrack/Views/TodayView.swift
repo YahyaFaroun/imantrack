@@ -170,32 +170,30 @@ struct TodayView: View {
                 let nextPrayer = resolveNextPrayer(at: now)
                 let todayPrayers = getTodayPrayerItems(for: now)
                 
-                VStack(spacing: 8) {
+                VStack(spacing: 0) {
                     // Block 1: Countdown-Zeile „Fajr in 02:17:46“
+                    // Eine einzige Text-Zeile, damit alle drei Teile einheitlich skaliert werden
                     if let next = nextPrayer {
                         let isRTL = ["ar", "ur", "fa"].contains(lang.lowercased())
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text(next.type.localizedName(lang: lang))
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(Theme.islamicGreen)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                            
-                            Text(L10n.tr("prayer_countdown_in", lang))
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                                .lineLimit(1)
-                            
-                            Text(countdownString(to: next.date, from: now))
-                                .font(.system(size: 24, weight: .bold))
-                                .monospacedDigit()
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                                .environment(\.layoutDirection, .leftToRight)
-                        }
-                        .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
-                        .frame(maxWidth: .infinity)
+                        let nameText = Text(next.type.localizedName(lang: lang))
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                        let inText = Text(L10n.tr("prayer_countdown_in", lang))
+                            .fontWeight(.regular)
+                            .foregroundColor(.secondary)
+                        let countdownText = Text(countdownString(to: next.date, from: now))
+                            .fontWeight(.bold)
+                            .monospacedDigit()
+                            .foregroundColor(.white)
+                        
+                        Text("\(nameText) \(inText) \(countdownText)")
+                            .font(.system(size: 40, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .multilineTextAlignment(.center)
+                            .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
+                            .frame(maxWidth: .infinity)
+                            .padding(.bottom, 16)
                     }
                     
                     // Block 2: Kompakte Zeile mit allen 6 Gebetszeiten
@@ -217,13 +215,14 @@ struct TodayView: View {
                         }
                     }
                     .padding(.horizontal, 4)
+                    .padding(.bottom, 20)
                     
-                    // Block 3: Datumszeilen (unverändert)
+                    // Block 3: Datumszeilen
                     VStack(spacing: 4) {
                         Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
                             .font(.headline)
                             .fontWeight(.semibold)
-                            .foregroundColor(Theme.islamicGreen)
+                            .foregroundColor(.white)
                         
                         Text(formattedDate(for: lang))
                             .font(.subheadline)
@@ -245,12 +244,12 @@ struct TodayView: View {
                 }
                 .buttonStyle(.plain)
                 
-                // Datumszeilen (unverändert)
+                // Datumszeilen
                 VStack(spacing: 4) {
                     Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
                         .font(.headline)
                         .fontWeight(.semibold)
-                        .foregroundColor(Theme.islamicGreen)
+                        .foregroundColor(.white)
                     
                     Text(formattedDate(for: lang))
                         .font(.subheadline)
