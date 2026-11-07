@@ -189,9 +189,6 @@ struct QuranView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Theme.getQuranBackgroundColor(for: quranTheme, systemColorScheme: colorScheme), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                quranToolbarContent
-            }
             #endif
             .alert(L10n.tr("khatm_confirm_title", settings.language), isPresented: $showKhatmConfirmAlert) {
                 Button(L10n.tr("khatm_confirm_action", settings.language), role: .destructive) {
@@ -808,33 +805,6 @@ struct QuranView: View {
         progressStore.resetKhatm(modelContext: modelContext)
     }
     
-    #if os(iOS)
-    @ToolbarContentBuilder
-    private var quranToolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            if progressStore.khatmCount > 0 {
-                khatmBadgeView
-            }
-        }
-    }
-    
-    private var khatmBadgeView: some View {
-        let label = "\(progressStore.khatmCount) " + L10n.tr("quran_completed_khatmat", settings.language)
-        return HStack(spacing: 4) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 13))
-                .foregroundColor(Theme.islamicGreen)
-            Text("\(progressStore.khatmCount)")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(Theme.islamicGreen)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Theme.islamicGreen.opacity(0.12))
-        .cornerRadius(12)
-        .accessibilityLabel(label)
-    }
-    #endif
 
     private func completeKhatm() {
         if progressStore.readFrontier < 6236 {
