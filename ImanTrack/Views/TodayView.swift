@@ -170,46 +170,35 @@ struct TodayView: View {
                 let nextPrayer = resolveNextPrayer(at: now)
                 let todayPrayers = getTodayPrayerItems(for: now)
                 
-                VStack(spacing: 12) {
-                    // Block 1: Nächstes Gebet
+                VStack(spacing: 8) {
+                    // Block 1: Countdown-Zeile „Fajr in 02:17:46“
                     if let next = nextPrayer {
-                        VStack(spacing: 2) {
-                            Text(L10n.tr("next_prayer", lang))
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            
+                        let isRTL = ["ar", "ur", "fa"].contains(lang.lowercased())
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text(next.type.localizedName(lang: lang))
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.primary)
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(Theme.islamicGreen)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
                             
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Text(countdownString(to: next.date, from: now))
-                                    .font(.title3)
-                                    .fontWeight(.bold)
-                                    .monospacedDigit()
-                                    .foregroundColor(.primary)
-                                
-                                Text(String(format: L10n.tr("prayer_at_time", lang), Self.prayerTimeFormatter.string(from: next.date)))
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
+                            Text(L10n.tr("prayer_countdown_in", lang))
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                                .lineLimit(1)
+                            
+                            Text(countdownString(to: next.date, from: now))
+                                .font(.system(size: 24, weight: .bold))
+                                .monospacedDigit()
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .environment(\.layoutDirection, .leftToRight)
                         }
+                        .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
+                        .frame(maxWidth: .infinity)
                     }
                     
-                    // Block 2: Datumszeilen (unverändert)
-                    VStack(spacing: 4) {
-                        Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(Theme.islamicGreen)
-                        
-                        Text(formattedDate(for: lang))
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    }
-                    
-                    // Block 3: Kompakte Zeile mit allen 6 Gebetszeiten
+                    // Block 2: Kompakte Zeile mit allen 6 Gebetszeiten
                     HStack(spacing: 0) {
                         ForEach(todayPrayers) { prayer in
                             let isNext = (nextPrayer?.type == prayer.type)
@@ -228,11 +217,22 @@ struct TodayView: View {
                         }
                     }
                     .padding(.horizontal, 4)
+                    
+                    // Block 3: Datumszeilen (unverändert)
+                    VStack(spacing: 4) {
+                        Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(Theme.islamicGreen)
+                        
+                        Text(formattedDate(for: lang))
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
                 }
-                .padding(.top, 4)
             }
         } else {
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 // Hinweis ohne Standortfreigabe
                 Button(action: {
                     solarManager.requestAuthorization()
@@ -257,7 +257,6 @@ struct TodayView: View {
                         .foregroundColor(.gray)
                 }
             }
-            .padding(.top, 4)
         }
     }
     

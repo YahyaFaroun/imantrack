@@ -1880,6 +1880,19 @@
     "ru": "Следующая молитва",
     "bn": "পরবর্তী নামাজ"
   },
+  "prayer_countdown_in": {
+    "de": "in",
+    "en": "in",
+    "ar": "بعد",
+    "tr": "kalan",
+    "id": "dalam",
+    "ms": "dalam",
+    "fr": "dans",
+    "es": "en",
+    "ur": "میں",
+    "ru": "через",
+    "bn": "বাকি"
+  },
   "prayer_at_time": {
     "de": "um %@",
     "en": "at %@",
