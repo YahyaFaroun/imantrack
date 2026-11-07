@@ -219,14 +219,14 @@ struct TodayView: View {
                     
                     // Block 3: Datumszeilen
                     VStack(spacing: 4) {
-                        Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
+                        Text(formattedDate(for: lang))
                             .font(.headline)
                             .fontWeight(.semibold)
-                            .foregroundColor(.secondary)
-                        
-                        Text(formattedDate(for: lang))
-                            .font(.subheadline)
                             .foregroundColor(Theme.islamicGreen)
+                        
+                        Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                     }
                 }
             }
@@ -246,14 +246,14 @@ struct TodayView: View {
                 
                 // Datumszeilen
                 VStack(spacing: 4) {
-                    Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
+                    Text(formattedDate(for: lang))
                         .font(.headline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.secondary)
-                    
-                    Text(formattedDate(for: lang))
-                        .font(.subheadline)
                         .foregroundColor(Theme.islamicGreen)
+                    
+                    Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
             }
         }
