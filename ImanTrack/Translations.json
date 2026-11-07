@@ -1867,6 +1867,123 @@
     "bn": "প্লেব্যাক গতি",
     "fa": "سرعت پخش"
   },
+  "next_prayer": {
+    "de": "Nächstes Gebet",
+    "en": "Next prayer",
+    "ar": "الصلاة القادمة",
+    "tr": "Sonraki Namaz",
+    "id": "Shalat Berikutnya",
+    "ms": "Solat Seterusnya",
+    "fr": "Prochaine prière",
+    "es": "Próxima oración",
+    "ur": "اگلی نماز",
+    "ru": "Следующая молитва",
+    "bn": "পরবর্তী নামাজ"
+  },
+  "prayer_at_time": {
+    "de": "um %@",
+    "en": "at %@",
+    "ar": "الساعة %@",
+    "tr": "saat %@",
+    "id": "pukul %@",
+    "ms": "pada %@",
+    "fr": "à %@",
+    "es": "a las %@",
+    "ur": "%@ پر",
+    "ru": "в %@",
+    "bn": "%@ এ"
+  },
+  "enable_location_prayer_times": {
+    "de": "Standort aktivieren, um Gebetszeiten zu sehen",
+    "en": "Enable location to see prayer times",
+    "ar": "فعّل الموقع لعرض أوقات الصلاة",
+    "tr": "Namaz vakitlerini görmek için konumu etkinleştirin",
+    "id": "Aktifkan lokasi untuk melihat waktu shalat",
+    "ms": "Dayakan lokasi untuk melihat waktu solat",
+    "fr": "Activez la localisation pour voir les heures de prière",
+    "es": "Activa la ubicación para ver los horarios de oración",
+    "ur": "نماز کے اوقات دیکھنے کے لیے مقام فعال کریں",
+    "ru": "Включите геолокацию, чтобы видеть время молитв",
+    "bn": "নামাজের সময় দেখতে লোকেশন সক্ষম করুন"
+  },
+  "prayer_short_fajr": {
+    "de": "Fajr",
+    "en": "Fajr",
+    "ar": "الفجر",
+    "tr": "Fecr",
+    "id": "Subuh",
+    "ms": "Subuh",
+    "fr": "Fajr",
+    "es": "Fajr",
+    "ur": "فجر",
+    "ru": "Фаджр",
+    "bn": "ফজর"
+  },
+  "prayer_short_sunrise": {
+    "de": "Sonne",
+    "en": "Sunrise",
+    "ar": "الشروق",
+    "tr": "Güneş",
+    "id": "Terbit",
+    "ms": "Syuruk",
+    "fr": "Lever",
+    "es": "Amanecer",
+    "ur": "طلوع آفتاب",
+    "ru": "Восход",
+    "bn": "সূর্যোদয়"
+  },
+  "prayer_short_dhuhr": {
+    "de": "Dhuhr",
+    "en": "Dhuhr",
+    "ar": "الظهر",
+    "tr": "Öğle",
+    "id": "Dzuhur",
+    "ms": "Zohor",
+    "fr": "Dhuhr",
+    "es": "Dhuhr",
+    "ur": "ظہر",
+    "ru": "Зухр",
+    "bn": "জোহর"
+  },
+  "prayer_short_asr": {
+    "de": "Asr",
+    "en": "Asr",
+    "ar": "العصر",
+    "tr": "İkindi",
+    "id": "Ashar",
+    "ms": "Asar",
+    "fr": "Asr",
+    "es": "Asr",
+    "ur": "عصر",
+    "ru": "Аср",
+    "bn": "আসর"
+  },
+  "prayer_short_maghrib": {
+    "de": "Maghrib",
+    "en": "Maghrib",
+    "ar": "المغرب",
+    "tr": "Akşam",
+    "id": "Maghrib",
+    "ms": "Maghrib",
+    "fr": "Maghrib",
+    "es": "Maghrib",
+    "ur": "مغرب",
+    "ru": "Магриб",
+    "bn": "মাগরিব"
+  },
+  "prayer_short_isha": {
+    "de": "Isha",
+    "en": "Isha",
+    "ar": "العشاء",
+    "tr": "Yatsı",
+    "id": "Isya",
+    "ms": "Isyak",
+    "fr": "Isha",
+    "es": "Isha",
+    "ur": "عشاء",
+    "ru": "Иша",
+    "bn": "এশা"
+  },
   "prayer_asr": {
     "de": "Asr (Nachmittag)",
     "en": "Asr (Afternoon)",
@@ -4069,8 +4186,8 @@
     "bn": "ক্বারীর কণ্ঠে শুনুন"
   },
   "adhkar_voice_mode_desc": {
-    "de": "Liest Adhkar mit der Stimme von Sheikh Saad Al-Ghamdi vor und hakt sie nach Beendigung automatisch ab.",
-    "en": "Plays recitation audio by Sheikh Saad Al-Ghamdi and automatically checks off each Dhikr when finished.",
+    "de": "Liest Adhkar mit der ausgewählten Stimme vor und hakt sie nach Beendigung automatisch ab.",
+    "en": "Plays recitation audio with the selected voice and automatically checks off each Dhikr when finished.",
     "ar": "يقرأ الأذكار بصوت الشيخ سعد الغامدي ويحددها تلقائياً عند الانتهاء.",
     "tr": "Zikirleri Şeyh Saad Al-Ghamdi'nin sesiyle okur ve bittiğinde otomatik olarak işaretler.",
     "id": "Memutar audio dzikir oleh Syaikh Saad Al-Ghamdi dan mencentangnya otomatis saat selesai.",
@@ -4093,6 +4210,32 @@
     "ur": "قاری",
     "ru": "Чтец",
     "bn": "ক্বারী"
+  },
+  "reader_iapetus": {
+    "de": "Iapetus (Standard)",
+    "en": "Iapetus (Default)",
+    "ar": "إيابيتوس (الافتراضي)",
+    "tr": "Iapetus (Varsayılan)",
+    "id": "Iapetus (Standar)",
+    "ms": "Iapetus (Lalai)",
+    "fr": "Iapetus (Par défaut)",
+    "es": "Iapetus (Por defecto)",
+    "ur": "ایپیٹس (پہلے سے طے شدہ)",
+    "ru": "Иапет (По умолчанию)",
+    "bn": "ইয়াপেটাস (ডিফল্ট)"
+  },
+  "reader_iapetus_desc": {
+    "de": "Ruhige & klare Lesung",
+    "en": "Calm & clear recitation",
+    "ar": "قراءة هادئة وواضحة",
+    "tr": "Sakin ve net okuma",
+    "id": "Bacaan tenang & jelas",
+    "ms": "Bacaan tenang & jelas",
+    "fr": "Récitation calme et claire",
+    "es": "Recitación tranquila y clara",
+    "ur": "پرسکون اور واضح تلاوت",
+    "ru": "Спокойное и четкое чтение",
+    "bn": "শান্ত ও স্পষ্ট তেলাওয়াত"
   },
   "reader_al_duraihim": {
     "de": "Hamad Al-Duraihim",
@@ -4418,5 +4561,47 @@
     "ur": "روکیں",
     "ru": "Стоп",
     "bn": "বন্ধ"
+  },
+  "maghrib_5min_warning_title": {
+    "de": "Neuer islamischer Tag in 5 Minuten",
+    "en": "New Islamic day in 5 minutes",
+    "ar": "اليوم الإسلامي الجديد خلال 5 دقائق",
+    "tr": "5 dakika içinde yeni İslami gün",
+    "fr": "Nouveau jour islamique dans 5 minutes"
+  },
+  "maghrib_5min_warning_sub": {
+    "de": "Maghrib steht bevor",
+    "en": "Maghrib is approaching",
+    "ar": "المغرب يقترب",
+    "tr": "Akşam yaklaşıyor",
+    "fr": "Le Maghreb approche"
+  },
+  "maghrib_5min_warning_desc": {
+    "de": "Mit Maghrib beginnt der neue islamische Tag. Alle täglichen Tracks (Dhikr, Adhkar, Koran) werden zurückgestellt.",
+    "en": "With Maghrib, the new Islamic day begins. All daily tracks (Dhikr, Adhkar, Quran) will be reset.",
+    "ar": "مع صلاة المغرب يبدأ اليوم الإسلامي الجديد، وسيتم إعادة تعيين جميع مسارات المتابعة اليومية.",
+    "tr": "Akşam namazı ile yeni İslami gün başlar. Tüm günlük takipler sıfırlanacaktır.",
+    "fr": "Avec le Maghreb commence le nouveau jour islamique. Tous les suivis quotidiens seront réinitialisés."
+  },
+  "maghrib_countdown_title": {
+    "de": "Neuer islamischer Tag",
+    "en": "New Islamic Day",
+    "ar": "اليوم الإسلامي الجديد",
+    "tr": "Yeni İslami Gün",
+    "fr": "Nouveau jour islamique"
+  },
+  "maghrib_countdown_sub": {
+    "de": "Tages-Tracks werden bei Maghrib zurückgestellt",
+    "en": "Daily tracks will be reset at Maghrib",
+    "ar": "ستتم إعادة تعيين المسارات عند المغرب",
+    "tr": "Akşam vakti günlük takipler sıfırlanacak",
+    "fr": "Les suivis seront réinitialisés au Maghreb"
+  },
+  "maghrib_day_reset_complete": {
+    "de": "Neuer islamischer Tag hat begonnen! ✨ Deine Tracks wurden zurückgestellt.",
+    "en": "New Islamic day has begun! ✨ Your tracks have been reset.",
+    "ar": "بدأ اليوم الإسلامي الجديد! ✨ تم إعادة تعيين المسارات اليومية.",
+    "tr": "Yeni İslami gün başladı! ✨ Günlük takipleriniz sıfırlandı.",
+    "fr": "Le nouveau jour islamique a commencé ! ✨ Vos suivis ont été réinitialisés."
   }
 }

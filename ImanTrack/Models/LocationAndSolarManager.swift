@@ -1,6 +1,7 @@
 import Foundation
 import CoreLocation
 import Combine
+import SwiftUI
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -24,6 +25,15 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
     @Published var currentTrackingDate: Date
     @Published var hasLocationPermission: Bool
     @Published var isNightTime: Bool = false
+    
+    // MARK: - Maghrib Countdown & 5-Minuten-Warnung
+    @Published var maghribCountdownSeconds: Int? = nil // 60 ... 1
+    @Published var showFiveMinuteWarning: Bool = false
+    @Published var showDayResetToast: Bool = false
+    @Published var isTestSimulationActive: Bool = false
+    @Published var isSimulatedDayActive: Bool = false
+    private var simulatedMaghribTargetDate: Date? = nil
+    private var hasShownFiveMinuteWarningToday: Bool = false
     
     private var checkTimer: Timer?
     private var cancellables = Set<AnyCancellable>()
@@ -123,14 +133,172 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
     }
     
     private func startTimer() {
-        // Alle 5 Sekunden überprüfen, um sofort reagieren zu können
-        checkTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            if let self = self {
-                Task { @MainActor in
-                    self.updateTrackingDate()
+        checkTimer?.invalidate()
+        // Sekündliche Prüfung für präzisen 60-Sekunden-Countdown und 5-Minuten-Warnung
+        checkTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.checkMaghribCountdownAndTransitions()
+            }
+        }
+    }
+    
+    func checkMaghribCountdownAndTransitions() {
+        let now = Date()
+        
+        let maghrib: Date
+        if isTestSimulationActive, let simDate = simulatedMaghribTargetDate {
+            maghrib = simDate
+        } else {
+            self.updateTrackingDate()
+            guard let realMaghrib = getMaghribDate(for: now) else {
+                if maghribCountdownSeconds != nil { maghribCountdownSeconds = nil }
+                if showFiveMinuteWarning { showFiveMinuteWarning = false }
+                return
+            }
+            maghrib = realMaghrib
+        }
+        
+        let diff = maghrib.timeIntervalSince(now)
+        
+        // 1. 5-Minuten-Warnung Pop-up (zwischen 300s und 60s vor Maghrib)
+        if diff > 60.0 && diff <= 300.0 {
+            if !hasShownFiveMinuteWarningToday && !isTestSimulationActive {
+                hasShownFiveMinuteWarningToday = true
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    self.showFiveMinuteWarning = true
+                }
+                #if os(iOS)
+                let gen = UINotificationFeedbackGenerator()
+                gen.notificationOccurred(.warning)
+                #endif
+                
+                // Automatisches sanftes Ausblenden nach 7 Sekunden ("was dann vergeht als Warnung")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 7.0) { [weak self] in
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        self?.showFiveMinuteWarning = false
+                    }
+                }
+            }
+        } else if diff > 300.0 {
+            hasShownFiveMinuteWarningToday = false
+            if showFiveMinuteWarning && !isTestSimulationActive {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showFiveMinuteWarning = false
                 }
             }
         }
+        
+        // 2. 1-Minute-Countdown (zwischen 60.0s und 0.0s vor Maghrib)
+        if diff > 0.0 && diff <= 60.0 {
+            if showFiveMinuteWarning {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showFiveMinuteWarning = false
+                }
+            }
+            let sec = Int(ceil(diff))
+            if maghribCountdownSeconds != sec {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    self.maghribCountdownSeconds = sec
+                }
+            }
+        } else if diff <= 0.0 && diff > -3.5 {
+            if maghribCountdownSeconds != nil || isTestSimulationActive {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    self.maghribCountdownSeconds = nil
+                }
+                
+                let wasSimulation = isTestSimulationActive
+                if wasSimulation {
+                    self.isTestSimulationActive = false
+                    self.simulatedMaghribTargetDate = nil
+                    self.isSimulatedDayActive = true
+                    // Im Testmodus: Datum sofort auf nächsten Tag setzen, damit der Zähler-Reset optisch & technisch live sichtbar ist
+                    let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: self.currentTrackingDate) ?? Date()
+                    self.currentTrackingDate = Calendar.current.startOfDay(for: nextDay)
+                } else {
+                    self.updateTrackingDate()
+                }
+                
+                hasShownFiveMinuteWarningToday = false
+                NotificationCenter.default.post(name: Notification.Name("MaghribDayResetTriggered"), object: nil)
+                
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    self.showDayResetToast = true
+                }
+                #if os(iOS)
+                let gen = UINotificationFeedbackGenerator()
+                gen.notificationOccurred(.success)
+                #endif
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) { [weak self] in
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        self?.showDayResetToast = false
+                    }
+                }
+            }
+        } else {
+            if maghribCountdownSeconds != nil && !isTestSimulationActive {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    self.maghribCountdownSeconds = nil
+                }
+            }
+        }
+    }
+    
+    func dismissFiveMinuteWarning() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            self.showFiveMinuteWarning = false
+        }
+    }
+    
+    // MARK: - Test & Simulation
+    func triggerTestFiveMinuteWarning() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            self.showFiveMinuteWarning = true
+        }
+        #if os(iOS)
+        let gen = UINotificationFeedbackGenerator()
+        gen.notificationOccurred(.warning)
+        #endif
+        
+        // Push-Benachrichtigung für 2 Sekunden später planen (damit man auch bei gesperrtem Handy testen kann)
+        let center = UNUserNotificationCenter.current()
+        let content = UNMutableNotificationContent()
+        content.title = "Neuer islamischer Tag in 5 Minuten"
+        content.body = "Mit Maghrib beginnt der neue islamische Tag. Alle täglichen Tracks (Dhikr, Adhkar, Koran) werden zurückgestellt."
+        content.sound = .default
+        if #available(iOS 15.0, *) {
+            content.interruptionLevel = .timeSensitive
+        }
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2.0, repeats: false)
+        let request = UNNotificationRequest(identifier: "TestMaghrib5Min_\(Date().timeIntervalSince1970)", content: content, trigger: trigger)
+        center.add(request)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7.0) { [weak self] in
+            withAnimation(.easeInOut(duration: 0.4)) {
+                self?.showFiveMinuteWarning = false
+            }
+        }
+    }
+    
+    func startTestCountdown(seconds: Int = 60) {
+        self.isTestSimulationActive = true
+        self.simulatedMaghribTargetDate = Date().addingTimeInterval(Double(seconds))
+        self.maghribCountdownSeconds = seconds
+        #if os(iOS)
+        let gen = UIImpactFeedbackGenerator(style: .medium)
+        gen.impactOccurred()
+        #endif
+    }
+    
+    func stopTestSimulation() {
+        self.isTestSimulationActive = false
+        self.isSimulatedDayActive = false
+        self.simulatedMaghribTargetDate = nil
+        self.maghribCountdownSeconds = nil
+        self.showFiveMinuteWarning = false
+        self.showDayResetToast = false
+        self.updateTrackingDate()
     }
     
     func updateTrackingDate() {
@@ -256,6 +424,15 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         return base.addingTimeInterval(Double(offset) * 60.0)
     }
     
+    // Berechnet die Sonnenaufgangszeit (Sunrise) für ein Datum
+    nonisolated func getSunriseDate(for date: Date) -> Date? {
+        let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
+        let cachedLon = UserDefaults.standard.double(forKey: "last_longitude")
+        let lat = (cachedLat != 0.0) ? cachedLat : 51.2217
+        let lon = (cachedLon != 0.0) ? cachedLon : 6.7762
+        return LocationAndSolarManager.calculateSunriseDateStatic(for: date, latitude: lat, longitude: lon)
+    }
+    
     // Berechnet die Dhuhr-Zeit (Solar Noon) für ein Datum
     nonisolated func getDhuhrDate(for date: Date) -> Date? {
         let cachedLat = UserDefaults.standard.double(forKey: "last_latitude")
@@ -330,6 +507,7 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
         let loc = location ?? CLLocation(latitude: 51.2217, longitude: 6.7762) // Standard Düsseldorf Fallback
         let lat = loc.coordinate.latitude
         let lon = loc.coordinate.longitude
+        let offset = getPrayerOffset(for: "maghrib")
         
         guard let sunsetDate = calculateSunsetDateStatic(for: date, latitude: lat, longitude: lon) else {
             var components = calendar.dateComponents([.year, .month, .day], from: date)
@@ -337,14 +515,16 @@ class LocationAndSolarManager: NSObject, ObservableObject, @preconcurrency CLLoc
             components.minute = 30
             components.second = 0
             let fallbackSunset = calendar.date(from: components) ?? date
-            if date >= fallbackSunset {
+            let effectiveSunset = fallbackSunset.addingTimeInterval(Double(offset) * 60.0)
+            if date >= effectiveSunset {
                 return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: date))!
             } else {
                 return calendar.startOfDay(for: date)
             }
         }
         
-        if date >= sunsetDate {
+        let effectiveSunset = sunsetDate.addingTimeInterval(Double(offset) * 60.0)
+        if date >= effectiveSunset {
             return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: date))!
         } else {
             return calendar.startOfDay(for: date)

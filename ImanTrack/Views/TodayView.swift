@@ -5,6 +5,39 @@ func progressColor(percentage: Double) -> Color {
     return percentage >= 1.0 ? Theme.islamicGreen : .gray
 }
 
+enum TodayPrayerType: String, CaseIterable, Identifiable {
+    case fajr
+    case sunrise
+    case dhuhr
+    case asr
+    case maghrib
+    case isha
+    
+    var id: String { rawValue }
+    
+    func localizedName(lang: String) -> String {
+        switch self {
+        case .fajr: return L10n.tr("prayer_short_fajr", lang)
+        case .sunrise: return L10n.tr("prayer_short_sunrise", lang)
+        case .dhuhr: return L10n.tr("prayer_short_dhuhr", lang)
+        case .asr: return L10n.tr("prayer_short_asr", lang)
+        case .maghrib: return L10n.tr("prayer_short_maghrib", lang)
+        case .isha: return L10n.tr("prayer_short_isha", lang)
+        }
+    }
+}
+
+struct TodayPrayerItem: Identifiable {
+    let type: TodayPrayerType
+    let date: Date?
+    var id: String { type.rawValue }
+}
+
+struct NextPrayerData {
+    let type: TodayPrayerType
+    let date: Date
+}
+
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var allSettings: [UserSettings]
@@ -70,6 +103,164 @@ struct TodayView: View {
         return solarManager.formattedDisplayDate(for: solarManager.currentTrackingDate, language: lang)
     }
     
+    private static let prayerTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }()
+    
+    private var canCalculatePrayerTimes: Bool {
+        solarManager.hasLocationPermission && (solarManager.lastLocation != nil || UserDefaults.standard.double(forKey: "last_latitude") != 0.0)
+    }
+    
+    private func resolveNextPrayer(at now: Date) -> NextPrayerData? {
+        let todayFajr = solarManager.getFajrDate(for: now)
+        let todayDhuhr = solarManager.getDhuhrDate(for: now)
+        let todayAsr = solarManager.getAsrDate(for: now)
+        let todayMaghrib = solarManager.getMaghribDate(for: now)
+        let todayIsha = solarManager.getIshaDate(for: now)
+        
+        let prayerQueue: [(TodayPrayerType, Date?)] = [
+            (.fajr, todayFajr),
+            (.dhuhr, todayDhuhr),
+            (.asr, todayAsr),
+            (.maghrib, todayMaghrib),
+            (.isha, todayIsha)
+        ]
+        
+        for (type, date) in prayerQueue {
+            if let date = date, date > now {
+                return NextPrayerData(type: type, date: date)
+            }
+        }
+        
+        // Nach Isha ist das nächste Gebet das Fajr des folgenden Kalendertags. Berechne dafür die Fajr-Zeit von morgen.
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: now) ?? now.addingTimeInterval(86400)
+        if let tomorrowFajr = solarManager.getFajrDate(for: tomorrow) {
+            return NextPrayerData(type: .fajr, date: tomorrowFajr)
+        }
+        
+        return nil
+    }
+    
+    private func getTodayPrayerItems(for date: Date) -> [TodayPrayerItem] {
+        return [
+            TodayPrayerItem(type: .fajr, date: solarManager.getFajrDate(for: date)),
+            TodayPrayerItem(type: .sunrise, date: solarManager.getSunriseDate(for: date)),
+            TodayPrayerItem(type: .dhuhr, date: solarManager.getDhuhrDate(for: date)),
+            TodayPrayerItem(type: .asr, date: solarManager.getAsrDate(for: date)),
+            TodayPrayerItem(type: .maghrib, date: solarManager.getMaghribDate(for: date)),
+            TodayPrayerItem(type: .isha, date: solarManager.getIshaDate(for: date))
+        ]
+    }
+    
+    private func countdownString(to targetDate: Date, from now: Date) -> String {
+        let diff = max(0, Int(targetDate.timeIntervalSince(now)))
+        let hours = diff / 3600
+        let minutes = (diff % 3600) / 60
+        let seconds = diff % 60
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+    
+    @ViewBuilder
+    private func headerView(lang: String) -> some View {
+        if canCalculatePrayerTimes {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let now = context.date
+                let nextPrayer = resolveNextPrayer(at: now)
+                let todayPrayers = getTodayPrayerItems(for: now)
+                
+                VStack(spacing: 12) {
+                    // Block 1: Nächstes Gebet
+                    if let next = nextPrayer {
+                        VStack(spacing: 2) {
+                            Text(L10n.tr("next_prayer", lang))
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            
+                            Text(next.type.localizedName(lang: lang))
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                            
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text(countdownString(to: next.date, from: now))
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                    .monospacedDigit()
+                                    .foregroundColor(.primary)
+                                
+                                Text(String(format: L10n.tr("prayer_at_time", lang), Self.prayerTimeFormatter.string(from: next.date)))
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    
+                    // Block 2: Datumszeilen (unverändert)
+                    VStack(spacing: 4) {
+                        Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(Theme.islamicGreen)
+                        
+                        Text(formattedDate(for: lang))
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    // Block 3: Kompakte Zeile mit allen 6 Gebetszeiten
+                    HStack(spacing: 0) {
+                        ForEach(todayPrayers) { prayer in
+                            let isNext = (nextPrayer?.type == prayer.type)
+                            VStack(spacing: 3) {
+                                Text(prayer.type.localizedName(lang: lang))
+                                    .font(.system(size: 11, weight: isNext ? .bold : .regular))
+                                    .foregroundColor(isNext ? Theme.islamicGreen : .gray)
+                                    .lineLimit(1)
+                                
+                                Text(prayer.date != nil ? Self.prayerTimeFormatter.string(from: prayer.date!) : "--:--")
+                                    .font(.system(size: 13, weight: isNext ? .bold : .medium))
+                                    .foregroundColor(isNext ? Theme.islamicGreen : .primary)
+                                    .monospacedDigit()
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .padding(.top, 4)
+            }
+        } else {
+            VStack(spacing: 12) {
+                // Hinweis ohne Standortfreigabe
+                Button(action: {
+                    solarManager.requestAuthorization()
+                }) {
+                    Text(L10n.tr("enable_location_prayer_times", lang))
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+                
+                // Datumszeilen (unverändert)
+                VStack(spacing: 4) {
+                    Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.islamicGreen)
+                    
+                    Text(formattedDate(for: lang))
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.top, 4)
+        }
+    }
+    
     var body: some View {
         let (tState, tT0) = QuranPerf.shared.begin("2c_TodayView_body")
         defer {
@@ -82,23 +273,22 @@ struct TodayView: View {
                 
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Header
-                        VStack(spacing: 6) {
-                            Text("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ")
-                                .font(Theme.uthmaniFontForced(size: 28))
-                                .foregroundColor(.primary)
-                                .multilineTextAlignment(.center)
-                                .padding(.top, 20)
-                            
-                            Text(formattedHijriDateTransliterated(for: solarManager.currentTrackingDate, lang: lang))
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(Theme.islamicGreen)
-                            
-                            Text(formattedDate(for: lang))
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
+                        // 5-Minuten-Warnung Pop-up
+                        if solarManager.showFiveMinuteWarning {
+                            MaghribFiveMinuteWarningBanner(language: lang) {
+                                solarManager.dismissFiveMinuteWarning()
+                            }
+                            .transition(.move(edge: .top).combined(with: .opacity))
                         }
+                        
+                        // 1-Minute Countdown Regler & Banner
+                        if let sec = solarManager.maghribCountdownSeconds {
+                            MaghribCountdownBanner(seconds: sec, language: lang)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                        
+                        // Header
+                        headerView(lang: lang)
                         
                         // Prominente Fajr-Check-Karte (nur Anzeige, Klick führt zum Adhkar-Tab)
                         Button(action: {
@@ -226,6 +416,15 @@ struct TodayView: View {
                         }
                     }
                     .padding()
+                }
+                
+                if solarManager.showDayResetToast {
+                    VStack {
+                        Spacer()
+                        MaghribDayResetToast(language: lang)
+                            .padding(.bottom, 25)
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
