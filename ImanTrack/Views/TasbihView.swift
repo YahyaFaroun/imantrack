@@ -90,7 +90,7 @@ struct TasbihView: View {
                         
                         if settings.laIlahaIllallahEnabled {
                             DhikrMainCard(
-                                titleAr: "لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير",
+                                titleAr: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
                                 titleDe: L10n.tr("tasbih_lailahaillallah", settings.language),
                                 transliteration: "La ilaha illallah wahdahu la sharika lah, lahul mulk wa lahul hamd wa huwa 'ala kulli shayin qadeer.",
                                 count: todayRecord.laIlahaIllallahCount,

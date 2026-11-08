@@ -869,23 +869,10 @@ struct DhikrDetailView: View {
             lastManualAddAmount = 0
         }
         .onChange(of: solarManager.currentTrackingDate) { _, _ in
-            if counterState == .running {
-                pauseTimer()
-                counterState = .idle
-            }
-            sessionCount = 0
-            lastManualAddAmount = 0
-            withAnimation(.easeInOut(duration: 0.3)) {
-                showResetToast = true
-            }
-            #if os(iOS) && !SKIP
-            UINotificationFeedbackGenerator().notificationOccurred(.warning)
-            #endif
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    showResetToast = false
-                }
-            }
+            handleMaghribReset()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MaghribDayResetTriggered"))) { _ in
+            handleMaghribReset()
         }
         .sheet(isPresented: $showInfoSheet) {
             TranslationSheet(
@@ -893,6 +880,26 @@ struct DhikrDetailView: View {
                 title: localizedTitle,
                 translation: currentTranslation
             )
+        }
+    }
+    
+    private func handleMaghribReset() {
+        if counterState == .running {
+            pauseTimer()
+            counterState = .idle
+        }
+        sessionCount = 0
+        lastManualAddAmount = 0
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showResetToast = true
+        }
+        #if os(iOS) && !SKIP
+        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        #endif
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showResetToast = false
+            }
         }
     }
     

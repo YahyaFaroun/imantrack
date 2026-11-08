@@ -1,0 +1,7 @@
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_0_tight.wav'
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/silence_120ms.wav'
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_1_tight.wav'
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/silence_120ms.wav'
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_2_tight.wav'
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/silence_120ms.wav'
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_3_tight.wav'

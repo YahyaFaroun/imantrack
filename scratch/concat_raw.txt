@@ -1,0 +1,4 @@
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_0.wav'
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_1.wav'
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_2.wav'
+file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_3.wav'

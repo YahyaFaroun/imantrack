@@ -54,7 +54,9 @@ struct AdhkarSessionView: View {
                 list[i].customSpeedStep = defaultSpeed
             }
             
-            list[i].audioFileName = "\(type.idStr)_\(i + 1)"
+            if list[i].audioFileName == nil || list[i].audioFileName?.isEmpty == true {
+                list[i].audioFileName = "\(type.idStr)_\(i + 1)"
+            }
         }
         
         let loadedOrder = AdhkarSessionView.loadCustomOrderStatic(type: type, list: list)

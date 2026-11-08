@@ -7,6 +7,7 @@ struct ContentView: View {
     @Query var settings: [UserSettings]
     @State var selectedTab = 2 // 2 is Heute (0-indexed)
     @StateObject private var quranViewModel = QuranViewModel()
+    @StateObject private var solarManager = LocationAndSolarManager.shared
 
     #if os(iOS) && !SKIP
     init() {
@@ -48,38 +49,61 @@ struct ContentView: View {
         
         let isRTL = ["ar", "ur", "fa", "ps", "ku", "he"].contains(language)
         
-        TabView(selection: tabSelectionBinding) {
-            TasbihView()
-                .tabItem {
-                    Label(L10n.tr("tab_tasbih", language), systemImage: "circle.hexagongrid.fill")
-                }
-                .tag(0)
+        ZStack(alignment: .top) {
+            TabView(selection: tabSelectionBinding) {
+                TasbihView()
+                    .tabItem {
+                        Label(L10n.tr("tab_tasbih", language), systemImage: "circle.hexagongrid.fill")
+                    }
+                    .tag(0)
+                
+                AdhkarOverviewView(selectedTab: $selectedTab)
+                    .tabItem {
+                        Label(L10n.tr("tab_adhkar", language), systemImage: "book.closed.fill")
+                    }
+                    .tag(1)
+                
+                TodayView(selectedTab: $selectedTab)
+                    .tabItem {
+                        Label(L10n.tr("tab_today", language), systemImage: "house.fill")
+                    }
+                    .tag(2)
+                
+                QuranView(viewModel: quranViewModel, selectedTab: $selectedTab)
+                    .tabItem {
+                        Label(L10n.tr("tab_quran", language), systemImage: "book.fill")
+                    }
+                    .tag(3)
+                
+                StatsView(selectedTab: $selectedTab)
+                    .tabItem {
+                        Label(L10n.tr("tab_stats", language), systemImage: "chart.bar.fill")
+                    }
+                    .tag(4)
+            }
+            .tint(Theme.islamicGreen)
             
-            AdhkarOverviewView(selectedTab: $selectedTab)
-                .tabItem {
-                    Label(L10n.tr("tab_adhkar", language), systemImage: "book.closed.fill")
+            // App-weites 5-Minuten-Warnungs Pop-up (für alle Tabs außer Heute, da Heute es inline hat)
+            if solarManager.showFiveMinuteWarning && selectedTab != 2 {
+                MaghribFiveMinuteWarningBanner(language: language) {
+                    solarManager.dismissFiveMinuteWarning()
                 }
-                .tag(1)
+                .padding(.top, 45)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(100)
+            }
             
-            TodayView(selectedTab: $selectedTab)
-                .tabItem {
-                    Label(L10n.tr("tab_today", language), systemImage: "house.fill")
+            // App-weiter Tages-Reset Toast (für alle Tabs außer Heute)
+            if solarManager.showDayResetToast && selectedTab != 2 {
+                VStack {
+                    Spacer()
+                    MaghribDayResetToast(language: language)
+                        .padding(.bottom, 65)
                 }
-                .tag(2)
-            
-            QuranView(viewModel: quranViewModel, selectedTab: $selectedTab)
-                .tabItem {
-                    Label(L10n.tr("tab_quran", language), systemImage: "book.fill")
-                }
-                .tag(3)
-            
-            StatsView(selectedTab: $selectedTab)
-                .tabItem {
-                    Label(L10n.tr("tab_stats", language), systemImage: "chart.bar.fill")
-                }
-                .tag(4)
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                .zIndex(101)
+            }
         }
-        .tint(Theme.islamicGreen)
         .preferredColorScheme(isDark ? .dark : .light)
         .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
         .onAppear {

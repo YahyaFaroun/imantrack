@@ -208,6 +208,23 @@ final class PrayerNotificationManager: NSObject, ObservableObject {
                         )
                     }
                 }
+                
+                // 3. 5-Minuten-Warnung für Maghrib (Neuer islamischer Tag & Tages-Reset)
+                if prayer == .maghrib {
+                    let fiveMinReminderDate = validPrayerDate.addingTimeInterval(-5 * 60)
+                    if fiveMinReminderDate > now {
+                        let title = L10n.tr("maghrib_5min_warning_title", lang)
+                        let body = L10n.tr("maghrib_5min_warning_desc", lang)
+                        
+                        scheduleNotification(
+                            identifier: "MaghribDayReset_5Min_\(dayOffset)",
+                            title: title,
+                            body: body,
+                            date: fiveMinReminderDate,
+                            sound: .default
+                        )
+                    }
+                }
             }
         }
     }
@@ -241,6 +258,7 @@ final class PrayerNotificationManager: NSObject, ObservableObject {
         let center = UNUserNotificationCenter.current()
         var identifiers: [String] = []
         for day in 0..<7 {
+            identifiers.append("MaghribDayReset_5Min_\(day)")
             for prayer in PrayerType.allCases {
                 identifiers.append("PrayerAdhan_\(prayer.rawValue)_\(day)")
                 identifiers.append("PrayerReminder10Min_\(prayer.rawValue)_\(day)")

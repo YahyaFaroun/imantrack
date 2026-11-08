@@ -10,6 +10,8 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
     static let shared = AdhkarAudioPlayer()
     
     @Published var isPlaying: Bool = false
+    @Published var isPlayingPreview: Bool = false
+    @Published var previewingReciter: String? = nil
     @Published var activeItemId: UUID? = nil
     @Published var currentRepetition: Int = 0
     @Published var targetRepetitions: Int = 1
@@ -18,6 +20,7 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
     @Published var duration: TimeInterval = 0.0
     
     private var player: AVAudioPlayer?
+    private var previewPlayer: AVAudioPlayer?
     private var progressTimer: Timer?
     private var onRepetitionCompleted: ((Int) -> Void)?
     private var onFinished: (() -> Void)?
@@ -46,6 +49,7 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         onRepetitionCompleted: @escaping (Int) -> Void,
         onFinished: @escaping () -> Void
     ) {
+        stopPreview()
         guard let fileName = item.audioFileName, !fileName.isEmpty else {
             stop()
             return
@@ -61,16 +65,57 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         playCurrentFile()
     }
     
+    private static let equivalentAudioMap: [String: String] = [
+        "evening_1": "quran_ayat_kursi",
+        "evening_2": "quran_ikhlas",
+        "evening_3": "quran_falaq",
+        "evening_4": "quran_nas",
+        "evening_7": "morning_7",
+        "evening_10": "morning_10",
+        "evening_11": "morning_11",
+        "evening_12": "morning_12",
+        "evening_13": "morning_13",
+        "evening_14": "morning_14",
+        "evening_15": "morning_15",
+        "evening_16": "morning_16",
+        "evening_19": "morning_19",
+        "evening_20": "morning_20",
+        "evening_21": "morning_23",
+        "evening_22": "morning_24",
+        "evening_23": "morning_25",
+        "sleep_2": "quran_ayat_kursi",
+        "sleep_3": "quran_baqarah_last2",
+        "quran_baqarah_last2": "sleep_3",
+        "sleep_12": "quran_mulk",
+        "quran_mulk": "sleep_12"
+    ]
+    
     private func playCurrentFile() {
         guard let fileName = currentFileName else { return }
         
-        let ghamdiResource = "ghamdi_\(fileName)"
-        let duraihimResource = "duraihim_\(fileName)"
+        let effectiveFile = fileName
+        let equivalent = Self.equivalentAudioMap[effectiveFile] ?? Self.equivalentAudioMap[fileName]
+        let reciter = UserDefaults.standard.string(forKey: "adhkarReciter") ?? "iapetus"
+        let isDuraihim = (reciter == "duraihim")
         
-        guard let url = Bundle.main.url(forResource: ghamdiResource, withExtension: "m4a")
-            ?? Bundle.main.url(forResource: duraihimResource, withExtension: "m4a")
-            ?? Bundle.main.url(forResource: fileName, withExtension: "m4a") else {
-            print("Audio file not found for: \(fileName)")
+        let url: URL?
+        if isDuraihim {
+            url = Bundle.main.url(forResource: "duraihim_\(effectiveFile)", withExtension: "m4a")
+                ?? (equivalent != nil ? Bundle.main.url(forResource: "duraihim_\(equivalent!)", withExtension: "m4a") : nil)
+                ?? Bundle.main.url(forResource: "duraihim_\(fileName)", withExtension: "m4a")
+                ?? Bundle.main.url(forResource: effectiveFile, withExtension: "m4a")
+                ?? (equivalent != nil ? Bundle.main.url(forResource: equivalent!, withExtension: "m4a") : nil)
+                ?? Bundle.main.url(forResource: fileName, withExtension: "m4a")
+        } else {
+            url = Bundle.main.url(forResource: effectiveFile, withExtension: "m4a")
+                ?? (equivalent != nil ? Bundle.main.url(forResource: equivalent!, withExtension: "m4a") : nil)
+                ?? Bundle.main.url(forResource: fileName, withExtension: "m4a")
+                ?? Bundle.main.url(forResource: "duraihim_\(effectiveFile)", withExtension: "m4a")
+                ?? (equivalent != nil ? Bundle.main.url(forResource: "duraihim_\(equivalent!)", withExtension: "m4a") : nil)
+        }
+        
+        guard let finalUrl = url else {
+            print("Audio file not found for: \(effectiveFile) (reciter: \(reciter))")
             stop()
             return
         }
@@ -79,7 +124,7 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
             #if os(iOS)
             try AVAudioSession.sharedInstance().setActive(true)
             #endif
-            player = try AVAudioPlayer(contentsOf: url)
+            player = try AVAudioPlayer(contentsOf: finalUrl)
             player?.delegate = self
             player?.prepareToPlay()
             player?.play()
@@ -132,9 +177,57 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         #endif
     }
     
+    // MARK: - Reciter Preview
+    func toggleReciterPreview(reciter: String) {
+        if isPlayingPreview && previewingReciter == reciter {
+            stopPreview()
+            return
+        }
+        playReciterPreview(reciter: reciter)
+    }
+    
+    func playReciterPreview(reciter: String) {
+        stop()
+        stopPreview()
+        
+        let sampleBase = (reciter == "duraihim") ? "duraihim_morning_14" : "morning_14"
+        guard let url = Bundle.main.url(forResource: sampleBase, withExtension: "m4a") else {
+            print("Preview audio not found for reciter: \(reciter)")
+            return
+        }
+        
+        do {
+            #if os(iOS)
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+            #endif
+            previewPlayer = try AVAudioPlayer(contentsOf: url)
+            previewPlayer?.delegate = self
+            previewPlayer?.prepareToPlay()
+            previewPlayer?.play()
+            isPlayingPreview = true
+            previewingReciter = reciter
+        } catch {
+            print("Failed to play reciter preview: \(error)")
+            stopPreview()
+        }
+    }
+    
+    func stopPreview() {
+        previewPlayer?.stop()
+        previewPlayer = nil
+        isPlayingPreview = false
+        previewingReciter = nil
+    }
+    
     // MARK: - AVAudioPlayerDelegate
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in
+            if player === self.previewPlayer {
+                self.stopPreview()
+                return
+            }
+            
             guard flag else {
                 self.stop()
                 return

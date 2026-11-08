@@ -50,7 +50,6 @@ struct SettingsView: View {
                                 .foregroundColor(Theme.islamicGreen)
                         }
                     }
-                    
                 }
                 
                 // Bereich 2: Allgemein (Direkt sichtbar)

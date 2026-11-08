@@ -78,6 +78,7 @@ final class UserSettings {
     
     // Adhkar Voice Mode
     var adhkarVoiceEnabled: Bool = false
+    var adhkarReciter: String = "iapetus"
     
     // Tasbih vibration
     var tasbihVibrationEnabled: Bool = true
@@ -186,6 +187,27 @@ enum IstighfarForm: String, CaseIterable, Codable {
         case .gewaltig: return 40
         case .yunus: return 40
         case .lang: return 40
+        }
+    }
+}
+
+enum AdhkarReciter: String, CaseIterable, Identifiable, Codable {
+    case iapetus = "iapetus"
+    case duraihim = "duraihim"
+    
+    var id: String { rawValue }
+    
+    func title(for lang: String) -> String {
+        switch self {
+        case .iapetus: return L10n.tr("reader_iapetus", lang)
+        case .duraihim: return L10n.tr("reader_al_duraihim", lang)
+        }
+    }
+    
+    func subtitle(for lang: String) -> String {
+        switch self {
+        case .iapetus: return L10n.tr("reader_iapetus_desc", lang)
+        case .duraihim: return L10n.tr("reader_al_duraihim_desc", lang)
         }
     }
 }

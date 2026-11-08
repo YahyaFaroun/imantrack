@@ -4,11 +4,14 @@ import SwiftData
 struct DhikrSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var settingsList: [UserSettings]
+    @ObservedObject private var audioPlayer = AdhkarAudioPlayer.shared
     
     @State private var adhkarAutoCount: Bool = true
     @State private var adhkarAutoAdvance: Bool = true
     @State private var defaultAdhkarSpeedStep: Int = 1
     @State private var adhkarVoiceEnabled: Bool = false
+    @State private var adhkarReciter: String = "iapetus"
+    @State private var hasLoadedInitialSettings: Bool = false
     
     @State private var isMorningAdhkarReminderEnabled: Bool = true
     @State private var isEveningAdhkarReminderEnabled: Bool = true
@@ -113,21 +116,45 @@ struct DhikrSettingsView: View {
                     }
                 }
                 .padding(.vertical, 4)
-                .onChange(of: adhkarVoiceEnabled) { _, _ in saveSettings() }
+                .onChange(of: adhkarVoiceEnabled) { _, newValue in
+                    if !newValue {
+                        audioPlayer.stopPreview()
+                    }
+                    saveSettings()
+                }
                 
                 if adhkarVoiceEnabled {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L10n.tr("adhkar_voice_reciter", language))
-                                .font(.body)
-                            Text(L10n.tr("reader_al_ghamdi_desc", language))
-                                .font(.caption2)
-                                .foregroundColor(.gray)
+                    Picker(L10n.tr("adhkar_voice_reciter", language), selection: $adhkarReciter) {
+                        ForEach(AdhkarReciter.allCases) { reciter in
+                            Text(reciter.title(for: language)).tag(reciter.rawValue)
                         }
-                        Spacer()
-                        Text(L10n.tr("reader_al_ghamdi", language))
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: adhkarReciter) { _, newValue in
+                        saveSettings()
+                        if hasLoadedInitialSettings {
+                            audioPlayer.playReciterPreview(reciter: newValue)
+                        }
+                    }
+                    
+                    HStack {
+                        Text(L10n.tr("preview", language))
                             .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Button {
+                            audioPlayer.toggleReciterPreview(reciter: adhkarReciter)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: audioPlayer.isPlayingPreview ? "stop.circle.fill" : "play.circle.fill")
+                                    .font(.title3)
+                                Text(audioPlayer.isPlayingPreview ? L10n.tr("stop", language) : L10n.tr("play", language))
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                            }
                             .foregroundColor(Theme.islamicGreen)
+                        }
+                        .buttonStyle(.borderless)
                     }
                     .padding(.vertical, 2)
                 }
@@ -155,14 +182,22 @@ struct DhikrSettingsView: View {
                 adhkarAutoAdvance = s.adhkarAutoAdvance
                 defaultAdhkarSpeedStep = s.defaultAdhkarSpeedStep
                 adhkarVoiceEnabled = s.adhkarVoiceEnabled
+                adhkarReciter = s.adhkarReciter
             } else {
                 defaultAdhkarSpeedStep = UserDefaults.standard.integer(forKey: "defaultAdhkarSpeedStep")
                 adhkarVoiceEnabled = UserDefaults.standard.bool(forKey: "adhkarVoiceEnabled")
+                adhkarReciter = UserDefaults.standard.string(forKey: "adhkarReciter") ?? "iapetus"
             }
             isMorningAdhkarReminderEnabled = UserDefaults.standard.object(forKey: "isMorningAdhkarReminderEnabled") != nil ? UserDefaults.standard.bool(forKey: "isMorningAdhkarReminderEnabled") : true
             isEveningAdhkarReminderEnabled = UserDefaults.standard.object(forKey: "isEveningAdhkarReminderEnabled") != nil ? UserDefaults.standard.bool(forKey: "isEveningAdhkarReminderEnabled") : true
             isSleepAdhkarReminderEnabled = UserDefaults.standard.object(forKey: "isSleepAdhkarReminderEnabled") != nil ? UserDefaults.standard.bool(forKey: "isSleepAdhkarReminderEnabled") : true
             isKahfReminderEnabled = UserDefaults.standard.object(forKey: "isKahfReminderEnabled") != nil ? UserDefaults.standard.bool(forKey: "isKahfReminderEnabled") : true
+            DispatchQueue.main.async {
+                hasLoadedInitialSettings = true
+            }
+        }
+        .onDisappear {
+            audioPlayer.stopPreview()
         }
     }
     
@@ -196,9 +231,11 @@ struct DhikrSettingsView: View {
         s.adhkarAutoAdvance = adhkarAutoAdvance
         s.defaultAdhkarSpeedStep = defaultAdhkarSpeedStep
         s.adhkarVoiceEnabled = adhkarVoiceEnabled
+        s.adhkarReciter = adhkarReciter
         
         UserDefaults.standard.set(defaultAdhkarSpeedStep, forKey: "defaultAdhkarSpeedStep")
         UserDefaults.standard.set(adhkarVoiceEnabled, forKey: "adhkarVoiceEnabled")
+        UserDefaults.standard.set(adhkarReciter, forKey: "adhkarReciter")
         UserDefaults.standard.set(isMorningAdhkarReminderEnabled, forKey: "isMorningAdhkarReminderEnabled")
         UserDefaults.standard.set(isEveningAdhkarReminderEnabled, forKey: "isEveningAdhkarReminderEnabled")
         UserDefaults.standard.set(isSleepAdhkarReminderEnabled, forKey: "isSleepAdhkarReminderEnabled")
