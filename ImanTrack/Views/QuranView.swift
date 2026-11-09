@@ -166,13 +166,6 @@ struct QuranView: View {
                         }
                         #endif
                         .opacity(hasRestoredInitialPosition ? 1.0 : 0.0)
-                        
-                        if let sec = solarManager.maghribCountdownSeconds {
-                            MaghribCountdownBanner(seconds: sec, language: settings.language)
-                                .padding(.top, 8)
-                                .transition(.move(edge: .top).combined(with: .opacity))
-                                .zIndex(90)
-                        }
                     }
                     .simultaneousGesture(
                         MagnificationGesture()

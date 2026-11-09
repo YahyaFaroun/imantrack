@@ -279,12 +279,6 @@ struct TodayView: View {
                             .transition(.move(edge: .top).combined(with: .opacity))
                         }
                         
-                        // 1-Minute Countdown Regler & Banner
-                        if let sec = solarManager.maghribCountdownSeconds {
-                            MaghribCountdownBanner(seconds: sec, language: lang)
-                                .transition(.move(edge: .top).combined(with: .opacity))
-                        }
-                        
                         // Header
                         headerView(lang: lang)
                         

@@ -93,6 +93,14 @@ struct ContentView: View {
                 .zIndex(100)
             }
             
+            // App-weiter Maghrib 60-Sekunden-Countdown Banner (auf allen Tabs oben einheitlich sichtbar)
+            if let sec = solarManager.maghribCountdownSeconds {
+                MaghribCountdownBanner(seconds: sec, language: language)
+                    .padding(.top, 45)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(100)
+            }
+            
             // App-weiter Tages-Reset Toast (für alle Tabs außer Heute)
             if solarManager.showDayResetToast && selectedTab != 2 {
                 VStack {

@@ -227,16 +227,12 @@ Beim App-Start (`ImanTrackApp`) und bei jedem Wechsel des App-Zustands (`AppStat
   * Der Quran-Screen **muss im Speicher gemountet bleiben** (`lazy: false` / kein Unmount bei Tab-Wechsel!). Beim Wechsel von Tab 0/1/2/4 zurück zu Tab 3 muss die Scrollposition pixelgenau und völlig starr an der verlassenen Stelle stehen bleiben.
   * Nur wenn der Nutzer sich **bereits auf Tab 3 befindet** und **erneut** auf das Tab-3-Icon tippt (`newTab === 3 && currentTab === 3`), wird das Event `QuranTabRetapped` gefeuert (scrollt sanft zur aktuellen Lesefront).
 * **Maghrib-Overlays & Countdown-Banner (App-weit & Screen-spezifisch):**
-  * **Global in `ContentView` (für Tabs `0, 1, 3, 4` – auf Tab `2` direkt im Layout integriert):**
-    * **Oben (`top: 45px`, `paddingHorizontal: 16`, `zIndex: 100`):** `MaghribFiveMinuteWarningBanner` (wenn `showFiveMinuteWarning == true`): Kompakte Karte mit orangem Rahmen (`rgba(255,149,0,0.4)`), `sunset.fill`-Icon (`#FF9500`), Titel `maghrib_5min_warning_title` (`14px bold`) und Untertitel `maghrib_5min_warning_desc` (`12px`). Verschwindet automatisch nach `7.0` Sekunden.
+  * **Global in `ContentView` (für alle Tabs `0, 1, 2, 3, 4`):**
+    * **Oben (`top: 45px`, `paddingHorizontal: 16`, `zIndex: 100`):** `MaghribFiveMinuteWarningBanner` (wenn `showFiveMinuteWarning == true`): Kompakte Karte mit orangem Rahmen (`rgba(255,149,0,0.4)`), `sunset.fill`-Icon (`#FF9500`), Titel `maghrib_5min_warning_title` (`14px bold`) und Untertitel `maghrib_5min_warning_desc` (`12px`). Verschwindet automatisch nach `7.0` Sekunden (auf Tab `2` inline integriert).
+    * **Oben (`top: 45px`, `paddingHorizontal: 16`, `zIndex: 100`):** `MaghribCountdownBanner` (wenn `maghribCountdownSeconds != nil`, d. h. `60..1` Sekunden vor Maghrib): Schwebt als globales App-weites Overlay zentriert über allen Tabs (bleibt bei Tab-Wechseln unterbrechungsfrei sichtbar). In Vollbild-Modals wie `AdhkarSessionView` (`type == .evening`) ebenfalls am oberen Rand integriert.
     * **Unten (`bottom: 65px`, über der Tab-Leiste, `zIndex: 101`):** `MaghribDayResetToast` (wenn `showDayResetToast == true`, für `4.5` Sekunden nach Maghrib): Kapsel-Toast (`#2E7D32`, weißer Text + `moon.stars.fill`) mit Text `new_islamic_day_started` (auf Tab 2 mit `paddingBottom: 25`).
-  * **60-Sekunden-Countdown (`MaghribCountdownBanner`, wenn `maghribCountdownSeconds != nil`, d. h. `60..1` Sekunden vor Maghrib):**
+  * **60-Sekunden-Countdown Details (`MaghribCountdownBanner`):**
     * Pulsierendes Banner mit Countdown `00:SS` (`monospacedDigit`, `18px bold`, `#FF9500`) und animiertem Fortschrittsbalken (`seconds / 60`).
-    * Wird direkt in den aktiven Screens eingeblendet:
-      1. `TodayView`: Oben im `VStack(spacing: 24)`.
-      2. `DhikrDetailView`: Ganz oben im `VStack(spacing: 0)` (Antippen zeigt für `3.0s` den Info-Toast `tasbih_maghrib_reset_info`).
-      3. `QuranView`: Im `ZStack(alignment: .top)` über der `ScrollView` mit `paddingTop: 8` und `zIndex: 90`.
-      4. `AdhkarSessionView`: Ganz oben im `VStack(spacing: 20)`, sofern `type == .evening` geöffnet ist.
 
 ---
 
@@ -494,7 +490,7 @@ Der Quran-Reader ist ein kontinuierlicher, vorwärtsgerichteter Mushaf-Lesefluss
 1. **Inline-Top-NavigationBar & Maghrib-Overlay (`ZStack(alignment: .top)`):**
    * **NavigationBar (`.inline`, Hintergrund sichtbar und passend zu `quranTheme`):** Zeigt zentriert `viewModel.navTitle` (aktueller Surenname + Seitenangabe; Fallback `tab_quran`), **ohne** Khatm-Zähler-Badge in der Toolbar.
    * **Oberer Leseabstand (`topReadingMargin = 18.0pt`):** Sorgt dafür, dass die oberste ungelesene Verszeile mit angenehmem Abstand unterhalb der Navigationsleiste steht.
-   * **Maghrib-Countdown-Banner:** Ist `solarManager.maghribCountdownSeconds != nil`, schwebt das `MaghribCountdownBanner` im `ZStack(alignment: .top)` mit `paddingTop: 8` und `zIndex: 90` über dem oberen Rand der `ScrollView`.
+   * **Maghrib-Countdown-Banner:** Wird zentral als globales App-Overlay in `ContentView` (`zIndex: 100`) über allen Tabs dargestellt (kein lokales Duplikat im Reader nötig).
 2. **Unsichtbare obere Lesekante (`threshold = fontLineHeight` im Seiten-Koordinatensystem bzw. `~120pt` Bildschirmkante inklusive Header):**
    * Es wird keine störende Linie gezeichnet, aber exakt an dieser oberen Lesekante entscheidet sich Vers für Vers das Ausgrauen (siehe Kapitel 5.5).
 3. **Scrollbereich (`LazyVStack` über Seiten ab der Startseite des aktuellen `readFrontier` bis Seite `604`):**
@@ -592,10 +588,9 @@ Geöffnet über das Zahnrad-Icon oben rechts in `TodayView` (`NavigationStack` i
 * **Automatisch weiterblättern:** Toggle `adhkarAutoAdvance` (Default `true`).
 * **Standard-Geschwindigkeit:** 3-Stufen-Picker (`defaultAdhkarSpeedStep`: `0` = Langsam, `1` = Normal [Default], `2` = Schnell).
 * **Stimme / Rezitator für den Sprachmodus (`adhkarReciter`):**
-  * Auswahl zwischen **3 Rezitatoren**, jeweils mit Beschreibungstext und eigenem Play/Stop-Hörproben-Button (`morning_14.m4a` bzw. mit Sprecher-Präfix):
+  * Auswahl zwischen **2 Rezitatoren**, jeweils mit Beschreibungstext und eigenem Play/Stop-Hörproben-Button (`morning_14.m4a` bzw. mit Sprecher-Präfix):
     1. `"iapetus"` — **Abdullah (Standard)** (`reader_iapetus`, Beschreibung `reader_iapetus_desc` *„Ruhige & klare Lesung“*, Hörprobe `morning_14.m4a`, Default)
     2. `"duraihim"` — **Hamad Al-Duraihim** (`reader_al_duraihim`, Beschreibung `reader_al_duraihim_desc` *„Hisn al-Muslim (Klar & Deutlich)“*, Hörprobe `duraihim_morning_14.m4a`)
-    3. `"ghamdi"` — **Sheikh Saad Al-Ghamdi** (`reader_al_ghamdi`, Beschreibung `reader_al_ghamdi_desc` *„Sanft & Melodisch“*, Hörprobe `ghamdi_morning_14.m4a`)
 * **Adhkar-Erinnerungen (Push-Benachrichtigungen):**
   * 4 Toggles mit individuellen Zeit-Offsets:
     1. **Morgen-Adhkar Erinnerung** (`isMorningAdhkarReminderEnabled`) – Offset nach Fajr (`morningAdhkarOffsetMinutes`, Default `+15` Min).
@@ -664,7 +659,7 @@ Es existiert immer genau **ein** Datensatz.
 | `adhkarAutoCount` | `Bool` | `false` | Automatischer Timer-Zählmodus in Adhkar aktiv |
 | `adhkarAutoAdvance` | `Bool` | `true` | Nach Abschluss eines Adhkar-Items automatisch zum nächsten springen |
 | `adhkarVoiceEnabled` | `Bool` | `false` | Globaler Default für Sprachmodus |
-| `adhkarReciter` | `String` | `"iapetus"` | Gewählter Adhkar-Rezitator (`"iapetus"` [Abdullah], `"duraihim"` oder `"ghamdi"`) |
+| `adhkarReciter` | `String` | `"iapetus"` | Gewählter Adhkar-Rezitator (`"iapetus"` [Abdullah] oder `"duraihim"`) |
 | `defaultAdhkarSpeedStep` | `Int` | `1` | Globale Standard-Geschwindigkeit für Adhkar (`0`=Langsam, `1`=Normal, `2`=Schnell) |
 | `tasbihAutoCount` | `Bool` | `true` | Freihand-Auto-Counter im Tasbih aktiv |
 | `tasbihVibrationEnabled` | `Bool` | `true` | Haptisches Feedback bei jedem Tasbih-Zählschritt |
@@ -790,7 +785,7 @@ interface Verse {
 | `adhkar_<30alnum>_mandatory` | `Bool` | `true` | Pflicht/Optional-Status pro Adhkar-Karte (`30` alphanumerische Zeichen aus `item.german`) |
 | `adhkar_<30alnum>_speed` | `Int` | `defaultAdhkarSpeedStep` | Individuelle Tempo-Stufe (`0`, `1`, `2`) pro Adhkar-Karte |
 | `adhkar_custom_order_<type>` | `[String]` | `[]` | Nutzerdefinierte Sortierreihenfolge für `sleep`, `morning`, `evening` |
-| `adhkarReciter` | `String` | `"iapetus"` | `"iapetus"` (Abdullah), `"duraihim"` oder `"ghamdi"` |
+| `adhkarReciter` | `String` | `"iapetus"` | `"iapetus"` (Abdullah) oder `"duraihim"` |
 | `defaultAdhkarSpeedStep` | `Int` | `1` | Standard-Adhkar-Tempo (`0..2`) |
 | `prayer_offset_fajr` | `Int` | `0` | Manuelle Minutenkorrektur Fajr (`-60..+60`) |
 | `prayer_offset_sunrise` | `Int` | `0` | Manuelle Minutenkorrektur Shuruq (`-60..+60`) |
@@ -1005,9 +1000,9 @@ const orderKey = `${item.count}_${(germanClean + transClean).slice(0, 40)}`;
 #### 5.4.4 Voice-Mode (Sprachmodus) & Audio-Äquivalenz-Auflösung
 * `AVAudioSession` / Expo Audio läuft im Modus `spokenAudio` mit `duckOthers` und aktiviertem `KeepAwake`.
 * Hat ein `AdhkarItem` in den Stammdaten `audioFileName == nil`, weist `AdhkarSessionView` beim Initialisieren automatisch `"${typeId}_${index + 1}"` zu (1-basiert nach Originalreihenfolge, z. B. `"morning_5"`, `"evening_5"`, `"sleep_4"`).
-* **Auflösungs-Reihenfolge der `.m4a`-Datei für die 3 Rezitatoren (`"iapetus"` [Abdullah], `"duraihim"`, `"ghamdi"`):**
-  * Sei `effectiveFile = equivalentAudioMap[fileName] ?? fileName` und `prefix = (adhkarReciter === "duraihim") ? "duraihim_" : (adhkarReciter === "ghamdi" ? "ghamdi_" : "")`.
-  * **1. Wenn `prefix !== ""` (`"duraihim"` oder `"ghamdi"`):**
+* **Auflösungs-Reihenfolge der `.m4a`-Datei für die 2 Rezitatoren (`"iapetus"` [Abdullah], `"duraihim"`):**
+  * Sei `effectiveFile = equivalentAudioMap[fileName] ?? fileName` und `prefix = (adhkarReciter === "duraihim") ? "duraihim_" : ""`.
+  * **1. Wenn `prefix !== ""` (`"duraihim"`):**
     Prüfe nacheinander:
     1. `${prefix}${effectiveFile}.m4a`
     2. `${prefix}${equivalent}.m4a` (falls `equivalentAudioMap[fileName]` existiert)
@@ -1331,7 +1326,7 @@ Die folgende Referenztabelle fasst sämtliche vom Nutzer konfigurierbaren Einste
 | **Adhkar** | Individuelles Tempo pro Karte | `AsyncStorage.adhkar_<id>_speed` | `Int` (`0`, `1`, `2`) | erbt `1` |
 | **Adhkar** | Pflicht / Optional pro Karte | `AsyncStorage.adhkar_<id>_mandatory` | `Boolean` | `true` |
 | **Adhkar** | Eigene Reihenfolge pro Session | `AsyncStorage.adhkar_custom_order_*` | `string[]` | Originalreihenfolge |
-| **Adhkar** | Stimme / Rezitator | `UserSettings.adhkarReciter` | `"iapetus"` \| `"duraihim"` \| `"ghamdi"` | `"iapetus"` (Abdullah) |
+| **Adhkar** | Stimme / Rezitator | `UserSettings.adhkarReciter` | `"iapetus"` \| `"duraihim"` | `"iapetus"` (Abdullah) |
 | **Adhkar** | Morgen-Adhkar Erinnerung | `isMorningAdhkarReminderEnabled` + Offset | `Bool` + `Int` Minuten nach Fajr | `false`, `+15` Min |
 | **Adhkar** | Abend-Adhkar Erinnerung | `isEveningAdhkarReminderEnabled` + Offset | `Bool` + `Int` Minuten nach Asr | `false`, `+15` Min |
 | **Adhkar** | Schlaf-Adhkar Erinnerung | `isSleepAdhkarReminderEnabled` + Uhrzeit | `Bool` + `HH:mm` | `false`, `22:00` |
@@ -1385,7 +1380,7 @@ Die folgende Referenztabelle fasst sämtliche vom Nutzer konfigurierbaren Einste
 ---
 
 ### 7.3 Aufbau von `Translations.json` & Alle unterstützten Sprachen
-* **Dateipfad:** `ImanTrack/Translations.json` (`381` Lokalisierungsschlüssel, inkl. `reader_iapetus` = `"Abdullah (Standard)"` / `"Abdullah (Default)"` / `"عبد الله (الافتراضي)"`, `reader_al_duraihim`, `reader_al_ghamdi` & `reader_al_ghamdi_desc`).
+* **Dateipfad:** `ImanTrack/Translations.json` (`380` Lokalisierungsschlüssel, inkl. `reader_iapetus` = `"Abdullah (Standard)"` / `"Abdullah (Default)"` / `"عبد الله (الافتراضي)"` & `reader_al_duraihim`).
 * **JSON-Struktur:** Ein flaches Dictionary der Form `Record<TranslationKey, Record<LangCode, string>>`:
   ```json
   {
@@ -1430,12 +1425,11 @@ Die folgende Referenztabelle fasst sämtliche vom Nutzer konfigurierbaren Einste
 #### `FAQ.json` (`ImanTrack/FAQ.json`)
 * Enthält für alle **11 Hauptsprachen** (`de`, `en`, `ar`, `tr`, `fr`, `es`, `id`, `ms`, `ur`, `ru`, `bn`) jeweils `navTitle`, `bannerTitle`, `bannerDesc` sowie `7` thematische Sektionen mit Fragen & Antworten (`iconColor`-Werte: `"islamicGreen"`, `"orange"`, `"purple"`, `"blue"`, `"indigo"`).
 
-#### Audio-Dateien (`153` `.m4a`-Dateien + `7` `.caf`-Dateien)
-1. **Adhkar-Rezitationen (`ImanTrack/Audio/Adhkar/` — `146` `.m4a`-Dateien):**
+#### Audio-Dateien (`104` `.m4a`-Dateien + `7` `.caf`-Dateien)
+1. **Adhkar-Rezitationen (`ImanTrack/Audio/Adhkar/` — `97` `.m4a`-Dateien):**
    * **Quran-Suren & Verse (`6` Dateien):** `quran_ayat_kursi.m4a`, `quran_ikhlas.m4a`, `quran_falaq.m4a`, `quran_nas.m4a`, `quran_baqarah_last2.m4a`, `quran_mulk.m4a`.
    * **Stimme 1 – Abdullah (Standard, `id: "iapetus"`, `51` Dateien):** `morning_5.m4a` .. `morning_25.m4a` (`21` Dateien), `evening_5.m4a` .. `evening_13.m4a`, `evening_15.m4a` .. `evening_23.m4a` (`18` Dateien), `sleep_1.m4a`, `sleep_3.m4a` .. `sleep_13.m4a` (`12` Dateien).
    * **Stimme 2 – Hamad Al-Duraihim (`id: "duraihim"`, `40` Dateien):** `duraihim_morning_5..16.m4a`, `duraihim_morning_18..25.m4a` (`20` Dateien; #17 fällt automatisch auf `morning_17.m4a` zurück), `duraihim_evening_5..11.m4a`, `duraihim_evening_18.m4a`, `duraihim_evening_21..23.m4a` (`11` Dateien), `duraihim_sleep_4..11.m4a`, `duraihim_sleep_13.m4a` (`9` Dateien).
-   * **Stimme 3 – Sheikh Saad Al-Ghamdi (`id: "ghamdi"`, `49` Dateien):** `ghamdi_morning_5.m4a` .. `ghamdi_morning_25.m4a` (`21` Dateien), `ghamdi_evening_5.m4a` .. `ghamdi_evening_23.m4a` (`19` Dateien), `ghamdi_sleep_4..11.m4a`, `ghamdi_sleep_13.m4a` (`9` Dateien).
 2. **Adhan- & Fajr-Klingeltöne (`ImanTrack/Adhan ringtones/` — je `7` `.caf`-Dateien für Push-Notifications `< 30s` und `7` `.m4a`-Dateien):**
    * `azan.caf` / `azan.m4a`
    * `azan (2).caf` / `azan (2).m4a`

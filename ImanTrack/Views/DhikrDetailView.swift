@@ -425,21 +425,6 @@ struct DhikrDetailView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 
-                // Maghrib 60-Sekunden-Countdown Regler & Banner
-                if let sec = solarManager.maghribCountdownSeconds {
-                    MaghribCountdownBanner(seconds: sec, language: lang) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showMaghribCountdownToast = true
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                showMaghribCountdownToast = false
-                            }
-                        }
-                    }
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
-                
                 // Page Indicator at the very top (feste Höhe für alle Tasbihs)
                 HStack(spacing: 8) {
                     if pageCount > 1 {
