@@ -1,10 +1,17 @@
 # Build & derived data
 build/
 build_temp/
+DerivedData/
 *.xcarchive
 *.xcuserstate
 xcuserdata/
 .DS_Store
+
+# Secrets, keys & environment files
+.env
+.env.*
+*.p8
+GoogleService-Info.plist
 
 # Temporary scratch files and test scripts
 scratch/
