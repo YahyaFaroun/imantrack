@@ -81,7 +81,7 @@ Beim App-Start (`ImanTrackApp`) und bei jedem Wechsel des App-Zustands (`AppStat
 | :--- | :--- | :--- | :--- |
 | **Primärtext (`primary`)** | `#000000` | `#FFFFFF` | Überschriften, Zählerstände, arabischer Haupttext |
 | **Sekundärtext (`secondary` / `gray`)** | `#8E8E93` | `#8E8E93` | Subtitles, Transliteration, inaktive Icons, Zeitstempel |
-| **Warnung / Aktiv-Fortschritt (`orange`)** | `#FF9500` | `#FF9F0A` | Fortschrittsringe `< 100 %`, Fajr „Nachgebetet“, Maghrib-Warnbanner, negativer Statistik-Trend, Abend-/Maghrib-Icons |
+| **Warnung / Aktiv-Fortschritt (`orange`)** | `#FF9500` | `#FF9F0A` | Fajr „Nachgebetet“, Maghrib-Warnbanner, negativer Statistik-Trend, Abend-/Maghrib-Icons |
 | **Destruktiv / Korrektur (`red`)** | `#FF3B30` | `#FF453A` | Tasbih Minus-Button, Prozent-Abzugsbuttons, Löschen-Aktionen |
 | **Highlight / Sunnah (`yellow`)** | `#FFCC00` | `#FFD60A` | Morgen-Sonne, Onboarding-Sparkles, Al-Kahf Stern |
 | **Nacht / Schlaf (`blue` / `indigo` / `purple`)** | `#007AFF` / `#5856D6` / `#AF52DE` | `#0A84FF` / `#5E5CE6` / `#BF5AF2` | Schlaf-Adhkar Mond-Icon, FAQ-Kategorie-Icons |
@@ -346,8 +346,8 @@ Scrollbarer Hauptscreen (`Theme.background`, `ScrollView` mit `VStack(spacing: 2
     * **Rechts – Mini-Fortschrittsring (`50×50px` `ZStack`) + `chevron.right` (`#8E8E93`):**
       * **Hintergrundring (Track):** `Circle().stroke(Color.primary.opacity(0.1), lineWidth: 4)` (`rgba(255,255,255,0.10)` Dark / `rgba(0,0,0,0.10)` Light).
       * **Aktiver Fortschrittsbogen (`lineWidth: 4`, `lineCap: .round`, Start bei `-90°` / 12 Uhr, `trim: count / goal`):**
-        * **Zustand `count < goal` (`< 100 %`):** Farbe **`.orange`** (`#FF9500` Light / `#FF9F0A` Dark).
-        * **Zustand `count >= goal` (`>= 100 %`):** Farbe **`Theme.islamicGreen` (`#2E7D32`)**.
+        * **Zustand `count < goal` (`< 100 %`):** Farbe **`Theme.islamicGreen.opacity(0.55)`** (`rgba(46, 125, 50, 0.55)`).
+        * **Zustand `count >= goal` (`>= 100 %`):** Farbe **`Theme.islamicGreen` (`#2E7D32`)** (voll deckend).
       * **Zentrum des Rings:** Prozentwert `"{Int((Double(count)/Double(goal)) * 100)}%"` (`10px bold`, `.primary`).
     * Tippen navigiert per Stack-Push zu `DhikrDetailView`.
 

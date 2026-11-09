@@ -189,7 +189,7 @@ struct DhikrMainCard: View {
                     
                     Circle()
                         .trim(from: 0, to: CGFloat(count) / CGFloat(goal))
-                        .stroke(count >= goal ? Theme.islamicGreen : .orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .stroke(count >= goal ? Theme.islamicGreen : Theme.islamicGreen.opacity(0.55), style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .frame(width: 50, height: 50)
                         .rotationEffect(.degrees(-90))
                     
@@ -244,7 +244,7 @@ struct DhikrMainCardCustom: View {
                     
                     Circle()
                         .trim(from: 0, to: CGFloat(count) / CGFloat(custom.goal))
-                        .stroke(count >= custom.goal ? Theme.islamicGreen : .orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .stroke(count >= custom.goal ? Theme.islamicGreen : Theme.islamicGreen.opacity(0.55), style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .frame(width: 50, height: 50)
                         .rotationEffect(.degrees(-90))
                     
@@ -293,7 +293,7 @@ struct SurahBaqarahTasbihCard: View {
                     
                     Circle()
                         .trim(from: 0, to: CGFloat(progress) / 100.0)
-                        .stroke(progress >= goal ? Theme.islamicGreen : .orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .stroke(progress >= goal ? Theme.islamicGreen : Theme.islamicGreen.opacity(0.55), style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .frame(width: 50, height: 50)
                         .rotationEffect(.degrees(-90))
                     
