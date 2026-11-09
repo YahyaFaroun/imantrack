@@ -1,0 +1,11 @@
+# Build & derived data
+build/
+build_temp/
+*.xcarchive
+*.xcuserstate
+xcuserdata/
+.DS_Store
+
+# Temporary scratch files and test scripts
+scratch/
+Audio_Inbox/

@@ -1,7 +1,0 @@
-file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_0_smooth.wav'
-file '/Users/princepalestine/Desktop/ImanTracker/scratch/silence_150ms.wav'
-file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_1_smooth.wav'
-file '/Users/princepalestine/Desktop/ImanTracker/scratch/silence_150ms.wav'
-file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_2_smooth.wav'
-file '/Users/princepalestine/Desktop/ImanTracker/scratch/silence_150ms.wav'
-file '/Users/princepalestine/Desktop/ImanTracker/scratch/seg_3_smooth.wav'
