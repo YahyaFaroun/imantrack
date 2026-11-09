@@ -206,27 +206,27 @@ struct DhikrDetailView: View {
         case .istighfar:
             guard selectedIndex < activeIstighfarCases.count else { return nil }
             switch activeIstighfarCases[selectedIndex] {
-            case .kurz: return TasbihIntervals(langsam: 1.35, normal: 1.08, schnell: 0.67)
-            case .extended: return TasbihIntervals(langsam: 1.75, normal: 1.51, schnell: 1.15)
-            case .gewaltig: return TasbihIntervals(langsam: 5.26, normal: 4.95, schnell: 4.47)
-            case .yunus: return TasbihIntervals(langsam: 4.36, normal: 4.00, schnell: 3.44)
-            case .lang: return TasbihIntervals(langsam: 14.46, normal: 13.45, schnell: 11.88)
+            case .kurz: return TasbihIntervals(langsam: 1.08, normal: 0.67, schnell: 0.42)
+            case .extended: return TasbihIntervals(langsam: 1.51, normal: 1.15, schnell: 0.88)
+            case .gewaltig: return TasbihIntervals(langsam: 4.95, normal: 4.47, schnell: 4.04)
+            case .yunus: return TasbihIntervals(langsam: 4.00, normal: 3.44, schnell: 2.96)
+            case .lang: return TasbihIntervals(langsam: 13.45, normal: 11.88, schnell: 10.49)
             }
         case .salawat:
             guard selectedIndex < activeSalawatCases.count else { return nil }
             switch activeSalawatCases[selectedIndex] {
-            case .waSallim: return TasbihIntervals(langsam: 2.47, normal: 2.20, schnell: 1.78)
-            case .kurz: return TasbihIntervals(langsam: 2.94, normal: 2.63, schnell: 2.14)
-            case .lang: return TasbihIntervals(langsam: 10.97, normal: 10.45, schnell: 9.64)
+            case .waSallim: return TasbihIntervals(langsam: 2.20, normal: 1.78, schnell: 1.44)
+            case .kurz: return TasbihIntervals(langsam: 2.63, normal: 2.14, schnell: 1.74)
+            case .lang: return TasbihIntervals(langsam: 10.45, normal: 9.64, schnell: 8.89)
             }
         case .subhanAllah:
-            return TasbihIntervals(langsam: 3.50, normal: 3.28, schnell: 2.94)
+            return TasbihIntervals(langsam: 3.28, normal: 2.94, schnell: 2.64)
         case .alhamdulillah:
-            return TasbihIntervals(langsam: 5.05, normal: 4.57, schnell: 3.82)
+            return TasbihIntervals(langsam: 4.57, normal: 3.82, schnell: 3.19)
         case .allahuAkbar:
-            return TasbihIntervals(langsam: 3.04, normal: 2.80, schnell: 2.43)
+            return TasbihIntervals(langsam: 2.80, normal: 2.43, schnell: 2.11)
         case .laIlahaIllallah:
-            return TasbihIntervals(langsam: 6.10, normal: 5.63, schnell: 4.91)
+            return TasbihIntervals(langsam: 5.63, normal: 4.91, schnell: 4.28)
         }
     }
     
@@ -346,9 +346,10 @@ struct DhikrDetailView: View {
     
     private var ringColor: Color {
         switch counterState {
-        case .idle: return .gray.opacity(0.5)
-        case .running: return Theme.islamicGreen
-        case .paused: return .orange
+        case .idle, .paused:
+            return Color.white.opacity(0.15)
+        case .running:
+            return Theme.islamicGreen.opacity(0.55)
         }
     }
     
@@ -532,6 +533,7 @@ struct DhikrDetailView: View {
                         .trim(from: 0, to: CGFloat(getCurrentCount()) / CGFloat(max(1, currentGoal)))
                         .stroke(ringColor, style: StrokeStyle(lineWidth: 15, lineCap: .round))
                         .rotationEffect(.degrees(-90))
+                        .animation(.easeInOut(duration: 0.3), value: ringColor)
                     
                     Circle()
                         .fill(Theme.islamicGreen.opacity(Theme.tasbihFlashBaseOpacity))

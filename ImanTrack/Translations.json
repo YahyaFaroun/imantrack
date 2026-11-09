@@ -4225,17 +4225,17 @@
     "bn": "ক্বারী"
   },
   "reader_iapetus": {
-    "de": "Iapetus (Standard)",
-    "en": "Iapetus (Default)",
-    "ar": "إيابيتوس (الافتراضي)",
-    "tr": "Iapetus (Varsayılan)",
-    "id": "Iapetus (Standar)",
-    "ms": "Iapetus (Lalai)",
-    "fr": "Iapetus (Par défaut)",
-    "es": "Iapetus (Por defecto)",
-    "ur": "ایپیٹس (پہلے سے طے شدہ)",
-    "ru": "Иапет (По умолчанию)",
-    "bn": "ইয়াপেটাস (ডিফল্ট)"
+    "de": "Abdullah (Standard)",
+    "en": "Abdullah (Default)",
+    "ar": "عبد الله (الافتراضي)",
+    "tr": "Abdullah (Varsayılan)",
+    "id": "Abdullah (Standar)",
+    "ms": "Abdullah (Lalai)",
+    "fr": "Abdullah (Par défaut)",
+    "es": "Abdullah (Por defecto)",
+    "ur": "عبد اللہ (پہلے سے طے شدہ)",
+    "ru": "Абдуллах (По умолчанию)",
+    "bn": "আব্দুল্লাহ (ডিফল্ট)"
   },
   "reader_iapetus_desc": {
     "de": "Ruhige & klare Lesung",

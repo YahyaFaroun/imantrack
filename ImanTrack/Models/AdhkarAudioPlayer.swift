@@ -96,13 +96,13 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         let effectiveFile = fileName
         let equivalent = Self.equivalentAudioMap[effectiveFile] ?? Self.equivalentAudioMap[fileName]
         let reciter = UserDefaults.standard.string(forKey: "adhkarReciter") ?? "iapetus"
-        let isDuraihim = (reciter == "duraihim")
+        let prefix = (reciter == "duraihim") ? "duraihim_" : (reciter == "ghamdi" ? "ghamdi_" : "")
         
         let url: URL?
-        if isDuraihim {
-            url = Bundle.main.url(forResource: "duraihim_\(effectiveFile)", withExtension: "m4a")
-                ?? (equivalent != nil ? Bundle.main.url(forResource: "duraihim_\(equivalent!)", withExtension: "m4a") : nil)
-                ?? Bundle.main.url(forResource: "duraihim_\(fileName)", withExtension: "m4a")
+        if !prefix.isEmpty {
+            url = Bundle.main.url(forResource: "\(prefix)\(effectiveFile)", withExtension: "m4a")
+                ?? (equivalent != nil ? Bundle.main.url(forResource: "\(prefix)\(equivalent!)", withExtension: "m4a") : nil)
+                ?? Bundle.main.url(forResource: "\(prefix)\(fileName)", withExtension: "m4a")
                 ?? Bundle.main.url(forResource: effectiveFile, withExtension: "m4a")
                 ?? (equivalent != nil ? Bundle.main.url(forResource: equivalent!, withExtension: "m4a") : nil)
                 ?? Bundle.main.url(forResource: fileName, withExtension: "m4a")
@@ -190,7 +190,14 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         stop()
         stopPreview()
         
-        let sampleBase = (reciter == "duraihim") ? "duraihim_morning_14" : "morning_14"
+        let sampleBase: String
+        if reciter == "duraihim" {
+            sampleBase = "duraihim_morning_14"
+        } else if reciter == "ghamdi" {
+            sampleBase = "ghamdi_morning_14"
+        } else {
+            sampleBase = "morning_14"
+        }
         guard let url = Bundle.main.url(forResource: sampleBase, withExtension: "m4a") else {
             print("Preview audio not found for reciter: \(reciter)")
             return

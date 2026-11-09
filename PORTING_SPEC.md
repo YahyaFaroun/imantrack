@@ -120,8 +120,9 @@ Beim App-Start (`ImanTrackApp`) und bei jedem Wechsel des App-Zustands (`AppStat
 | `.subheadline` | `15` | `400` / `600` | Untertitel, Status-Texte, Datumszeilen |
 | `.footnote` | `13` | `400` / `500` | Hilfstexte, Footer-Hinweise |
 | `.caption` | `12` | `400` / `600` | Labels, Gebetsnamen in der 6er-Leiste |
-| `.caption2` | `11` | `400` / `700` | Badges, Zeitstempel, Mini-Prozentwerte |
-| **Tasbih-Hauptzähler** | `64` (`rounded`) | `700` (Bold) | Zentrale Zahl im großen Tasbih-Zählring (`monospacedDigit`) |
+| `.caption2` | `11` | `400` / `700` | Badges, Zeitstempel, Mini-Prozentwerte, Gebetsnamen in der 6er-Leiste |
+| **Today-Countdown-Zeile** | `40` (`rounded`) | `600` / `400` / `700` | Einzeilige Gebets-Countdown-Überschrift (`minimumScaleFactor: 0.7`, Countdown `monospacedDigit`) |
+| **Tasbih-Hauptzähler** | `40` (`rounded`) | `700` (Bold) | Zentrale Zahl im großen `240×240` Tasbih-Zählring (mit Tausenderpunkt `1.234`) |
 | **Quran-Fließtext** | `22` – `42` (Default `30`) | `400` (Regular) | Stufenlos per Pinch-to-Zoom in `1pt`-Schritten (Suren-Reader `2pt`-Schritte); Versnummern `fontSize * 0.85` |
 | **Adhkar Arabisch** | `26` | `400` (Regular) | Arabischer Dhikr-Text in `AdhkarCard` (`lineSpacing: 10`, zentriert) |
 
@@ -165,11 +166,11 @@ Beim App-Start (`ImanTrackApp`) und bei jedem Wechsel des App-Zustands (`AppStat
 | `checkmark` / `checkmark.circle.fill` | Erledigt-Häkchen in Ringen, Karten, Listen | `checkmark` / `checkmark-circle` |
 | `clock` / `clock.fill` / `clock.arrow.circlepath` | Noch nicht aktive Adhkar, Fajr Nachgebetet (Qada), Gebets-Settings | `time-outline` / `time` / `history` |
 | `exclamationmark.circle.fill` | Abgelaufene Adhkar-Zeit (`expired`) | `alert-circle` |
-| `play.fill` / `pause.fill` / `stop.circle.fill` | Auto-Counter & Audio-Steuerung (Tasbih & Adhkar) | `play` / `pause` / `stop-circle` |
+| `play.fill` / `pause.fill` / `stop.fill` / `stop.circle.fill` | Auto-Counter & Audio-Steuerung (Tasbih nutzt `play.fill` / `stop.fill`, Adhkar `play.fill` / `pause.fill`) | `play` / `pause` / `stop` / `stop-circle` |
 | `tortoise.fill` | Geschwindigkeitsstufe 0 (Langsam) | `turtle` (MaterialCommunityIcons) |
 | `hare.fill` | Geschwindigkeitsstufe 2 (Schnell) | `rabbit` (MaterialCommunityIcons) |
 | `plus` / `minus` | Tasbih Manuell Hinzufügen (`+`) & Minus-Korrektur (`-`) | `add` / `remove` |
-| `globe` | Übersetzungs-Button in `DhikrDetailView` & `AdhkarCard` | `globe-outline` |
+| `info.circle` / `globe` | Übersetzungs-Sheet in `DhikrDetailView` (`info.circle`) & `AdhkarCard` (`globe`) | `information-circle-outline` / `globe-outline` |
 | `speaker.wave.2.fill` / `speaker.slash` | Sprachmodus-Toggle (Voice-Mode) in `AdhkarSessionView` & Preview | `volume-high` / `volume-mute` |
 | `ellipsis.circle` | Menü-Button oben rechts in `AdhkarSessionView` (Reihenfolge bearbeiten) | `ellipsis-horizontal-circle` |
 | `arrow.up.circle.fill` / `arrow.down.circle.fill` | Adhkar-Karte nach oben/unten schieben im Edit-Modus | `arrow-up-circle` / `arrow-down-circle` |
@@ -225,125 +226,195 @@ Beim App-Start (`ImanTrackApp`) und bei jedem Wechsel des App-Zustands (`AppStat
 * **KRITISCHE TAB-WECHSEL-REGEL FÜR TAB 3 (QURAN):**
   * Der Quran-Screen **muss im Speicher gemountet bleiben** (`lazy: false` / kein Unmount bei Tab-Wechsel!). Beim Wechsel von Tab 0/1/2/4 zurück zu Tab 3 muss die Scrollposition pixelgenau und völlig starr an der verlassenen Stelle stehen bleiben.
   * Nur wenn der Nutzer sich **bereits auf Tab 3 befindet** und **erneut** auf das Tab-3-Icon tippt (`newTab === 3 && currentTab === 3`), wird das Event `QuranTabRetapped` gefeuert (scrollt sanft zur aktuellen Lesefront).
-* **Globale Maghrib-Overlays (für Tabs 0, 1, 3, 4 – auf Tab 2 sind sie direkt im Layout integriert):**
-  * **Oben (`top: 45px`, `paddingHorizontal: 16`):**
-    * `MaghribFiveMinuteWarningBanner` (wenn `showFiveMinuteWarning == true`): Kompakte Karte mit orangem Rahmen (`rgba(255,149,0,0.4)`), `sunset.fill`-Icon (`#FF9500`), Titel `maghrib_5min_warning_title` (`14px bold`) und Untertitel `maghrib_5min_warning_desc` (`12px`). Verschwindet automatisch nach `7.0` Sekunden.
-    * `MaghribCountdownBanner` (wenn `maghribCountdownSeconds != nil`, d. h. letzte `60..1` Sekunden vor Maghrib): Pulsierendes Banner mit Countdown `00:SS` (`monospacedDigit`, `18px bold`, `#FF9500`) und animiertem Fortschrittsbalken (`seconds / 60`).
-  * **Unten (`bottom: 65px`, über der Tab-Leiste):**
-    * `MaghribDayResetToast` (wenn `showDayResetToast == true`, für `4.5` Sekunden nach Maghrib): Kapsel-Toast (`#2E7D32`, weißer Text + `moon.stars.fill`) mit Text `new_islamic_day_started`.
+* **Maghrib-Overlays & Countdown-Banner (App-weit & Screen-spezifisch):**
+  * **Global in `ContentView` (für Tabs `0, 1, 3, 4` – auf Tab `2` direkt im Layout integriert):**
+    * **Oben (`top: 45px`, `paddingHorizontal: 16`, `zIndex: 100`):** `MaghribFiveMinuteWarningBanner` (wenn `showFiveMinuteWarning == true`): Kompakte Karte mit orangem Rahmen (`rgba(255,149,0,0.4)`), `sunset.fill`-Icon (`#FF9500`), Titel `maghrib_5min_warning_title` (`14px bold`) und Untertitel `maghrib_5min_warning_desc` (`12px`). Verschwindet automatisch nach `7.0` Sekunden.
+    * **Unten (`bottom: 65px`, über der Tab-Leiste, `zIndex: 101`):** `MaghribDayResetToast` (wenn `showDayResetToast == true`, für `4.5` Sekunden nach Maghrib): Kapsel-Toast (`#2E7D32`, weißer Text + `moon.stars.fill`) mit Text `new_islamic_day_started` (auf Tab 2 mit `paddingBottom: 25`).
+  * **60-Sekunden-Countdown (`MaghribCountdownBanner`, wenn `maghribCountdownSeconds != nil`, d. h. `60..1` Sekunden vor Maghrib):**
+    * Pulsierendes Banner mit Countdown `00:SS` (`monospacedDigit`, `18px bold`, `#FF9500`) und animiertem Fortschrittsbalken (`seconds / 60`).
+    * Wird direkt in den aktiven Screens eingeblendet:
+      1. `TodayView`: Oben im `VStack(spacing: 24)`.
+      2. `DhikrDetailView`: Ganz oben im `VStack(spacing: 0)` (Antippen zeigt für `3.0s` den Info-Toast `tasbih_maghrib_reset_info`).
+      3. `QuranView`: Im `ZStack(alignment: .top)` über der `ScrollView` mit `paddingTop: 8` und `zIndex: 90`.
+      4. `AdhkarSessionView`: Ganz oben im `VStack(spacing: 20)`, sofern `type == .evening` geöffnet ist.
 
 ---
 
 ### 3.3 Tab 2: Heute (`TodayView`) — Startbildschirm
-Scrollbarer Hauptscreen (`Theme.background`, `padding: 16`, vertikales `spacing: 24`), in der oberen NavigationBar rechts ein Zahnrad-Button (`gearshape.fill`, öffnet `SettingsView` als Sheet):
+Scrollbarer Hauptscreen (`Theme.background`, `ScrollView` mit `VStack(spacing: 24)` und Außenabstand `padding: 16`). In der oberen `NavigationBar` (`inline`, ohne Texttitel) sitzt rechts ein Zahnrad-Button (`gearshape.fill` in Primärfarbe `.primary`: `#FFFFFF` im Dark Mode / `#000000` im Light Mode), der `SettingsView` als Modal-Sheet öffnet:
 
-1. **Maghrib-Banner (ganz oben im `VStack`, falls aktiv):**
-   * `MaghribFiveMinuteWarningBanner` (wenn `showFiveMinuteWarning == true`) bzw. `MaghribCountdownBanner` (wenn `maghribCountdownSeconds != nil`).
+1. **Maghrib-Banner (ganz oben im `VStack(spacing: 24)`, falls aktiv):**
+   * `MaghribFiveMinuteWarningBanner` (wenn `showFiveMinuteWarning == true`) und/oder `MaghribCountdownBanner` (wenn `maghribCountdownSeconds != nil`), jeweils mit Transition `.move(edge: .top)` + `.opacity`.
 
-2. **Zentraler Header-Block (`headerView`, ohne eigene Kartenbox direkt auf dem Hintergrund):**
+2. **Zentraler Kopfbereich (`headerView(lang:)`, direkt auf `Theme.background` ohne eigene Kartenbox):**
+   * **Bedingung `canCalculatePrayerTimes`:**
+     `solarManager.hasLocationPermission && (solarManager.lastLocation != nil || UserDefaults.double("last_latitude") != 0.0)`
    * **Zustand A – Standort berechtigt (`canCalculatePrayerTimes == true`):**
-     * **Block 1 – Große einzeilige Live-Countdown-Überschrift (`paddingBottom: 16`):**
-       Zentrierte einzeilige Textzeile (`40px rounded`, `minimumScaleFactor: 0.7`):
-       `"{Gebetsname} {in} {HH:MM:SS}"` — dabei sind Gebetsname (`semibold`) und `prayer_countdown_in` (`regular`) in Sekundärfarbe (`#8E8E93`), während der Countdown `HH:MM:SS` (`bold`, `monospacedDigit`) in **`#2E7D32`** leuchtet. *(Wichtig: Der Countdown zählt nur auf die 5 Pflichtgebete `[Fajr, Dhuhr, Asr, Maghrib, Isha]` herunter und überspringt Shuruq!)*
-     * **Block 2 – Kompakte 6er-Gebetszeitenzeile (`paddingHorizontal: 4`, `paddingBottom: 20`):**
-       6 gleich breite Spalten nebeneinander (`Fajr`, `Shuruq`, `Dhuhr`, `Asr`, `Maghrib`, `Isha`), jeweils vertikal gestapelt (`spacing: 3`):
-       * Oben Gebetsname (`11px`, `bold` & `#2E7D32` falls nächstes Gebet, sonst `regular` & `#8E8E93`).
-       * Unten Uhrzeit `HH:mm` (`13px monospacedDigit`, `bold` & `#2E7D32` falls nächstes Gebet, sonst `medium` & Primärfarbe).
-     * **Block 3 – Zentrierte Datumszeilen (`spacing: 4`):**
-       * **Zeile 1 (oben, größer & grün):** Gregorianisches Datum bzw. zwischen Maghrib und Fajr `"Nacht zum <Wochentag>, <Datum>"` (`17px headline semibold`, Farbe **`#2E7D32`**).
-       * **Zeile 2 (unten, kleiner & grau):** Transliteriertes/lokalisiertes Hijri-Datum inkl. islamischem Wochentag, z. B. `"Al-Jumu'ah, 14. Dhu al-Qi'dah 1447 AH"` (`15px subheadline`, Farbe **`#8E8E93`**).
+     Aktualisiert sich sekündlich über `TimelineView(.periodic(from: .now, by: 1.0))` in einem vertikalen Container `VStack(spacing: 0)` mit exakt **3 Blöcken in dieser Reihenfolge**:
+     * **Zeile 1 / Block 1 – Einzeilige Live-Countdown-Überschrift (`paddingBottom: 16`):**
+       * Berechnet `nextPrayer = resolveNextPrayer(at: now)` ausschließlich aus den **5 Pflichtgebeten** `[fajr, dhuhr, asr, maghrib, isha]` des heutigen Kalendertages (`sunrise` / Shuruq wird für den Countdown übersprungen!; sind heute bereits alle 5 Gebete vorbei, d. h. `now >= todayIsha`, ist das Ziel `fajr` des morgigen Kalendertages).
+       * Ein einziger kombinierter `Text("\(nameText) \(inText) \(countdownText)")`, damit alle drei Bestandteile bei Platzmangel gemeinsam skalieren:
+         * **Teil 1 (`nameText`):** Lokalisierter Gebetsname (`prayer_short_fajr` / `dhuhr` / `asr` / `maghrib` / `isha`), Gewicht **`semibold` (`600`)**, Farbe **`.secondary` (`#8E8E93`)**.
+         * **Teil 2 (`inText`):** `L10n.tr("prayer_countdown_in", lang)` (z. B. `"in"` / `"بعد"`), Gewicht **`regular` (`400`)**, Farbe **`.secondary` (`#8E8E93`)**.
+         * **Teil 3 (`countdownText`):** Restzeit `HH:MM:SS` (`String(format: "%02d:%02d:%02d", hours, minutes, seconds)`), Gewicht **`bold` (`700`)**, **`monospacedDigit`**, Farbe **`Theme.islamicGreen` (`#2E7D32`)**.
+       * Gemeinsame Typografie & Abstände der Zeile:
+         * Schriftart & Größe: **`.system(size: 40, design: .rounded)`** (`40px` Rounded)
+         * `lineLimit: 1`, `minimumScaleFactor: 0.7`, `multilineTextAlignment: .center`, `frame(maxWidth: .infinity)`
+         * Lokale `layoutDirection`: `.rightToLeft` wenn `lang` in `["ar", "ur", "fa"]`, sonst `.leftToRight`
+         * Unterer Abstand zur Gebetszeitenzeile: **`paddingBottom: 16`**.
+     * **Zeile 2 / Block 2 – Kompakte 6er-Gebetszeitenzeile (`paddingHorizontal: 4`, `paddingBottom: 20`):**
+       * `HStack(spacing: 0)` mit allen **6 Zeiten** des aktuellen Kalendertages `now` in fester Reihenfolge:
+         1. `fajr` (`prayer_short_fajr`)
+         2. `sunrise` / Shuruq (`prayer_short_sunrise`)
+         3. `dhuhr` (`prayer_short_dhuhr`)
+         4. `asr` (`prayer_short_asr`)
+         5. `maghrib` (`prayer_short_maghrib`)
+         6. `isha` (`prayer_short_isha`)
+       * Jede der 6 Spalten hat `frame(maxWidth: .infinity)` (gleiche Breite) und stapelt Name & Uhrzeit in einem `VStack(spacing: 3)` (`3px` Abstand).
+       * Hervorhebungs-Logik: `isNext = (nextPrayer?.type == prayer.type)` *(Shuruq ist niemals `isNext`; nach `isha` ist `nextPrayer.type == .fajr`, sodass bereits die `fajr`-Spalte grün hervorgehoben wird)*.
+       * **Oben (Gebetsname):** Schriftgröße **`11px`**, Gewicht **`bold` (`700`)** wenn `isNext`, sonst **`regular` (`400`)**, `lineLimit: 1`; Farbe **`#2E7D32`** wenn `isNext`, sonst **`.gray` (`#8E8E93`)**.
+       * **Unten (Uhrzeit `HH:mm` bzw. `"--:--"`):** Schriftgröße **`13px`**, `monospacedDigit`, Gewicht **`bold` (`700`)** wenn `isNext`, sonst **`medium` (`500`)**; Farbe **`#2E7D32`** wenn `isNext`, sonst **`.primary`** (`#FFFFFF` Dark / `#000000` Light).
+       * Außenabstände der Zeile: **`paddingHorizontal: 4`**, **`paddingBottom: 20`** (`20px` Abstand zum Datumsblock).
+     * **Zeile 3 & 4 / Block 3 – Zentrierter Datumsblock (`VStack(spacing: 4)`):**
+       Beide Zeilen nutzen `solarManager.currentTrackingDate` (springt exakt bei Maghrib auf den neuen Tag um!), getrennt durch **`4px`** vertikalen Abstand:
+       * **Obere Zeile (Wochentag & Gregorianisches Datum — größer & grün):**
+         * Methode: `solarManager.formattedDisplayDate(for: currentTrackingDate, language: lang)`
+         * Schriftgröße & Gewicht: **`.headline` (`17px`)**, **`semibold` (`600`)**
+         * Farbe: **`Theme.islamicGreen` (`#2E7D32`)**
+         * Inhalt & Logik:
+           * Zwischen Maghrib und Fajr (`isNightTime == true`, d. h. `hasLocationPermission && (now >= todayMaghrib || now < todayFajr)`): Lokalisiertes Muster `night_before_weekday` (z. B. `"Nacht zum Freitag"` auf Deutsch, `"Night before Friday"` auf Englisch, `"ليلة الجمعة"` auf Arabisch; Kleinschreibung des Wochentags für `fr`/`es`, russischer Akkusativ `-а -> -у` für `ru`), gefolgt von Komma und Tag/Monat **ohne Jahreszahl** (`"Nacht zum Freitag, 6. November"`).
+           * Ab Fajr bis Maghrib (`isNightTime == false`): Normaler Wochentag + Tag/Monat ohne Jahreszahl (`de`: `"{Wochentag}, {d. MMMM}"`, `en`: `"{Weekday}, {MMMM d}"`, `ar`: `"{Weekday}، {d MMMM}"`, übrige Sprachen: lokalisiertes Template `"d MMMM"`).
+       * **Untere Zeile (Islamisches Hijri-Datum inkl. islamischem Wochentag — kleiner & grau):**
+         * Methode: `formattedHijriDateTransliterated(for: currentTrackingDate, lang: lang)` auf Basis von `Calendar(identifier: .islamicUmmAlQura)`
+         * Schriftgröße & Gewicht: **`.subheadline` (`15px`, `regular` `400`)**
+         * Farbe: **`.secondary` (`#8E8E93`)**
+         * Sprachabhängige Formatierung:
+           * **`de`:** `"{dayName}, {day}. {monthName} {year} n.H."` mit deutschen Transliterationen ohne Artikel (`["Ahad", "Ithnayn", "Thulatha", "Arba'a", "Chamis", "Jumu'ah", "Sabt"]`), z. B. `"Jumu'ah, 14. Dhu al-Qi'dah 1447 n.H."`.
+           * **`ar`:** `"{dayName}، {dayAr} {monthName} {yearAr} هـ"` mit arabischen Wochentagen, arabischen Monatsnamen und ost-arabischen Ziffern (`١٤٤٧`).
+           * **Alle übrigen Sprachen (`en` usw.):** `"{dayName}, {day}. {monthName} {year} AH"` mit `Al-`-Wochentagen (`["Al-Ahad", ..., "Al-Jumu'ah", "Al-Sabt"]`), z. B. `"Al-Jumu'ah, 14. Dhu al-Qi'dah 1447 AH"`.
    * **Zustand B – Kein Standort freigegeben (`canCalculatePrayerTimes == false`):**
-     * Zeigt oben einen zentrierten Text-Button `enable_location_prayer_times` (`13px footnote`, `#8E8E93`, triggert `requestAuthorization()`) und direkt darunter denselben zweizeiligen Datumsblock (Gregorianisch oben in `#2E7D32`, Hijri unten in `#8E8E93`).
+     * `VStack(spacing: 8)`:
+       1. Zentrierter Plain-Button mit Text `enable_location_prayer_times` (`13px footnote`, Farbe `.gray` `#8E8E93`, `paddingVertical: 4`, triggert `solarManager.requestAuthorization()`).
+       2. Darunter exakt derselbe Datumsblock `VStack(spacing: 4)` wie in Zustand A:
+          * **Oben:** Wochentag + Gregorianisches Datum (`17px headline semibold`, **`#2E7D32`**, ohne `"Nacht zum ..."` da `isNightTime == false`).
+          * **Unten:** Hijri-Datum inkl. islamischem Wochentag (`15px subheadline`, **`#8E8E93`**).
 
-3. **Prominente Fajr-Status-Karte (`Theme.cardBackground`, `borderRadius: 16`, `padding: 16`, reine Status-Anzeige – Tippen wechselt animiert zu `selectedTab = 1` / Adhkar-Tab!):**
-   * Zeile 1 (`HStack`): Links `sujud_icon.png` (`20×20`, eingefärbt in `#2E7D32`) + Titel `fajr_prayer` (`17px headline`), rechts Symbol `"✓"` (`bold`, `#2E7D32` bei `"onTime"`, `#FF9500` bei `"late"`) bzw. `"○"` (`#8E8E93` bei `"none"`).
+3. **Prominente Fajr-Status-Karte (`Theme.cardBackground`, `borderRadius: 16`, `padding: 16`, `VStack(spacing: 6)`, reine Status-Anzeige – Tippen wechselt per Spring-Animation zu `selectedTab = 1` / Adhkar-Tab!):**
+   * Zeile 1 (`HStack`): Links `sujud_icon.png` (`20×20`, Template-Rendering eingefärbt in `#2E7D32`) + Titel `fajr_prayer` (`17px headline`, `.primary`), rechts Symbol `"✓"` (`bold`, `#2E7D32` bei `"onTime"`, `#FF9500` bei `"late"`) bzw. `"○"` (`#8E8E93` bei `"none"`).
    * Zeile 2: Statustext `fajr_status_ontime` (`#2E7D32`), `fajr_status_late` (`#FF9500`) oder `fajr_status_none` (`#8E8E93`) in `15px subheadline`. *(Die eigentliche Eingabe/Änderung des Fajr-Status erfolgt im Adhkar-Tab auf der dortigen Fajr-Karte!)*
 
-4. **Tagesfortschritts-Karten (`ResultCard`-Komponenten, jeweils `Theme.cardBackground`, `borderRadius: 16`, `padding: 16`, Header mit Icon in `#2E7D32` + Titel + `chevron.right`):**
+4. **Tagesfortschritts-Karten (`ResultCard`-Komponenten, jeweils `Theme.cardBackground`, `borderRadius: 16`, `padding: 16`, `VStack(spacing: 16)`, Header mit `20×20`-Icon in `#2E7D32` + Titel `17px headline` ohne Chevron):**
+   * Gemeinsame Prozentfarben-Funktion `progressColor(percentage)`: **`#2E7D32` wenn `percentage >= 1.0` (`100 %`), sonst `.gray` (`#8E8E93`)**.
    * **ResultCard 1: Quran (Tippen setzt `selectedTab = 3`):**
      * Icon `book.fill`, Titel `tab_quran`.
-     * Zeile: `daily_goal_title` links, rechts `"{displayPercent}%"` (`15px bold`, `#2E7D32` bei `100 %`, `#FF9500` bei `> 0 %`, `#8E8E93` bei `0 %`).
-     * Horizontaler Fortschrittsbalken (`ProgressView`, Farbe `#2E7D32`).
+     * Zeile: `daily_goal_title` (`15px subheadline`, `.primary`) links, rechts `"{displayPercent}%"` (`15px subheadline bold`, Farbe `progressColor`: `#2E7D32` bei `100 %`, sonst `#8E8E93`).
+     * Horizontaler Fortschrittsbalken (`ProgressView`, Tint `#2E7D32`).
      * Unterzeile (`12px caption`, `#8E8E93`): `"{quranPagesRead}/{goal} {pages} · {quranVersesRead} {verses}"`.
    * **ResultCard 2: Adhkar (Tippen setzt `selectedTab = 1`):**
      * Icon `book.closed.fill`, Titel `tab_adhkar`.
      * Vertikale Zeilen (`AdhkarResultRow`, `spacing: 12`) in der Reihenfolge:
-       1. `adhkar_sleep` (`schlafAdhkarDone` + Uhrzeit `HH:mm`)
+       1. `adhkar_sleep` (`schlafAdhkarDone` + Uhrzeit `HH:mm` in `12px caption` `#8E8E93` + `"✓"` in `#2E7D32` bzw. `"○"` in `#8E8E93`)
        2. `adhkar_morning` (`morgenAdhkarDone` + Uhrzeit `HH:mm`)
        3. `surah_alkahf` *(nur sichtbar wenn `isFridayKahfVisible == true`, d. h. islamischer Freitag ab Fajr!)*
        4. `adhkar_evening` (`abendAdhkarDone` + Uhrzeit `HH:mm`)
    * **ResultCard 3: Tasbih (Tippen setzt `selectedTab = 0`):**
      * Icon `circle.hexagongrid.fill`, Titel `tab_tasbih`.
-     * Vertikale Zeilen (`TasbihResultRow`, `spacing: 10`) für jede aktivierte Tasbih-Kategorie (`istighfar`, `salawat` [mit Freitagsziel falls aktiv], `subhanAllah`, `alhamdulillah`, `allahuAkbar` [= La hawla], `laIlahaIllallah`) mit Name links und `"{count} / {goal}"` + Status-Indikator rechts.
+     * Vertikale Zeilen (`TasbihResultRow`, `spacing: 10`) für jede aktivierte Standard-Kategorie (`istighfar`, `salawat` [mit `effectiveSalawatGoal`], `subhanAllah`, `alhamdulillah`, `allahuAkbar` [= La hawla], `laIlahaIllallah`):
+       * Oben: Kompakter Kurzname links (`15px subheadline`), rechts `"{displayPercent}%"` (`15px bold`, `#2E7D32` bei `100 %`, sonst `#8E8E93`).
+       * Mitte: Dünner horizontaler `ProgressView` (`scaleY: 0.5`, Tint `#2E7D32`).
+       * Unten: `"{count}/{safeGoal}"` (`12px caption`, `#8E8E93`).
 
 ---
 
 ### 3.4 Tab 0: Tasbih-Übersicht (`TasbihView`) & Zähler-Detail (`DhikrDetailView`)
 
-#### 3.4.1 `TasbihView` (Liste aller aktiven Tasbih-Zähler)
-* **Header:** Navigationstitel `tab_tasbih`.
-* **Inhalt (`ScrollView`, `padding: 16`, `spacing: 14`):**
-  * Rendert in fester Reihenfolge alle aktivierten Kategorien (`UserSettings.<cat>Enabled == true`), gefolgt von allen `CustomTasbih` mit `isEnabled == true`:
-    1. **Istighfar** (`TasbihCategory.istighfar`) – Titel `tasbih_istighfar`, Arabisch der ersten aktiven Form (Standard: `أَسْتَغْفِرُ اللَّهَ`), Ziel `settings.istighfarGoal` (Default `1000`).
-    2. **Salawat** (`TasbihCategory.salawat`) – Titel `tasbih_salawat`, Arabisch `اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ`, Ziel: an islamischen Freitagen (Donnerstag Maghrib bis Freitag Maghrib), falls `salawatFridayGoal > 0`, gilt `salawatFridayGoal` (mit grünem Freitags-Badge), sonst `salawatGoal` (Default `500`).
-    3. **SubhanAllah wa bihamdihi** (`TasbihCategory.subhanAllah`) – Arabisch `سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ`, Ziel `subhanAllahGoal` (Default `100`).
-    4. **Alhamdulillah / Baqiyat as-Salihat** (`TasbihCategory.alhamdulillah`) – Arabisch `سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَاللَّهُ أَكْبَرُ`, Ziel `alhamdulillahGoal` (Default `100`).
-    5. **La hawla wa la quwwata illa billah** (Technischer Enum-Key: `TasbihCategory.allahuAkbar`!) – Titel-Key `tasbih_lahawla`, Arabisch `لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ`, speichert in `allahuAkbarCount`, Ziel `allahuAkbarGoal` (Default `100`).
-    6. **La ilaha illallah (Tahlil)** (`TasbihCategory.laIlahaIllallah`) – Arabisch `لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ`, Ziel `laIlahaIllallahGoal` (Default `100`).
-    7. **Eigene Tasbihs (`CustomTasbih`):** Sortiert nach `createdAt` aufsteigend.
-  * **Aufbau jeder Tasbih-Karte (`Theme.cardBackground`, `borderRadius: 16`, `padding: 16`):**
-    * Oben: Links lokalisierter Kategoriename (`16px semibold`), rechts Fortschrittszähler `"{count} / {goal}"` (`15px bold monospacedDigit`, `#2E7D32` wenn `count >= goal`, sonst `#8E8E93`).
-    * Mitte: Rechtsbündiger arabischer Vorschautext in `UthmanicHafs1Ver18.ttf` (`22px`, max. 2 Zeilen).
-    * Unten: Horizontaler Fortschrittsbalken (`height: 6px`, `borderRadius: 3px`, Füllfarbe `#2E7D32` bei `>= 100 %`, sonst `#FF9500`).
+#### 3.4.1 `TasbihView` (Liste aller aktiven Tasbih-Zähler & Mini-Fortschrittsringe)
+* **Header:** Inline-Navigationstitel `tab_tasbih`.
+* **Inhalt (`ScrollView`, `padding: 16`, `VStack(spacing: 16)`):**
+  * Rendert in fester Reihenfolge alle aktivierten Standard-Kategorien (`UserSettings.<cat>Enabled == true`), gefolgt von allen `CustomTasbih` mit `isEnabled == true`:
+    1. **Istighfar** (`TasbihCategory.istighfar`) – Typ-Titel `tasbih_type_istighfar`, Vorschau-Arabisch `"الاستغفار"`, Zähler `todayRecord.totalIstighfarCount`, Ziel `settings.istighfarGoal` (Default `1000`).
+    2. **Salawat** (`TasbihCategory.salawat`) – Typ-Titel `tasbih_type_salawat`, Vorschau-Arabisch `"الصلاة على النبي"`, Ziel: an islamischen Freitagen (Donnerstag Maghrib bis Freitag Maghrib), falls `salawatFridayGoalEnabled` (`salawatFridayGoal > 0`), gilt `salawatFridayGoal` inklusive grünem Badge `salawat_friday_goal` (`11px caption2 semibold`, `#2E7D32` auf `rgba(46,125,50,0.12)`, `cornerRadius: 6`), sonst `salawatGoal` (Default `500`).
+    3. **SubhanAllah wa bihamdihi** (`TasbihCategory.subhanAllah`) – Typ-Titel `tasbih_type_subhanallah`, Arabisch `سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ`, Ziel `subhanAllahGoal` (Default `100`).
+    4. **Alhamdulillah / Baqiyat as-Salihat** (`TasbihCategory.alhamdulillah`) – Typ-Titel `tasbih_type_alhamdulillah`, Arabisch `سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَاللَّهُ أَكْبَرُ`, Ziel `alhamdulillahGoal` (Default `100`).
+    5. **La hawla wa la quwwata illa billah** (Technischer Enum-Key: `TasbihCategory.allahuAkbar`!) – Typ-Titel `tasbih_type_lahawla`, Arabisch `لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ`, speichert in `allahuAkbarCount`, Ziel `allahuAkbarGoal` (Default `100`).
+    6. **La ilaha illallah (Tahlil)** (`TasbihCategory.laIlahaIllallah`) – Typ-Titel `tasbih_type_lailahaillallah`, Arabisch `لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ`, Ziel `laIlahaIllallahGoal` (Default `100`).
+    7. **Eigene Tasbihs (`CustomTasbih`):** Sortiert nach `createdAt` aufsteigend (`DhikrMainCardCustom`).
+  * **Aufbau jeder Tasbih-Übersichtskarte (`Theme.cardBackground`, `borderRadius: 16`, `padding: 16`, `HStack(spacing: 12)`):**
+    * **Links (`VStack(alignment: .leading, spacing: 6)`):**
+      * Oben: Lokalisierter Kategoriename (`17px headline`, `.primary`) + ggf. grünes Freitags-Badge.
+      * Unten (ausgeblendet wenn `settings.language == "ar"`): Rechtsbündiger arabischer Titel/Text (`16px semibold`, Farbe **`#2E7D32`**).
+    * **Rechts – Mini-Fortschrittsring (`50×50px` `ZStack`) + `chevron.right` (`#8E8E93`):**
+      * **Hintergrundring (Track):** `Circle().stroke(Color.primary.opacity(0.1), lineWidth: 4)` (`rgba(255,255,255,0.10)` Dark / `rgba(0,0,0,0.10)` Light).
+      * **Aktiver Fortschrittsbogen (`lineWidth: 4`, `lineCap: .round`, Start bei `-90°` / 12 Uhr, `trim: count / goal`):**
+        * **Zustand `count < goal` (`< 100 %`):** Farbe **`.orange`** (`#FF9500` Light / `#FF9F0A` Dark).
+        * **Zustand `count >= goal` (`>= 100 %`):** Farbe **`Theme.islamicGreen` (`#2E7D32`)**.
+      * **Zentrum des Rings:** Prozentwert `"{Int((Double(count)/Double(goal)) * 100)}%"` (`10px bold`, `.primary`).
     * Tippen navigiert per Stack-Push zu `DhikrDetailView`.
 
-#### 3.4.2 `DhikrDetailView` (Interaktiver Vollbild-Tasbih-Zähler)
-Aufbau von oben nach unten (`Theme.background`, kein Scrollen des Hauptcontainers, vertikale Flex-Aufteilung):
+#### 3.4.2 `DhikrDetailView` (Interaktiver Vollbild-Tasbih-Zähler — Ring-Farben & Zustände)
+Aufbau von oben nach unten (`Theme.background`, `VStack(spacing: 0)` ohne Scrollen des Hauptcontainers):
 
 1. **Navigation-Bar:**
    * Links: Zurück-Button (`chevron.left`).
-   * Mitte: Kategoriename (`17px semibold`).
-   * Rechts: Runder Button mit `globe`-Icon (`20px`, `#2E7D32`) -> öffnet ein Bottom-Sheet mit der vollständigen **Übersetzung / Bedeutung** des aktuell gewählten Dhikrs (`currentTranslation`).
+   * Mitte: Kategoriename (`localizedTitle`, inline).
+   * Rechts: Button mit `info.circle`-Icon (`20px title3`, `#2E7D32`, `44×44` Tap-Fläche) -> öffnet `TranslationSheet` mit der vollständigen **Übersetzung / Bedeutung** des aktuell gewählten Dhikrs (`currentTranslation`).
 
-2. **Oberer Dhikr-Textbereich (ca. 32 % Bildschirmhöhe):**
-   * Falls mehrere Varianten aktiv sind (bei **Istighfar** bis zu 5 Formen, bei **Salawat** bis zu 3 Formen):
-     * Oben kleine **Seiten-Punkte (Page-Dots)** (`6×6px`, aktiver Punkt `#2E7D32`, inaktive `rgba(142,142,147,0.35)`).
-     * Horizontal wischbarer Pager (`TabView`), der beim Wischen `selectedIndex` wechselt (bei laufendem Auto-Counter passt sich das Zeitintervall sofort an die neu gewählte Variante an!).
-   * **Arabischer Text:** Zentriert, Schriftart `KFGQPCHAFSUthmanicScript-Regula`, dynamische Schriftgröße je nach Textlänge (`28px` bei `< 50` Zeichen, `24px` bei `< 120` Zeichen, `20px` bei langen Texten wie Sayyidul Istighfar / Ibrahimiyyah), vertikal scrollbar falls sehr lang.
-   * **Transliteration (Umschrift):** Nur sichtbar wenn `settings.showTransliteration == true` UND `settings.language != "ar"`. Zentriert darunter in `14px`, `#8E8E93`.
+2. **Oberer Dhikr-Textbereich (feste Höhe `135px` auf Standard-Displays, `120px` bei Bildschirmhöhe `<= 700pt`):**
+   * **Seiten-Indikator (`Page-Dots`, feste Zeilenhöhe `14px`, `paddingVertical: 6`):**
+     * Sichtbar wenn `pageCount > 1` (bei **Istighfar** alle 5 Formen, bei **Salawat** alle 3 Formen): `8×8px` Kreise mit `spacing: 8`, aktiver Punkt `#2E7D32`, inaktive `Color.primary.opacity(0.3)` (antippbar zum Wechseln).
+   * **Horizontal wischbarer Pager (`TabView`):**
+     * Wechselt `selectedIndex`, speichert die zuletzt gewählte Form in `settings.istighfarVersion` bzw. `settings.salawatVersion` und startet bei laufendem Auto-Counter (`counterState == .running`) den Timer sofort mit dem Intervall der neuen Variante neu.
+     * **Arabischer Text:** Zentriert, RTL, dynamische Schriftgröße nach Zeichenanzahl (`<=25`: `28pt`/`26pt`, `<=55`: `24pt`/`22pt`, `<=90`: `22pt`/`20pt`, `<=130`: `19pt`/`18pt`, `>130`: `18pt`/`17pt`), innerhalb des Textblocks vertikal scrollbar falls nötig.
+     * **Transliteration (Umschrift):** Nur sichtbar wenn `settings.showTransliteration == true` UND `settings.language != "ar"`. Zentriert darunter (`15pt` bis `11.5pt` je nach Länge, `medium`, `#8E8E93`).
 
-3. **Zentraler Zählring (Herzstück des Screens, Durchmesser `240×240px`):**
-   * Äußerer Hintergrundring: `strokeWidth: 12`, Farbe `rgba(142,142,147,0.15)`.
-   * Grüner/Oranger Fortschrittsring: `strokeWidth: 12`, `strokeLinecap: 'round'`, Start bei `-90°` (12 Uhr), Füllgrad `min(1.0, currentCount / goal)`, Farbe `#2E7D32` ab Zielerreichung, sonst `#2E7D32` (im Zählring immer `#2E7D32` mit sanfter Animation).
-   * **Grüner Puls-Blitz (`flashOpacity`):** Innerhalb des Kreises liegt eine gefüllte grüne Scheibe (`#2E7D32`), die bei **jedem einzelnen Zählschritt** (manuell und automatisch) kurz aufleuchtet (exakte Formel siehe Abschnitt 5.6.3).
-   * **Inhalt im Kreiszentrum:**
-     * Aktueller Zählerstand `currentCount` (`64px bold rounded monospacedDigit`, `#FFFFFF` / `#000000`).
-     * Darunter Zielanzeige `"/ {goal}"` (`16px medium`, `#8E8E93`).
-     * Falls Auto-Counter aktiv (`settings.tasbihAutoCount == true`): Kleines Play-/Pause-Badge (`play.fill` / `pause.fill`, `#2E7D32`) unterhalb des Ziels.
-   * **Tap-Verhalten auf den großen Kreis:**
-     * Ist `settings.tasbihAutoCount == false` (Manueller Modus): Jeder Tipp zählt `+1`, spielt Haptik (`light`, sofern `tasbihVibrationEnabled == true`) und triggert den grünen Blitz.
-     * Ist `settings.tasbihAutoCount == true` (Auto-Modus): Ein Tipp auf den Kreis toggelt **Start / Pause** des automatischen Zählers! (Beim Start beginnt `sessionCount = 0` für die spätere Prozent-Korrektur und `KeepAwake` wird aktiviert.)
+3. **Zentraler Zählring (`240×240px`) — Zustände & Ring-Farben im Detail:**
+   Zwischen oberem Textblock und unterer Button-Leiste durch zwei symmetrische `Spacer(minLength: 8)` vertikal zentriert:
+   * **Die 3 Zähler-Zustände (`enum CounterState`):**
+     * **`.idle` (Ruhezustand):** Initialzustand beim Öffnen (`onAppear`), im gesamten manuellen Zählmodus (`tasbihAutoCount == false`), nach Verlassen des Screens (`onDisappear`), nach Maghrib-Tageswechsel sowie nach Abschluss einer Prozent-Korrektur (`saveSession`).
+     * **`.running` (Aktiv laufend):** Der automatische Zähler (`autoTimer`) läuft aktiv, Display-Sperre ist deaktiviert (`isIdleTimerDisabled = true`).
+     * **`.paused` (Pausiert):** Der automatische Zähler wurde per Tap auf den Kreis oder durch Öffnen des Minus-Korrektur-Modals angehalten (`autoTimer` gestoppt, `isIdleTimerDisabled = false`, `sessionCount` bleibt für prozentuale Abzüge erhalten).
+   * **Exakte Ring-Ebenen & Ring-Farben (`ZStack` mit `240×240px`):**
+     1. **Hintergrundring (Track):**
+        `Circle().stroke(Color.primary.opacity(0.1), lineWidth: 15)` (`15px` Breite, `rgba(255,255,255,0.10)` im Dark Mode / `rgba(0,0,0,0.10)` im Light Mode).
+     2. **Fortschrittsring (`ringColor`, `lineWidth: 15`, `lineCap: .round`, Start bei `-90°` / 12 Uhr, Füllgrad `trim(0, currentCount / max(1, currentGoal))`):**
+        * **Zustand `.idle` UND `.paused`:** **`Color.white.opacity(0.15)`** (`rgba(255, 255, 255, 0.15)`) — dezentes, gedämpftes Weiß-Transparent (weder kräftiges Grau noch Orange bei Pause!).
+        * **Zustand `.running`:** **`Theme.islamicGreen.opacity(0.55)`** (`rgba(46, 125, 50, 0.55)`) — ruhiges, halbtransparentes Islamisch-Grün.
+        * **Zustandsübergang:** Weiche Farb-Animation **`.animation(.easeInOut(duration: 0.3), value: ringColor)`**.
+        * *(Wichtig: Die Farbe des großen Fortschrittsrings richtet sich ausschließlich nach `counterState`, nicht nach dem Erreichen des Tagesziels!)*
+     3. **Innerer grüner Impuls-Blitz (`Circle().fill(Theme.islamicGreen.opacity(0.30)).padding(7.5)`):**
+        * Liegt exakt innerhalb der `15px`-Ringkontur (`padding: 7.5`) und leuchtet bei **jedem einzelnen Zählschritt** (manuell & automatisch) sowie kurz (`0.2s`) nach einer Korrektur mit `opacity: flashGreen ? flashOpacity : 0.0` auf (Formel siehe Abschnitt 5.6.3).
+     4. **Inhalt im Kreiszentrum (`VStack(spacing: 6)`, `paddingHorizontal: 20`):**
+        * **Aktueller Zählerstand:** Mit Tausenderpunkt formatiert (z. B. `"1.250"`), **`40px bold rounded`** (`.system(size: 40, weight: .bold, design: .rounded)`), Farbe `.primary`.
+        * **Tagesziel-Zeile (`HStack(spacing: 4)`):** Zielwert mit Tausenderpunkt ohne Schrägstrich (z. B. `"1.000"`), **`16px medium rounded`**, Farbe `.gray.opacity(0.8)`; falls `isFridaySalawatGoalActive == true`, steht rechts daneben `salawat_friday_goal` (`11px semibold`, `#2E7D32`).
+        * **Start-/Stopp-Icon (nur sichtbar wenn `settings.tasbihAutoCount == true`):**
+          * Bei `counterState == .running`: **`stop.fill`**
+          * Bei `counterState == .idle` oder `.paused`: **`play.fill`**
+          * Größe `.title3` (`20px`), Farbe **`.gray` (`#8E8E93`)**, `paddingTop: 4`.
+   * **Tap-Verhalten auf den `240×240`-Kreis:**
+     * Ist `settings.tasbihAutoCount == false` (Manueller Modus): Jeder Tipp zählt `+1`, erhöht `sessionCount += 1`, spielt Haptik (`ImpactFeedbackStyle.Medium`, sofern `tasbihVibrationEnabled == true`) und triggert den grünen Blitz.
+     * Ist `settings.tasbihAutoCount == true` (Auto-Modus): Ein Tipp schaltet zwischen `.idle`/`.paused` -> **`.running`** (`startTimer()`) und `.running` -> **`.paused`** (`pauseTimer()`) um; jeder Auto-Tick spielt leichte Haptik (`ImpactFeedbackStyle.Light`).
+   * **Zielerreichungs-Overlay:** Erreicht `currentCount` exakt `currentGoal` (`currentCount == currentGoal`), blendet sich für `1.0` Sekunde mittig über `Color.black.opacity(0.3)` der arabische Schriftzug **`"ما شاء الله"`** (`34px largeTitle bold`, `#2E7D32`, Scale+Opacity-Transition) ein.
 
-4. **Untere Steuerleiste (`paddingHorizontal: 24, paddingBottom: 28`):**
-   Drei Elemente nebeneinander (`HStack`, zentriert):
-   * **Links – Minus-Button (`48×48`, runder Kreis, Hintergrund `rgba(255,59,48,0.12)`, Icon `minus` in `#FF3B30`):**
-     * Deaktiviert (`opacity: 0.35`), wenn `currentCount == 0`.
-     * Tippen pausiert ggf. den Auto-Counter und öffnet das **Korrektur-Sheet (Minus-Modal)**:
-       * Zeigt aktuellen Stand `actual_count` und – falls `sessionCount > 0` – die Anzahl der letzten Zählsession (`last_session_count`).
-       * **Schnell-Prozent-Buttons (nur aktiv wenn `sessionCount > 0`):** 4 rote Pill-Buttons **`-10%`**, **`-30%`**, **`-50%`**, **`-100%`** – ziehen den entsprechenden Prozentsatz von `sessionCount` (`round(sessionCount * pct)`) vom Gesamtzähler ab (gedeckelt auf `>= 0`).
-       * **Letzte manuelle Hinzufügung rückgängig machen** (nur sichtbar wenn `lastManualAddedAmount > 0`): Button „Letzte Eingabe (`+{lastManualAddedAmount}`) entfernen“.
-       * **Freie Zahl abziehen:** Numerisches Textfeld (nur Ziffern `0-9`, max. `5000`) + roter Bestätigungsbutton.
-   * **Mitte – 3-Stufen-Geschwindigkeitswähler (nur sichtbar wenn `settings.tasbihAutoCount == true`):**
-     * Kapsel-Container (`Theme.cardBackground`, `borderRadius: 22`, `padding: 4`) mit 3 Segment-Buttons:
-       * Stufe `0`: Icon `tortoise.fill` (Langsam)
-       * Stufe `1`: Text `Normal` (`13px semibold`)
-       * Stufe `2`: Icon `hare.fill` (Schnell)
-     * Aktives Segment hat Hintergrund `#2E7D32` und weiße Schrift/Icon. Wird individuell pro Dhikr und pro Istighfar-/Salawat-Variante unter `tasbih_speed_<key>` gespeichert (Default `1` = Normal).
-   * **Rechts – Plus-Button (`48×48`, runder Kreis, Hintergrund `rgba(46,125,50,0.15)`, Icon `plus` in `#2E7D32`):**
-     * Öffnet das **Manuell-Hinzufügen-Sheet (Plus-Modal)**:
-       * Numerisches Eingabefeld (filtert alle Nicht-Ziffern wie Punkte/Kommas sofort heraus, kappt live bei **max. `5000`**!).
-       * Schnellauswahl-Chips (`+10`, `+33`, `+100`, `+500`, `+1000`).
-       * Grüner „Hinzufügen“-Button addiert den Wert zu `currentCount`, speichert ihn in `lastManualAddedAmount` und schließt das Sheet.
+4. **Untere Steuerleiste (`HStack`, `paddingBottom: 24`):**
+   Drei symmetrisch angeordnete Steuerelemente:
+   * **Links – Minus-/Korrektur-Button (`58×58px` Kreis, `paddingLeading: 30`):**
+     * Design: Hintergrund `Color.red.opacity(0.14)`, Rahmen `Color.red.opacity(0.25)` (`lineWidth: 1.5`), Icon `minus` (`22px title2 bold`) in `Color.red.opacity(0.85)`.
+     * Tippen pausiert einen laufenden Auto-Counter (`counterState = .paused`) und öffnet ein zentriertes **Korrektur-Pop-up (`width: 280px`, `Theme.cardBackground`, `borderRadius: 24`, `padding: 20`)**:
+       1. **4 Prozent-Buttons in einer Zeile (`HStack(spacing: 8)`): `-10%`, `-30%`, `-50%`, `-100%`** (`14px bold rounded`, rot umrandet; aktiviert wenn `sessionCount > 0`, sonst gedimmt & disabled). Ziehen `max(1, round(sessionCount * pct / 100))` (bzw. komplett `sessionCount` bei `100%`) vom Tageszähler ab, setzen `counterState = .idle`, `sessionCount = 0` und spielen `Success`-Haptik.
+       2. **Trennlinie (`Divider`)**.
+       3. **Button „Letzte Zählung (`X`) entfernen“ (`trash`-Icon + `tasbih_remove_last_count`):** Zieht ausschließlich die letzte manuelle `+`-Addition (`lastManualAddAmount`) wieder ab und setzt `lastManualAddAmount = 0` (deaktiviert mit Text `tasbih_no_recent_to_remove`, falls `lastManualAddAmount == 0`; **keine** freie Zahleneingabe beim Abziehen).
+       4. **`Abbrechen`-Button (`cancel`)** darunter.
+   * **Mitte – Kompakter 3-Stufen-Geschwindigkeitswähler (`CompactTasbihSpeedSelector`):**
+     * Kapsel-Container (`Capsule`, Füllung `Color.primary.opacity(0.05)`, Rand `Color.primary.opacity(0.08)` `1px`, Innenabstand `padding: 3`, `HStack(spacing: 2)`):
+       * Stufe `0`: Icon `tortoise.fill` (`13px`)
+       * Stufe `1`: Lokalisierter Text `tempo_normal` (`12px`)
+       * Stufe `2`: Icon `hare.fill` (`13px`)
+     * **Farben der Segmente:** Aktives Segment hat eine grüne Kapsel-Hinterlegung `Theme.islamicGreen.opacity(0.18)` und Vordergrundfarbe **`#2E7D32` (`semibold`)**; inaktive Segmente haben transparenten Hintergrund und Farbe **`.gray` (`#8E8E93`, `medium`)**. Wechsel löst `Selection`-Haptik aus und speichert unter `tasbih_speed_<key>` (Default `1` = Normal).
+   * **Rechts – Plus-Button für manuelles Hinzufügen (`58×58px` Kreis, `paddingTrailing: 30`):**
+     * Design: Hintergrund `Theme.islamicGreen.opacity(0.14)`, Rahmen `Theme.islamicGreen.opacity(0.25)` (`lineWidth: 1.5`), Icon `plus` (`22px title2 bold`) in `#2E7D32`.
+     * Öffnet ein minimalistisches zentriertes **Plus-Pop-up (`width: 180px`, `Theme.cardBackground`, `borderRadius: 24`, `padding: 20`)**:
+       * Fokussiertes Ziffern-Eingabefeld (`width: 140px`, `32px bold rounded`, filtert live auf `"0123456789"`, max. 4 Stellen, kappt Werte `> 5000` sofort auf `"5000"`).
+       * Grüner Vollflächen-Button `add` (`#2E7D32`, `borderRadius: 12`) addiert `safeAmount` (`1..5000`, Gesamtzähler gedeckelt bei `500_000`), speichert `lastManualAddAmount = safeAmount` und setzt `sessionCount = 0`.
 
 ---
 
@@ -382,10 +453,12 @@ Wird als `fullScreenCover` / Modal geöffnet:
    * Rechts (wenn `adhkarState == .active` und nicht im Edit-Modus):
      * **Voice-Mode Toggle-Button:** Runder Button (`speaker.wave.2.fill` in `#2E7D32` wenn aktiv, `speaker.slash` in `#8E8E93` wenn aus).
      * **Fortschrittszähler:** `"{completedItems.count} / {adhkarList.count}"` (`15px bold`, `#8E8E93`).
-2. **Einmal-Abhaken / Rückgängig-Banner ganz oben in der Liste (sichtbar sobald `adhkarState != .future`):**
+2. **Maghrib-Countdown-Banner (nur bei Abend-Adhkar `type == .evening`):**
+   * Ist `solarManager.maghribCountdownSeconds != nil` (letzte 60 Sekunden vor Sonnenuntergang), wird ganz oben im `VStack(spacing: 20)` direkt das pulsierende `MaghribCountdownBanner` eingeblendet.
+3. **Einmal-Abhaken / Rückgängig-Banner ganz oben in der Liste (sichtbar sobald `adhkarState != .future`):**
    * **Wenn Kategorie noch NICHT erledigt:** Dezenter Rahmen-Button mit Text `adhkar_already_read_prompt` (*„Bereits gelesen? Hier abhaken“*). Im Zustand `expired` prominenter dargestellt (`15px medium`, `paddingVertical: 10`, Hintergrund `rgba(142,142,147,0.16)`). Ein Tipp speichert vorher einen `AdhkarCompletionSnapshot` (damit etwaige Teilfortschritte und Tasbih-Stände exakt wiederhergestellt werden können!) und markiert alle Pflicht-Items als erledigt.
    * **Wenn Kategorie erledigt UND `hasSnapshot == true`:** Grüner Vollflächen-Button (`#2E7D32`, weißer Text) mit zwei Zeilen: `adhkar_read_done` (*„Als gelesen markiert ✓“*) und darunter `adhkar_tap_to_undo` (*„Tippen zum Rückgängigmachen“*).
-3. **Kartenliste (`ForEach` über `localAdhkarList`, `spacing: 20`):**
+4. **Kartenliste (`ForEach` über `localAdhkarList`, `spacing: 20`):**
    Jede `AdhkarCard` (`Theme.cardBackground`, `borderRadius: 16`, `padding: 20`, grüner Rahmen wenn gerade Auto-Count/Audio läuft, leicht ausgegraut wenn erledigt oder optional):
    * **Im Edit-Modus (`isEditMode == true`, auslösbar per Menü oder Long-Press `0.5s` auf eine Karte):** Zeigt oben links Pfeil-Buttons `arrow.up.circle.fill` und `arrow.down.circle.fill` zum Verschieben der Karte; Reihenfolge wird sofort unter `adhkar_custom_order_<type>` gespeichert.
    * **Arabischer Dhikr-Text:** `26px`, Zeilenabstand `10px`, zentriert, RTL (`opacity: 0.6` falls `isMandatory == false`).
@@ -397,7 +470,7 @@ Wird als `fullScreenCover` / Modal geöffnet:
      * *Auto-Count-Modus (`settings.adhkarAutoCount == true`):* Kreis mit `play.fill` / `pause.fill` und aktuellem Zählerstand `current / count`.
      * *Manueller Modus (`settings.adhkarAutoCount == false`):* Bei `count == 1` Kreis mit Häkchen-Umriss / `"1×"`; bei `count > 1` Fortschrittsring mit großer Zahl `current / count`.
    * **Info-/Einstellungs-Icon unten rechts (`globe` / Info-Button):** Öffnet `AdhkarInfoModalView` (zeigt vollständige lokalisierte Übersetzung des Bittgebets, einen Toggle **„Pflicht / Optional“** `adhkar_<prefix>_mandatory` sowie einen 3-Stufen-Geschwindigkeitswähler **Langsam / Normal / Schnell** `adhkar_<prefix>_speed` individuell für genau dieses Bittgebet!).
-4. **Abschluss & Benachrichtigungs-Prompt:**
+5. **Abschluss & Benachrichtigungs-Prompt:**
    * Sobald alle `isMandatory == true` Items einer Session erreicht sind, wird automatisch `todayRecord.<type>AdhkarDone = true` und `<type>AdhkarTime = now` gespeichert.
    * Unten am Listenende steht zusätzlich ein grüner Abschluss-Button `finish_adhkar_session`. Wurde der Nutzer nach seiner allerersten abgeschlossenen Session noch nie nach Push-Mitteilungen gefragt (`hasPromptedNotificationPermissionAfterFirstSession == false` und Systemstatus `notDetermined`), öffnet sich `NotificationPermissionSheet`.
 
@@ -418,9 +491,10 @@ Alle drei dedizierten Suren-Reader teilen sich exakt denselben Aufbau:
 
 Der Quran-Reader ist ein kontinuierlicher, vorwärtsgerichteter Mushaf-Lesefluss (Seiten `1` bis `604`, `6.236` Verse):
 
-1. **Kompakter Top-Header (fixiert über dem Scrollbereich, Hintergrund passend zu `quranTheme`):**
-   * Links: Aktueller Surenname (arabisch/lokalisiert) + Seitenangabe `"{page} {currentPage}"` (sowie Juz-Info).
-   * Rechts: Kompakte Tagesziel-Anzeige `"{todayPages} / {quranDailyGoal}"` + Prozent-Badge (`min(100, round(todayPages / goal * 100))%`, grün ab 100 %, sonst `#2E7D32` / `#FF9500`) und kleiner Fortschrittsbalken.
+1. **Inline-Top-NavigationBar & Maghrib-Overlay (`ZStack(alignment: .top)`):**
+   * **NavigationBar (`.inline`, Hintergrund sichtbar und passend zu `quranTheme`):** Zeigt zentriert `viewModel.navTitle` (aktueller Surenname + Seitenangabe; Fallback `tab_quran`), **ohne** Khatm-Zähler-Badge in der Toolbar.
+   * **Oberer Leseabstand (`topReadingMargin = 18.0pt`):** Sorgt dafür, dass die oberste ungelesene Verszeile mit angenehmem Abstand unterhalb der Navigationsleiste steht.
+   * **Maghrib-Countdown-Banner:** Ist `solarManager.maghribCountdownSeconds != nil`, schwebt das `MaghribCountdownBanner` im `ZStack(alignment: .top)` mit `paddingTop: 8` und `zIndex: 90` über dem oberen Rand der `ScrollView`.
 2. **Unsichtbare obere Lesekante (`threshold = fontLineHeight` im Seiten-Koordinatensystem bzw. `~120pt` Bildschirmkante inklusive Header):**
    * Es wird keine störende Linie gezeichnet, aber exakt an dieser oberen Lesekante entscheidet sich Vers für Vers das Ausgrauen (siehe Kapitel 5.5).
 3. **Scrollbereich (`LazyVStack` über Seiten ab der Startseite des aktuellen `readFrontier` bis Seite `604`):**
@@ -518,7 +592,10 @@ Geöffnet über das Zahnrad-Icon oben rechts in `TodayView` (`NavigationStack` i
 * **Automatisch weiterblättern:** Toggle `adhkarAutoAdvance` (Default `true`).
 * **Standard-Geschwindigkeit:** 3-Stufen-Picker (`defaultAdhkarSpeedStep`: `0` = Langsam, `1` = Normal [Default], `2` = Schnell).
 * **Stimme / Rezitator für den Sprachmodus (`adhkarReciter`):**
-  * Auswahl zwischen `"iapetus"` (**Iapetus – Ruhige Standardstimme**, Default) und `"duraihim"` (**Scheich Hamad Al-Duraihim**), jeweils mit kleinem Play/Stop-Hörproben-Button (`morning_14.m4a` vs. `duraihim_morning_14.m4a`).
+  * Auswahl zwischen **3 Rezitatoren**, jeweils mit Beschreibungstext und eigenem Play/Stop-Hörproben-Button (`morning_14.m4a` bzw. mit Sprecher-Präfix):
+    1. `"iapetus"` — **Abdullah (Standard)** (`reader_iapetus`, Beschreibung `reader_iapetus_desc` *„Ruhige & klare Lesung“*, Hörprobe `morning_14.m4a`, Default)
+    2. `"duraihim"` — **Hamad Al-Duraihim** (`reader_al_duraihim`, Beschreibung `reader_al_duraihim_desc` *„Hisn al-Muslim (Klar & Deutlich)“*, Hörprobe `duraihim_morning_14.m4a`)
+    3. `"ghamdi"` — **Sheikh Saad Al-Ghamdi** (`reader_al_ghamdi`, Beschreibung `reader_al_ghamdi_desc` *„Sanft & Melodisch“*, Hörprobe `ghamdi_morning_14.m4a`)
 * **Adhkar-Erinnerungen (Push-Benachrichtigungen):**
   * 4 Toggles mit individuellen Zeit-Offsets:
     1. **Morgen-Adhkar Erinnerung** (`isMorningAdhkarReminderEnabled`) – Offset nach Fajr (`morningAdhkarOffsetMinutes`, Default `+15` Min).
@@ -579,15 +656,15 @@ Es existiert immer genau **ein** Datensatz.
 | `surahBaqarahGoal` | `Int` | `100` | Tagesziel Al-Baqarah in Prozent (`10..100`) |
 | `enabledIstighfarForms` | `String` | `"kurz,extended,gewaltig,yunus,lang"` | Kommagetrennte Liste aktiver `IstighfarForm`-RawValues |
 | `enabledSalawatForms` | `String` | `"waSallim,kurz,lang"` | Kommagetrennte Liste aktiver `SalawatForm`-RawValues |
-| `istighfarForm` | `String` | `"kurz"` | Zuletzt gewählte primäre Istighfar-Form |
-| `salawatForm` | `String` | `"waSallim"` | Zuletzt gewählte primäre Salawat-Form |
+| `istighfarVersion` | `String` | `"kurz"` | Zuletzt gewählte aktive Istighfar-Variante (`IstighfarForm.rawValue`) |
+| `salawatVersion` | `String` | `"waSallim"` | Zuletzt gewählte aktive Salawat-Variante (`SalawatForm.rawValue`) |
 | `isDarkMode` | `Bool` | `true` | App-weites Dark-Mode-Flag |
 | `language` | `String` | System / `"en"` | ISO-Sprachcode (`de`, `en`, `ar`, `tr`, `id`, `ms`, `fr`, `es`, `ur`, `ru`, `bn`) |
 | `showTransliteration` | `Bool` | `true` | Lateinische Umschrift unter arabischen Texten anzeigen |
 | `adhkarAutoCount` | `Bool` | `false` | Automatischer Timer-Zählmodus in Adhkar aktiv |
 | `adhkarAutoAdvance` | `Bool` | `true` | Nach Abschluss eines Adhkar-Items automatisch zum nächsten springen |
 | `adhkarVoiceEnabled` | `Bool` | `false` | Globaler Default für Sprachmodus |
-| `adhkarReciter` | `String` | `"iapetus"` | Gewählter Adhkar-Rezitator (`"iapetus"` oder `"duraihim"`) |
+| `adhkarReciter` | `String` | `"iapetus"` | Gewählter Adhkar-Rezitator (`"iapetus"` [Abdullah], `"duraihim"` oder `"ghamdi"`) |
 | `defaultAdhkarSpeedStep` | `Int` | `1` | Globale Standard-Geschwindigkeit für Adhkar (`0`=Langsam, `1`=Normal, `2`=Schnell) |
 | `tasbihAutoCount` | `Bool` | `true` | Freihand-Auto-Counter im Tasbih aktiv |
 | `tasbihVibrationEnabled` | `Bool` | `true` | Haptisches Feedback bei jedem Tasbih-Zählschritt |
@@ -674,12 +751,9 @@ interface AdhkarCompletionSnapshot {
 ```ts
 // Gespeichert als JSON-String unter Key "quranFrontierBookmark_v1"
 interface QuranBookmark {
-  surah: number;      // 1..114
-  ayah: number;       // 1..286
-  page: number;       // 1..604
-  delta: number;      // Vertikaler Offset in Pixeln relativ zur Vers-Oberkante
+  verseIndex: number; // 0..6236 (globaler Vers-Index des Lesezeichens / readFrontier)
+  delta: number;      // Vertikaler Pixel-Abstand relativ zu (frontierTop - topReadingMargin [18.0pt])
   fontSize: number;   // Schriftgröße (22..42) zum Zeitpunkt der Speicherung
-  savedAt: number;    // Unix-Timestamp
 }
 
 // In-Memory-Modell eines Quran-Verses nach Laden aus quran_offline.json
@@ -716,7 +790,7 @@ interface Verse {
 | `adhkar_<30alnum>_mandatory` | `Bool` | `true` | Pflicht/Optional-Status pro Adhkar-Karte (`30` alphanumerische Zeichen aus `item.german`) |
 | `adhkar_<30alnum>_speed` | `Int` | `defaultAdhkarSpeedStep` | Individuelle Tempo-Stufe (`0`, `1`, `2`) pro Adhkar-Karte |
 | `adhkar_custom_order_<type>` | `[String]` | `[]` | Nutzerdefinierte Sortierreihenfolge für `sleep`, `morning`, `evening` |
-| `adhkarReciter` | `String` | `"iapetus"` | `"iapetus"` oder `"duraihim"` |
+| `adhkarReciter` | `String` | `"iapetus"` | `"iapetus"` (Abdullah), `"duraihim"` oder `"ghamdi"` |
 | `defaultAdhkarSpeedStep` | `Int` | `1` | Standard-Adhkar-Tempo (`0..2`) |
 | `prayer_offset_fajr` | `Int` | `0` | Manuelle Minutenkorrektur Fajr (`-60..+60`) |
 | `prayer_offset_sunrise` | `Int` | `0` | Manuelle Minutenkorrektur Shuruq (`-60..+60`) |
@@ -777,10 +851,10 @@ Ein `1.0s`-Intervall-Timer prüft kontinuierlich `diff = effectiveSunset.getTime
     * Spiele Haptik `NotificationFeedbackType.Success`.
     * Zeige `MaghribDayResetToast` (`showDayResetToast = true`) für `4.5` Sekunden.
 
-#### 5.1.3 Anzeige „Nacht zum <Wochentag>“ (`IslamicDateHelper.nightTitle`)
+#### 5.1.3 Anzeige „Nacht zum <Wochentag>, <Tag. Monat>“ (`IslamicDateHelper.nightTitle` & `formattedDisplayDate`)
 Zwischen `effectiveSunset` (Abend) und `effectiveFajr` (Morgendämmerung) befindet sich der Nutzer in der **Nacht zum neuen Wochentag**:
 * `isNightTime == true`, wenn Standort aktiv UND (`now >= todayEffectiveSunset` ODER `now < todayEffectiveFajr`).
-* In diesem Zeitraum zeigt `TodayView` als Haupttitel nicht bloß `"Freitag"`, sondern lokalisiert `"Nacht zum Freitag"` (`night_to_weekday`), inklusive sprachspezifischer Grammatikregeln (z. B. im Russischen Akkusativ für weibliche Wochentage среда -> среду, пятница -> пятницу, суббота -> субботу; im Französischen `"Nuit du vendredi"`; im Arabischen `"ليلة الجمعة"`). Ab `now >= effectiveFajr` springt der Titel auf den normalen Wochentagsnamen (`"Freitag"` / `"الجمعة"`).
+* In diesem Zeitraum zeigt `TodayView` in der oberen Datumszeile (`#2E7D32`, `17px semibold`) lokalisiert `"{nightTitle}, {Tag. Monat}"` (Key `night_before_weekday`, z. B. `"Nacht zum Freitag, 6. Nov."`, **ohne** Jahreszahl!), inklusive sprachspezifischer Grammatikregeln (z. B. im Russischen Akkusativ für weibliche Wochentage среда -> среду, пятница -> пятницу, суббота -> субботу; im Französischen `"Nuit du vendredi"`; im Arabischen `"ليلة الجمعة"`). Ab `now >= effectiveFajr` springt die Zeile auf den normalen Wochentagsnamen mit Datum (`"Freitag, 6. Nov."`).
 
 ---
 
@@ -865,9 +939,13 @@ Alle Gebetszeiten werden zu 100 % offline anhand der **NOAA Solar Equations** be
 
 ---
 
-### 5.3 Hijri-Datum (`IslamicDateHelper`)
+### 5.3 Hijri-Datum (`IslamicDateHelper.formattedHijriDateTransliterated`)
 * Verwendet den **Umm-al-Qura-Kalender** (`Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric', month: 'numeric', year: 'numeric' })`) mit `trackingDate` als Eingabedatum! Da `trackingDate` bereits ab Maghrib um `+1 Tag` weiterspringt, springt auch das islamische Hijri-Datum automatisch exakt bei Sonnenuntergang auf den nächsten Tag um.
-* Die 12 islamischen Monatsnamen:
+* **Sprachabhängiges Ausgabeformat (in `TodayView` in der unteren Datumszeile in `#8E8E93`, `15px`):**
+  * **`"de"`:** `"{day}. {Monatsname} {year}"` (mit Punkt nach dem Tag, ohne `"AH"`).
+  * **`"ar"`:** Vollständig arabische Formatierung über Locale `"ar_SA"` (arabisch-indische Ziffern + arabischer Monatsname + `"هـ"`).
+  * **Alle übrigen Sprachen:** `"{day} {Monatsname} {year} AH"`.
+* Die 12 islamischen Monatsnamen (Transliteration / Arabisch):
   1. Muharram (`محرم`)
   2. Safar (`صفر`)
   3. Rabi' al-Awwal (`ربيع الأول`)
@@ -927,9 +1005,16 @@ const orderKey = `${item.count}_${(germanClean + transClean).slice(0, 40)}`;
 #### 5.4.4 Voice-Mode (Sprachmodus) & Audio-Äquivalenz-Auflösung
 * `AVAudioSession` / Expo Audio läuft im Modus `spokenAudio` mit `duckOthers` und aktiviertem `KeepAwake`.
 * Hat ein `AdhkarItem` in den Stammdaten `audioFileName == nil`, weist `AdhkarSessionView` beim Initialisieren automatisch `"${typeId}_${index + 1}"` zu (1-basiert nach Originalreihenfolge, z. B. `"morning_5"`, `"evening_5"`, `"sleep_4"`).
-* **Auflösungs-Reihenfolge der `.m4a`-Datei für Rezitator `"duraihim"` vs. `"iapetus"`:**
-  1. Ist `adhkarReciter === "duraihim"`, suche zuerst `duraihim_<fileName>.m4a`, dann `duraihim_<equivalent>.m4a`, dann Fallback auf `<fileName>.m4a` bzw. `<equivalent>.m4a`.
-  2. Ist `adhkarReciter === "iapetus"`, suche zuerst `<fileName>.m4a`, dann `<equivalent>.m4a`, dann Fallback auf `duraihim_<fileName>.m4a`.
+* **Auflösungs-Reihenfolge der `.m4a`-Datei für die 3 Rezitatoren (`"iapetus"` [Abdullah], `"duraihim"`, `"ghamdi"`):**
+  * Sei `effectiveFile = equivalentAudioMap[fileName] ?? fileName` und `prefix = (adhkarReciter === "duraihim") ? "duraihim_" : (adhkarReciter === "ghamdi" ? "ghamdi_" : "")`.
+  * **1. Wenn `prefix !== ""` (`"duraihim"` oder `"ghamdi"`):**
+    Prüfe nacheinander:
+    1. `${prefix}${effectiveFile}.m4a`
+    2. `${prefix}${equivalent}.m4a` (falls `equivalentAudioMap[fileName]` existiert)
+    3. `${prefix}${fileName}.m4a`
+    4. Fallback auf Standardstimme ohne Präfix: `${effectiveFile}.m4a` -> `${equivalent}.m4a` -> `${fileName}.m4a`.
+  * **2. Wenn `prefix === ""` (`"iapetus"` = Abdullah Standard):**
+    Prüfe nacheinander `${effectiveFile}.m4a` -> `${equivalent}.m4a` -> `${fileName}.m4a`.
 * **`equivalentAudioMap` (Teilung identischer Aufnahmen zwischen Morgen/Abend/Schlaf):**
   ```json
   {
@@ -1091,10 +1176,10 @@ Damit Kinder oder versehentliche schnelle Wischgesten nicht dutzende Seiten unge
 
 #### 5.5.4 Lesezeichen-Wiederherstellung (`QuranBookmark`) & Pinch-to-Zoom
 * Beim Pausieren des Scrollens (Debounce `400ms`) sowie bei jedem App-Hintergrundwechsel speichert `QuranProgressStore` ein `QuranBookmark`:
-  * `surah`, `ayah`, `page` des ersten ungelesenen Verses (`readFrontier + 1`),
-  * `delta`: exakter Pixel-Abstand zwischen Vers-Oberkante (`verseMinY`) und Viewport-Oberkante,
+  * `verseIndex`: globaler Vers-Index (`0..6236`) des aktuellen `readFrontier`,
+  * `delta`: exakter Pixel-Abstand relativ zu `(frontierTop - topReadingMargin)`, wobei `topReadingMargin = 18.0pt` den oberen Leseabstand unterhalb der Navigationsleiste definiert,
   * `fontSize`: aktuelle Schriftgröße.
-* Beim Neustart der App lädt `QuranView` die Seiten ab `bookmark.page`, wartet auf das Text-Layout, sucht `verseMinY` von `(bookmark.surah, bookmark.ayah)` und setzt `contentOffset.y = verseMinY + bookmark.delta * (currentFontSize / bookmark.fontSize)`. Dadurch landet der Nutzer **immer millimetergenau an derselben Textzeile**.
+* Beim Neustart der App lädt `QuranView` die Seiten ab der Zielseite von `verseIndex + 1`, wartet auf das Text-Layout, bestimmt `frontierTop` und setzt `contentOffset.y = (frontierTop - 18.0) + bookmark.delta * (currentFontSize / bookmark.fontSize)`. Dadurch landet der Nutzer **immer millimetergenau an derselben Textzeile**.
 * **Khatm-Abschluss (`readFrontier >= 6236`):** Sobald Vers `114:6` (Sure An-Nas, Vers 6, `id == 6236`) die obere Lesekante passiert, öffnet sich das Khatm-Gratulations-Modal; Bestätigung inkrementiert `quranKhatmCount += 1`, setzt `readFrontier = 0`, löscht `quranFrontierBookmark_v1` und scrollt auf Seite 1 zurück.
 
 ---
@@ -1124,18 +1209,18 @@ Jedes Preset hat fein abgestimmte Sprechzeiten in Sekunden für **Stufe 0 (Schil
 
 | Tasbih / Variante | `tasbih_speed_*` Key | Stufe `0` (Langsam) | Stufe `1` (Normal) | Stufe `2` (Schnell) |
 | :--- | :--- | :---: | :---: | :---: |
-| Istighfar – `kurz` | `tasbih_speed_istighfar_kurz` | `1.35 s` | `1.08 s` | `0.67 s` |
-| Istighfar – `extended` | `tasbih_speed_istighfar_extended` | `1.75 s` | `1.51 s` | `1.15 s` |
-| Istighfar – `gewaltig` | `tasbih_speed_istighfar_gewaltig` | `5.26 s` | `4.95 s` | `4.47 s` |
-| Istighfar – `yunus` | `tasbih_speed_istighfar_yunus` | `4.36 s` | `4.00 s` | `3.44 s` |
-| Istighfar – `lang` (Sayyidul) | `tasbih_speed_istighfar_lang` | `14.46 s` | `13.45 s` | `11.88 s` |
-| Salawat – `waSallim` | `tasbih_speed_salawat_waSallim` | `2.47 s` | `2.20 s` | `1.78 s` |
-| Salawat – `kurz` | `tasbih_speed_salawat_kurz` | `2.94 s` | `2.63 s` | `2.14 s` |
-| Salawat – `lang` (Ibrahimiyyah) | `tasbih_speed_salawat_lang` | `10.97 s` | `10.45 s` | `9.64 s` |
-| SubhanAllah wa bihamdihi... | `tasbih_speed_subhanAllah` | `3.50 s` | `3.28 s` | `2.94 s` |
-| Alhamdulillah (Baqiyat as-Salihat) | `tasbih_speed_alhamdulillah` | `5.05 s` | `4.57 s` | `3.82 s` |
-| La hawla (`allahuAkbar`) | `tasbih_speed_allahuAkbar` | `3.04 s` | `2.80 s` | `2.43 s` |
-| La ilaha illallah wahdahu... | `tasbih_speed_laIlahaIllallah` | `6.10 s` | `5.63 s` | `4.91 s` |
+| Istighfar – `kurz` | `tasbih_speed_istighfar_kurz` | `1.08 s` | `0.67 s` | `0.42 s` |
+| Istighfar – `extended` | `tasbih_speed_istighfar_extended` | `1.51 s` | `1.15 s` | `0.88 s` |
+| Istighfar – `gewaltig` | `tasbih_speed_istighfar_gewaltig` | `4.95 s` | `4.47 s` | `4.04 s` |
+| Istighfar – `yunus` | `tasbih_speed_istighfar_yunus` | `4.00 s` | `3.44 s` | `2.96 s` |
+| Istighfar – `lang` (Sayyidul) | `tasbih_speed_istighfar_lang` | `13.45 s` | `11.88 s` | `10.49 s` |
+| Salawat – `waSallim` | `tasbih_speed_salawat_waSallim` | `2.20 s` | `1.78 s` | `1.44 s` |
+| Salawat – `kurz` | `tasbih_speed_salawat_kurz` | `2.63 s` | `2.14 s` | `1.74 s` |
+| Salawat – `lang` (Ibrahimiyyah) | `tasbih_speed_salawat_lang` | `10.45 s` | `9.64 s` | `8.89 s` |
+| SubhanAllah wa bihamdihi... | `tasbih_speed_subhanAllah` | `3.28 s` | `2.94 s` | `2.64 s` |
+| Alhamdulillah (Baqiyat as-Salihat) | `tasbih_speed_alhamdulillah` | `4.57 s` | `3.82 s` | `3.19 s` |
+| La hawla (`allahuAkbar`) | `tasbih_speed_allahuAkbar` | `2.80 s` | `2.43 s` | `2.11 s` |
+| La ilaha illallah wahdahu... | `tasbih_speed_laIlahaIllallah` | `5.63 s` | `4.91 s` | `4.28 s` |
 | **Eigene Tasbihs (`CustomTasbih`)** | `tasbih_speed_<uuid>` | `1.50 s` (40 BPM) | `1.00 s` (60 BPM) | `0.67 s` (90 BPM) |
 
 #### 5.6.3 Dynamischer Grüner Puls-Blitz (`triggerGreenFlash` aus `Theme.swift` & `DhikrDetailView`)
@@ -1151,10 +1236,11 @@ Damit der grüne Kreis-Blitz bei sehr schnellem Zählen nicht dauerhaft flackert
   * Erlaubt ausschließlich ASCII-Ziffern `0-9` (keine Punkte, Kommas, Minuszeichen oder Leerzeichen).
   * Kappt jede Eingabe sofort auf **maximal `5000`** pro Addition!
   * Speichert den zuletzt hinzugefügten Wert in `lastManualAddedAmount`.
-* **Minus-Korrektur (`-`-Sheet):**
+* **Minus-Korrektur (`-`-Pop-up):**
   * Während eine Auto-Count- oder Tipp-Session läuft, zählt `sessionCount` im Hintergrund mit (`+1` pro Schritt).
-  * Wählt der Nutzer im Minus-Modal `-10%`, `-30%`, `-50%` oder `-100%`, wird `deduct = Math.max(1, Math.round(sessionCount * percentage))` berechnet, `currentCount = Math.max(0, currentCount - deduct)` und `sessionCount = Math.max(0, sessionCount - deduct)` gesetzt.
-  * Wählt der Nutzer „Letzte manuelle Eingabe entfernen“, wird `currentCount = Math.max(0, currentCount - lastManualAddedAmount)` abgezogen und `lastManualAddedAmount = 0` gesetzt.
+  * Wählt der Nutzer `-10%`, `-30%` oder `-50%`, wird `deduct = Math.max(1, Math.round(sessionCount * percentage))` berechnet, `currentCount = Math.max(0, currentCount - deduct)` und `sessionCount = Math.max(0, sessionCount - deduct)` gesetzt.
+  * Wählt der Nutzer `-100%`, wird exakt `sessionCount` von `currentCount` abgezogen (`Math.max(0, currentCount - sessionCount)`), `sessionCount = 0` gesetzt und die Session auf `counterState = .idle` zurückgesetzt.
+  * Wählt der Nutzer „Letzte manuelle Eingabe entfernen“ (`undoLastManualAddition`), wird `currentCount = Math.max(0, currentCount - lastManualAddedAmount)` abgezogen und `lastManualAddedAmount = 0` gesetzt.
 
 ---
 
@@ -1245,7 +1331,7 @@ Die folgende Referenztabelle fasst sämtliche vom Nutzer konfigurierbaren Einste
 | **Adhkar** | Individuelles Tempo pro Karte | `AsyncStorage.adhkar_<id>_speed` | `Int` (`0`, `1`, `2`) | erbt `1` |
 | **Adhkar** | Pflicht / Optional pro Karte | `AsyncStorage.adhkar_<id>_mandatory` | `Boolean` | `true` |
 | **Adhkar** | Eigene Reihenfolge pro Session | `AsyncStorage.adhkar_custom_order_*` | `string[]` | Originalreihenfolge |
-| **Adhkar** | Stimme / Rezitator | `UserSettings.adhkarReciter` | `"iapetus"` \| `"duraihim"` | `"iapetus"` |
+| **Adhkar** | Stimme / Rezitator | `UserSettings.adhkarReciter` | `"iapetus"` \| `"duraihim"` \| `"ghamdi"` | `"iapetus"` (Abdullah) |
 | **Adhkar** | Morgen-Adhkar Erinnerung | `isMorningAdhkarReminderEnabled` + Offset | `Bool` + `Int` Minuten nach Fajr | `false`, `+15` Min |
 | **Adhkar** | Abend-Adhkar Erinnerung | `isEveningAdhkarReminderEnabled` + Offset | `Bool` + `Int` Minuten nach Asr | `false`, `+15` Min |
 | **Adhkar** | Schlaf-Adhkar Erinnerung | `isSleepAdhkarReminderEnabled` + Uhrzeit | `Bool` + `HH:mm` | `false`, `22:00` |
@@ -1299,7 +1385,7 @@ Die folgende Referenztabelle fasst sämtliche vom Nutzer konfigurierbaren Einste
 ---
 
 ### 7.3 Aufbau von `Translations.json` & Alle unterstützten Sprachen
-* **Dateipfad:** `ImanTrack/Translations.json` (`379` Lokalisierungsschlüssel).
+* **Dateipfad:** `ImanTrack/Translations.json` (`381` Lokalisierungsschlüssel, inkl. `reader_iapetus` = `"Abdullah (Standard)"` / `"Abdullah (Default)"` / `"عبد الله (الافتراضي)"`, `reader_al_duraihim`, `reader_al_ghamdi` & `reader_al_ghamdi_desc`).
 * **JSON-Struktur:** Ein flaches Dictionary der Form `Record<TranslationKey, Record<LangCode, string>>`:
   ```json
   {
@@ -1344,11 +1430,12 @@ Die folgende Referenztabelle fasst sämtliche vom Nutzer konfigurierbaren Einste
 #### `FAQ.json` (`ImanTrack/FAQ.json`)
 * Enthält für alle **11 Hauptsprachen** (`de`, `en`, `ar`, `tr`, `fr`, `es`, `id`, `ms`, `ur`, `ru`, `bn`) jeweils `navTitle`, `bannerTitle`, `bannerDesc` sowie `7` thematische Sektionen mit Fragen & Antworten (`iconColor`-Werte: `"islamicGreen"`, `"orange"`, `"purple"`, `"blue"`, `"indigo"`).
 
-#### Audio-Dateien (`113` `.m4a`-Dateien + `7` `.caf`-Dateien)
-1. **Adhkar-Rezitationen (`ImanTrack/Audio/Adhkar/` — `106` `.m4a`-Dateien):**
+#### Audio-Dateien (`153` `.m4a`-Dateien + `7` `.caf`-Dateien)
+1. **Adhkar-Rezitationen (`ImanTrack/Audio/Adhkar/` — `146` `.m4a`-Dateien):**
    * **Quran-Suren & Verse (`6` Dateien):** `quran_ayat_kursi.m4a`, `quran_ikhlas.m4a`, `quran_falaq.m4a`, `quran_nas.m4a`, `quran_baqarah_last2.m4a`, `quran_mulk.m4a`.
-   * **Stimme 1 – Iapetus (Standard):** `morning_5.m4a` .. `morning_25.m4a` (21 Dateien), `evening_5.m4a` .. `evening_13.m4a`, `evening_15.m4a` .. `evening_23.m4a` (18 Dateien), `sleep_1.m4a`, `sleep_3.m4a` .. `sleep_13.m4a` (12 Dateien) sowie `ghamdi_sleep_*.m4a` (8 Dateien).
-   * **Stimme 2 – Scheich Hamad Al-Duraihim (`41` Dateien):** `duraihim_morning_5.m4a` .. `duraihim_morning_25.m4a`, `duraihim_evening_5..11.m4a`, `duraihim_evening_18.m4a`, `duraihim_evening_21..23.m4a`, `duraihim_sleep_4..11.m4a`, `duraihim_sleep_13.m4a`.
+   * **Stimme 1 – Abdullah (Standard, `id: "iapetus"`, `51` Dateien):** `morning_5.m4a` .. `morning_25.m4a` (`21` Dateien), `evening_5.m4a` .. `evening_13.m4a`, `evening_15.m4a` .. `evening_23.m4a` (`18` Dateien), `sleep_1.m4a`, `sleep_3.m4a` .. `sleep_13.m4a` (`12` Dateien).
+   * **Stimme 2 – Hamad Al-Duraihim (`id: "duraihim"`, `40` Dateien):** `duraihim_morning_5..16.m4a`, `duraihim_morning_18..25.m4a` (`20` Dateien; #17 fällt automatisch auf `morning_17.m4a` zurück), `duraihim_evening_5..11.m4a`, `duraihim_evening_18.m4a`, `duraihim_evening_21..23.m4a` (`11` Dateien), `duraihim_sleep_4..11.m4a`, `duraihim_sleep_13.m4a` (`9` Dateien).
+   * **Stimme 3 – Sheikh Saad Al-Ghamdi (`id: "ghamdi"`, `49` Dateien):** `ghamdi_morning_5.m4a` .. `ghamdi_morning_25.m4a` (`21` Dateien), `ghamdi_evening_5.m4a` .. `ghamdi_evening_23.m4a` (`19` Dateien), `ghamdi_sleep_4..11.m4a`, `ghamdi_sleep_13.m4a` (`9` Dateien).
 2. **Adhan- & Fajr-Klingeltöne (`ImanTrack/Adhan ringtones/` — je `7` `.caf`-Dateien für Push-Notifications `< 30s` und `7` `.m4a`-Dateien):**
    * `azan.caf` / `azan.m4a`
    * `azan (2).caf` / `azan (2).m4a`
@@ -1365,7 +1452,11 @@ Die folgende Referenztabelle fasst sämtliche vom Nutzer konfigurierbaren Einste
 ### 8.1 Haptik-Matrix (`UIImpactFeedbackGenerator` / `UINotificationFeedbackGenerator` -> `expo-haptics`)
 | Benutzeraktion / Systemereignis | Haptik-Typ | Bedingung |
 | :--- | :--- | :--- |
-| Tasbih einzelner Zählschritt (Tap oder Auto-Tick) | `ImpactFeedbackStyle.Light` | Nur wenn `settings.tasbihVibrationEnabled == true` |
+| Tasbih manueller Tap auf Zählring | `ImpactFeedbackStyle.Medium` | Nur wenn `settings.tasbihVibrationEnabled == true` |
+| Tasbih automatischer Timer-Tick (Auto-Counter) | `ImpactFeedbackStyle.Light` | Nur wenn `settings.tasbihVibrationEnabled == true` |
+| Tasbih Tempo-Wechsel (`CompactTasbihSpeedSelector`) | `SelectionFeedback` (`selectionAsync`) | Immer |
+| Tasbih Plus-/Minus-Korrektur angewendet | `NotificationFeedbackType.Success` | Immer |
+| Tasbih Auto-Stopp bei Maghrib-Tageswechsel | `NotificationFeedbackType.Warning` | Wenn Auto-Counter lief |
 | Adhkar manueller Tap auf Zählkreis | `ImpactFeedbackStyle.Medium` | Immer |
 | Adhkar automatischer Tick / Voice-Wiederholung | `ImpactFeedbackStyle.Light` | Immer |
 | Adhkar Einmal-Abhaken & Rückgängigmachen | `ImpactFeedbackStyle.Medium` | Immer |
@@ -1375,6 +1466,7 @@ Die folgende Referenztabelle fasst sämtliche vom Nutzer konfigurierbaren Einste
 | Maghrib Tages-Reset (`00:00` erreicht) & Onboarding-Start | `NotificationFeedbackType.Success` | Immer |
 
 ### 8.2 Animationen & Übergänge
+* **Tasbih-Ring-Zustandswechsel (`.idle`/`.paused` <-> `.running`):** Weicher Farbübergang des Haupt-Rings zwischen `rgba(255,255,255,0.15)` und `rgba(46,125,50,0.55)` mit `easeInOut(duration: 0.3s)`.
 * **Tasbih Grüner Blitz:** `easeIn` (`0.04s–0.08s`) -> `hold` (`0.06s–0.12s`) -> `easeOut` (`0.06s–0.12s`), dynamisch skaliert nach Intervall (Abschnitt 5.6.3).
 * **Adhkar Voice-Mode Pulsieren:** Aktiver Audio-Ring pulsiert kontinuierlich zwischen `scale(1.0)` und `scale(1.05)` mit `easeInOut(duration: 0.6s, autoreverse: true)`.
 * **Adhkar Edit-Modus & FAQ-Akkordeon:** Federanimation `spring(response: 0.35s, dampingFraction: 0.7–0.8)`; FAQ-Chevron rotiert mit `easeInOut(duration: 0.2s)` von `0°` auf `90°`.

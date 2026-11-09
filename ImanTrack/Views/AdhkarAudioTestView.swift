@@ -344,7 +344,7 @@ struct AdhkarAudioTestView: View {
                         .foregroundColor(.secondary)
                     
                     Picker("Stimme", selection: $player.selectedReciter) {
-                        Text("Iapetus (Standard)").tag("iapetus")
+                        Text("Abdullah (Standard)").tag("iapetus")
                         Text("Hamad Al-Duraihim").tag("duraihim")
                     }
                     .pickerStyle(.segmented)

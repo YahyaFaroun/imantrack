@@ -175,6 +175,11 @@ struct AdhkarSessionView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 20) {
+                            if type == .evening, let sec = solarManager.maghribCountdownSeconds {
+                                MaghribCountdownBanner(seconds: sec, language: language)
+                                    .transition(.move(edge: .top).combined(with: .opacity))
+                            }
+                            
                             if isEditMode {
                                 HStack(spacing: 8) {
                                     Image(systemName: "arrow.up.arrow.down.circle.fill")
