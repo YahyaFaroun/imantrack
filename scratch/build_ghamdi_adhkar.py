@@ -57,10 +57,10 @@ encode_audio(MORNING_RAW, f"{OUT_DIR}/ghamdi_morning_11.m4a", ss=591.7, to=603.8
 encode_audio(MORNING_RAW, f"{OUT_DIR}/ghamdi_morning_12.m4a", ss=334.4, to=377.0)
 
 # 13. Allahumma 'alimal ghayb
-encode_audio(MORNING_RAW, f"{OUT_DIR}/ghamdi_morning_13.m4a", ss=666.9, to=702.9)
+encode_audio(MORNING_RAW, f"{OUT_DIR}/ghamdi_morning_13.m4a", ss=666.9, to=700.4)
 
 # 14. Bismillahilladhi la yadurru (1 rep)
-encode_audio(MORNING_RAW, f"{OUT_DIR}/ghamdi_morning_14.m4a", ss=702.9, to=719.3)
+encode_audio(MORNING_RAW, f"{OUT_DIR}/ghamdi_morning_14.m4a", ss=700.75, to=714.15)
 
 # 15. Radiytu billahi (1 rep)
 encode_audio(MORNING_RAW, f"{OUT_DIR}/ghamdi_morning_15.m4a", ss=740.2, to=754.2)
