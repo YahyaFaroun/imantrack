@@ -212,7 +212,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Preis sei Allah, und Ihm gebührt Sein Lob.",
         english: "Glory is to Allah and praise is to Him.",
         count: 100,
-        quickInterval: 1.12, normalInterval: 1.37, slowInterval: 1.62),
+        quickInterval: 0.85, normalInterval: 1.10, slowInterval: 1.35),
     // 20. La ilaha illallah (10)
     AdhkarItem(
         arabic: "لَا إِلَهَ إِلَّا اللَّهُ، وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكْ، وَلَهُ الْحَمْدْ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرْ",
@@ -229,7 +229,7 @@ let morgenAdhkar: [AdhkarItem] = [
         german: "Preis sei Allah, und Ihm gebührt Sein Lob: In der Anzahl Seiner Schöpfung, nach Seinem Wohlgefallen, dem Gewicht Seines Thrones und der Menge der Tinte Seiner Worte.",
         english: "Glory is to Allah and praise is to Him, by the multitude of His creation, by His Pleasure, by the weight of His Throne, and by the extent of His Words.",
         count: 3,
-        quickInterval: 4.21, normalInterval: 5.16, slowInterval: 6.11),
+        quickInterval: 3.50, normalInterval: 4.30, slowInterval: 5.10),
     // 22. Allahumma inni as'aluka 'ilman nafi'an
     AdhkarItem(
         arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْماً نَافِعاً، وَرِزْقاً طَيِّباً، وَعَمَلاً مُتَقَبَّلاً",
@@ -246,7 +246,7 @@ let morgenAdhkar: [AdhkarItem] = [
         english: "I seek the forgiveness of Allah and repent to Him.",
         count: 100,
         linkedTasbihCategory: .istighfar
-        , quickInterval: 0.79, normalInterval: 1.73, slowInterval: 2.67),
+        , quickInterval: 0.75, normalInterval: 1.10, slowInterval: 1.45),
     // 24. A'udhu bikalimatillahit-tammati
     AdhkarItem(
         arabic: "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ",
@@ -263,7 +263,7 @@ let morgenAdhkar: [AdhkarItem] = [
         english: "O Allah, send blessings and peace upon our Prophet Muhammad.",
         count: 10,
         linkedTasbihCategory: .salawat
-        , quickInterval: 1.56, normalInterval: 2.7, slowInterval: 3.85),
+        , quickInterval: 1.35, normalInterval: 1.75, slowInterval: 2.20),
 ]
 
 let abendAdhkar: [AdhkarItem] = [
@@ -423,7 +423,7 @@ let abendAdhkar: [AdhkarItem] = [
         german: "Preis sei Allah, und Ihm gebührt Sein Lob.",
         english: "Glory is to Allah and praise is to Him.",
         count: 100,
-        quickInterval: 1.12, normalInterval: 1.37, slowInterval: 1.62),
+        quickInterval: 0.85, normalInterval: 1.10, slowInterval: 1.35),
     // 20. La ilaha illallah (Abend)
     AdhkarItem(
         arabic: "لَا إِلَهَ إِلَّا اللَّهُ، وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكْ، وَلَهُ الْحَمْدْ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرْ",
@@ -441,7 +441,7 @@ let abendAdhkar: [AdhkarItem] = [
         english: "I seek the forgiveness of Allah and repent to Him.",
         count: 100,
         linkedTasbihCategory: .istighfar
-        , quickInterval: 0.79, normalInterval: 1.73, slowInterval: 2.67),
+        , quickInterval: 0.75, normalInterval: 1.10, slowInterval: 1.45),
     // 22. A'udhu bikalimatillahit-tammati (Abend)
     AdhkarItem(
         arabic: "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ",
@@ -458,7 +458,7 @@ let abendAdhkar: [AdhkarItem] = [
         english: "O Allah, send blessings and peace upon our Prophet Muhammad.",
         count: 10,
         linkedTasbihCategory: .salawat
-    , quickInterval: 1.56, normalInterval: 2.70, slowInterval: 3.85)
+    , quickInterval: 1.35, normalInterval: 1.75, slowInterval: 2.20)
 ]
 
 let schlafAdhkar: [AdhkarItem] = [
@@ -522,7 +522,7 @@ let schlafAdhkar: [AdhkarItem] = [
         german: "Verherrlicht sei Allah (dreiunddreißigmal), alles Lob gebührt Allah (dreiunddreißigmal) und Allah ist am größten (vierunddreißigmal).",
         english: "Glory is to Allah (thirty-three times), praise is to Allah (thirty-three times), and Allah is the Most Great (thirty-four times).",
         count: 33,
-        quickInterval: 3.8, normalInterval: 4.75, slowInterval: 5.7),
+        quickInterval: 2.40, normalInterval: 3.10, slowInterval: 3.80),
     // 9. Allahumma rabbi as-samawatis-sab'i
     AdhkarItem(
         arabic: "اللَّهُمَّ رَبَّ السَّمَوَاتِ السَّبْعِ وَرَبَّ الْعَرْشِ الْعَظِيمِ، رَبَّنَا وَرَبَّ كُلِّ شَيْءٍ، فَالِقَ الْحَبِّ وَالنَّوَى، وَمُنْزِلَ التَّوْرَاةِ وَالإِنْجِيلِ وَالْفُرْقَانِ، أَعُوذُ بِكَ مِنْ شَرِّ كُلِّ شَيْءٍ أَنْتَ آخِذٌ بِنَاصِيَتِهِ. اللَّهُمَّ أَنْتَ الأَوَّلُ فَلَيْسَ قَبْلَكَ شَيْءٌ، وَأَنْتَ الآخِرُ فَلَيْسَ بَعْدَكَ شَيْءٌ، وَأَنْتَ الظَّاهِرُ فَلَيْسَ فَوْقَكَ شَيْءٌ، وَأَنْتَ الْبَاطِنُ فَلَيْسَ دُونَكَ شَيْءٌ، اقْضِ عَنَّا الدَّيْنَ وَأَغْنينا مِنَ الْفَقْرِ",
@@ -567,13 +567,13 @@ extension AdhkarItem {
         
         // Spezifische Optimierungen für bekannte Adhkar
         if text.contains("سُبْحَانَ اللَّهِ وَبِحَمْدِهِ") {
-            return 1.2 // Subhanallahi wa bihamdihi (ca. 50 BPM)
+            return 1.10 // Subhanallahi wa bihamdihi (ca. 55 BPM)
         }
         if text.contains("أَسْتَغْفِرُ") {
-            return 1.8 // Astaghfirullah wa atubu ilayh (ca. 33 BPM)
+            return 1.10 // Astaghfirullah wa atubu ilayh (ca. 55 BPM)
         }
         if text.contains("صَلِّ وَسَلِّمْ") || text.contains("اللَّهُمَّ صَلِّ") {
-            return 2.4 // Allahumma salli... (ca. 25 BPM)
+            return 1.75 // Allahumma salli... (ca. 34 BPM)
         }
         if text.contains("لاَ إِلَهَ إِلاَّ اللَّهُ") || text.contains("لَا إِلَهَ إِلَّا اللَّهُ") {
             return 5.5 // La ilaha illallah... (ca. 11 BPM)

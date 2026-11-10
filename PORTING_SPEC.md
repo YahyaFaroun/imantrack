@@ -1071,13 +1071,13 @@ const orderKey = `${item.count}_${(germanClean + transClean).slice(0, 40)}`;
 | 16 | Ya Hayyu ya Qayyum bi-rahmatika astaghith... | `1` | — | `6.87` | `5.80` | `4.73` | `morning_16.m4a` |
 | 17 | Asbahna wa asbahal-mulku lillahi Rabbil-'alamin | `1` | — | `12.88` | `10.88` | `8.88` | `morning_17.m4a` |
 | 18 | Asbahna 'ala fitratil-Islam... | `1` | — | `13.26` | `11.20` | `9.14` | `morning_18.m4a` |
-| 19 | Subhanallahi wa bihamdihi | `100` | — | `1.62` | `1.37` | `1.12` | `morning_19.m4a` |
+| 19 | Subhanallahi wa bihamdihi | `100` | — | `1.35` | `1.10` | `0.85` | `morning_19.m4a` |
 | 20 | La ilaha illallahu wahdahu la sharika lah... | `10` | `.laIlahaIllallah` | `13.20` | `11.08` | `9.00` | `morning_20.m4a` |
-| 21 | Subhanallahi wa bihamdihi 'adada khalqihi... | `3` | — | `6.11` | `5.16` | `4.21` | `morning_21.m4a` |
+| 21 | Subhanallahi wa bihamdihi 'adada khalqihi... | `3` | — | `5.10` | `4.30` | `3.50` | `morning_21.m4a` |
 | 22 | Allahumma inni as'aluka 'ilman nafi'an... | `1` | — | `4.96` | `4.19` | `3.42` | `morning_22.m4a` |
-| 23 | Astaghfirullaha wa atubu ilayh | `100` | `.istighfar` | `2.67` | `1.73` | `0.79` | `morning_23.m4a` |
+| 23 | Astaghfirullaha wa atubu ilayh | `100` | `.istighfar` | `1.45` | `1.10` | `0.75` | `morning_23.m4a` |
 | 24 | A'udhu bi-kalimatillahit-tammati min sharri... | `3` | — | `3.53` | `2.98` | `2.43` | `morning_24.m4a` |
-| 25 | Allahumma salli wa sallim 'ala Nabiyyina... | `10` | `.salawat` | `3.85` | `2.70` | `1.56` | `morning_25.m4a` |
+| 25 | Allahumma salli wa sallim 'ala Nabiyyina... | `10` | `.salawat` | `2.20` | `1.75` | `1.35` | `morning_25.m4a` |
 
 ##### B. Abend-Adhkar (`abendAdhkar` — 23 Items)
 | # | Kurzbeschreibung / Anfang | `count` | Tasbih-Link | `slow` (s) | `normal` (s) | `quick` (s) | Audio / Äquivalent |
@@ -1091,11 +1091,11 @@ const orderKey = `${item.count}_${(germanClean + transClean).slice(0, 40)}`;
 | 10–16 | Identisch mit Morgen #10–#16 | `3,7,1,1,3,3,1` | — | wie Morgen | wie Morgen | wie Morgen | `evening_10..16` -> `morning_10..16` |
 | 17 | Amsayna wa amsal-mulku lillahi Rabbil-'alamin | `1` | — | `23.40` | `19.72` | `16.00` | `evening_17.m4a` |
 | 18 | Amsayna 'ala fitratil-Islam... | `1` | — | `13.26` | `11.20` | `9.14` | `evening_18.m4a` |
-| 19 | Subhanallahi wa bihamdihi | `100` | — | `1.62` | `1.37` | `1.12` | `evening_19` / `morning_19` |
+| 19 | Subhanallahi wa bihamdihi | `100` | — | `1.35` | `1.10` | `0.85` | `evening_19` / `morning_19` |
 | 20 | La ilaha illallahu wahdahu la sharika lah... | `10` | `.laIlahaIllallah` | `13.20` | `11.08` | `9.00` | `evening_20` / `morning_20` |
-| 21 | Astaghfirullaha wa atubu ilayh | `100` | `.istighfar` | `2.67` | `1.73` | `0.79` | `evening_21` / `morning_23` |
+| 21 | Astaghfirullaha wa atubu ilayh | `100` | `.istighfar` | `1.45` | `1.10` | `0.75` | `evening_21` / `morning_23` |
 | 22 | A'udhu bi-kalimatillahit-tammati min sharri... | `3` | — | `3.53` | `2.98` | `2.43` | `evening_22` / `morning_24` |
-| 23 | Allahumma salli wa sallim 'ala Nabiyyina... | `10` | `.salawat` | `3.85` | `2.70` | `1.56` | `evening_23` / `morning_25` |
+| 23 | Allahumma salli wa sallim 'ala Nabiyyina... | `10` | `.salawat` | `2.20` | `1.75` | `1.35` | `evening_23` / `morning_25` |
 
 ##### C. Schlaf-Adhkar (`schlafAdhkar` — 13 Items)
 | # | Kurzbeschreibung / Anfang | `count` | Tasbih-Link | Intervalle (`slow`/`norm`/`quick`) | Primäre Audio-Datei |
@@ -1107,7 +1107,7 @@ const orderKey = `${item.count}_${(germanClean + transClean).slice(0, 40)}`;
 | 5 | Allahumma innaka khalaqta nafsi... | `1` | — | `16.50` / `14.04` / `11.50` | `sleep_5.m4a` |
 | 6 | Allahumma qini 'adhabaka yawma tab'athu 'ibadak | `3` | — | Standard | `sleep_6.m4a` |
 | 7 | Bismika Allahumma amutu wa ahya | `1` | — | `4.60` / `3.88` / `3.10` | `sleep_7.m4a` |
-| 8 | Tasbih Fatimah (33× SubhanAllah, 33× Alhamdulillah, 34× Allahu Akbar) | `33` | — | `5.70` / `4.75` / `3.80` | `sleep_8.m4a` |
+| 8 | Tasbih Fatimah (33× SubhanAllah, 33× Alhamdulillah, 34× Allahu Akbar) | `33` | — | `3.80` / `3.10` / `2.40` | `sleep_8.m4a` |
 | 9 | Allahumma Rabbas-samawatis-sab'i... | `1` | — | Standard | `sleep_9.m4a` |
 | 10 | Alhamdulillahil-ladhi at'amana wa saqana... | `1` | — | Standard | `sleep_10.m4a` |
 | 11 | Allahumma 'Alimal-ghaybi wash-shahadah... | `1` | — | Standard | `sleep_11.m4a` |
