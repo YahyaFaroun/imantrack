@@ -725,8 +725,8 @@ struct AdhkarSessionView: View {
         impact.impactOccurred()
         #endif
         
-        // Subhan Allah & Istighfar (100x): Recitation audio plays only once, then auto tracker takes over
-        if item.count == 100 {
+        // Subhan Allah & Istighfar (100x) sowie Schlaf-Tasbih (33x): Audio nur einmal abspielen, danach läuft der Auto-Tracker weiter
+        if item.count == 100 || item.count == 33 {
             if current >= 1 {
                 // Audio has already played at least once, continue tracking
                 startAutoCount(item: item, proxy: proxy)

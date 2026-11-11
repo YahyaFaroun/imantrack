@@ -194,7 +194,6 @@ enum IstighfarForm: String, CaseIterable, Codable {
 enum AdhkarReciter: String, CaseIterable, Identifiable, Codable {
     case iapetus = "iapetus"
     case duraihim = "duraihim"
-    case ghamdi = "ghamdi"
     
     var id: String { rawValue }
     
@@ -202,7 +201,6 @@ enum AdhkarReciter: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .iapetus: return L10n.tr("reader_iapetus", lang)
         case .duraihim: return L10n.tr("reader_al_duraihim", lang)
-        case .ghamdi: return L10n.tr("reader_al_ghamdi", lang)
         }
     }
     
@@ -210,7 +208,6 @@ enum AdhkarReciter: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .iapetus: return L10n.tr("reader_iapetus_desc", lang)
         case .duraihim: return L10n.tr("reader_al_duraihim_desc", lang)
-        case .ghamdi: return L10n.tr("reader_al_ghamdi_desc", lang)
         }
     }
 }

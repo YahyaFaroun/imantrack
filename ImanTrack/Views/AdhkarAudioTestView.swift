@@ -66,15 +66,20 @@ final class TestAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     
     private func playItemFile(item: AudioTestItem) {
         let baseName = item.fileName.replacingOccurrences(of: ".m4a", with: "")
+        let equivalent = AdhkarAudioPlayer.equivalentAudioMap[baseName]
         let isDuraihim = (selectedReciter == "duraihim")
         
         let url: URL?
         if isDuraihim {
             url = Bundle.main.url(forResource: "duraihim_\(baseName)", withExtension: "m4a")
+                ?? (equivalent != nil ? Bundle.main.url(forResource: "duraihim_\(equivalent!)", withExtension: "m4a") : nil)
                 ?? Bundle.main.url(forResource: baseName, withExtension: "m4a")
+                ?? (equivalent != nil ? Bundle.main.url(forResource: equivalent!, withExtension: "m4a") : nil)
         } else {
             url = Bundle.main.url(forResource: baseName, withExtension: "m4a")
+                ?? (equivalent != nil ? Bundle.main.url(forResource: equivalent!, withExtension: "m4a") : nil)
                 ?? Bundle.main.url(forResource: "duraihim_\(baseName)", withExtension: "m4a")
+                ?? (equivalent != nil ? Bundle.main.url(forResource: "duraihim_\(equivalent!)", withExtension: "m4a") : nil)
         }
         
         guard let finalUrl = url else {

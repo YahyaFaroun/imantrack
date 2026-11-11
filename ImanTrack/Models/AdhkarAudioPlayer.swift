@@ -65,7 +65,7 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         playCurrentFile()
     }
     
-    private static let equivalentAudioMap: [String: String] = [
+    static let equivalentAudioMap: [String: String] = [
         "evening_1": "quran_ayat_kursi",
         "evening_2": "quran_ikhlas",
         "evening_3": "quran_falaq",
@@ -78,6 +78,7 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         "evening_14": "morning_14",
         "evening_15": "morning_15",
         "evening_16": "morning_16",
+        "evening_17": "morning_17",
         "evening_19": "morning_19",
         "evening_20": "morning_20",
         "evening_21": "morning_23",
@@ -101,7 +102,7 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         let effectiveFile = fileName
         let equivalent = Self.equivalentAudioMap[effectiveFile] ?? Self.equivalentAudioMap[fileName]
         let reciter = UserDefaults.standard.string(forKey: "adhkarReciter") ?? "iapetus"
-        let prefix = (reciter == "duraihim") ? "duraihim_" : (reciter == "ghamdi" ? "ghamdi_" : "")
+        let prefix = (reciter == "duraihim") ? "duraihim_" : ""
         
         let url: URL?
         if !prefix.isEmpty {
@@ -198,8 +199,6 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         let sampleBase: String
         if reciter == "duraihim" {
             sampleBase = "duraihim_morning_14"
-        } else if reciter == "ghamdi" {
-            sampleBase = "ghamdi_morning_14"
         } else {
             sampleBase = "morning_14"
         }
