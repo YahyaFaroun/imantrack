@@ -35,6 +35,7 @@ struct AdhkarOverviewView: View {
     private var sleepState: AdhkarState { getAdhkarState(type: .sleep) }
     
     private var fajrState: AdhkarState {
+        if isAdhkarTestModeUnlocked { return .active }
         let now = Date()
         let trackerDate = LocationAndSolarManager.shared.currentTrackingDate
         let dhuhr = LocationAndSolarManager.shared.getDhuhrDate(for: trackerDate) ?? trackerDate
@@ -232,7 +233,11 @@ enum AdhkarState: Equatable {
     case expired
 }
 
+// Temporär freigeschaltet zum Testen aller Adhkar-Sessions (Morgen, Abend, Schlafen)
+public let isAdhkarTestModeUnlocked = true
+
 func getAdhkarState(type: AdhkarSessionType) -> AdhkarState {
+    if isAdhkarTestModeUnlocked { return .active }
     let now = Date()
     let solarManager = LocationAndSolarManager.shared
     let trackingDate = solarManager.currentTrackingDate

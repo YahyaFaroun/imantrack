@@ -143,11 +143,13 @@ struct AdhkarSessionView: View {
     }
     
     private var adhkarState: AdhkarState {
-        getAdhkarState(type: type)
+        if isAdhkarTestModeUnlocked { return .active }
+        return getAdhkarState(type: type)
     }
     
     private var isTrackingAllowed: Bool {
-        adhkarState == .active
+        if isAdhkarTestModeUnlocked { return true }
+        return adhkarState == .active
     }
 
 
