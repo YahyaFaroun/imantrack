@@ -539,38 +539,19 @@ struct AdhkarSessionView: View {
                         showMashaAllah = nil
                     }
                     if isVoiceMode {
+                        if audioPlayer.activeItemId != item.id {
+                            let settings = settingsList.first
+                            if settings?.adhkarAutoAdvance == true {
+                                advanceToNextItem(after: item, proxy: proxy, isVoice: true)
+                            }
+                        }
                         return
                     }
                     let settings = settingsList.first
                     
                     if let index = adhkarList.firstIndex(where: { $0.id == item.id }) {
                         if settings?.adhkarAutoCount == true && settings?.adhkarAutoAdvance == true {
-                            // Finde das nächste unvollständige, pflichtige Item
-                            var nextIndex = index + 1
-                            while nextIndex < adhkarList.count && (completedItems.contains(adhkarList[nextIndex].id) || !adhkarList[nextIndex].isMandatory) {
-                                nextIndex += 1
-                            }
-                            
-                            if nextIndex < adhkarList.count {
-                                let nextItem = adhkarList[nextIndex]
-                                lastActiveDhikrIndex = nextIndex
-                                lastActiveDhikrCount = todayRecord.getAdhkarCount(for: safeKey(for: nextItem))
-                                withAnimation {
-                                    proxy?.scrollTo(nextItem.id, anchor: .center)
-                                }
-                                
-                                // Starte den Auto-Count für das nächste Item
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                                    if let proxy = proxy {
-                                        toggleAutoCount(item: nextItem, proxy: proxy)
-                                    }
-                                }
-                            } else {
-                                // Kein weiteres unvollständiges Item vorhanden
-                                withAnimation {
-                                    proxy?.scrollTo(adhkarList.last?.id, anchor: .bottom)
-                                }
-                            }
+                            advanceToNextItem(after: item, proxy: proxy, isVoice: false)
                         } else {
                             // Normales Verhalten (einfach zum unmittelbar nächsten scrollen)
                             if index + 1 < adhkarList.count {
@@ -604,83 +585,95 @@ struct AdhkarSessionView: View {
         default: return normalVal
         }
     }
+    
+    private func advanceToNextItem(after item: AdhkarItem, proxy: ScrollViewProxy?, isVoice: Bool) {
+        let settings = settingsList.first
+        guard settings?.adhkarAutoAdvance == true else { return }
+        
+        guard let index = adhkarList.firstIndex(where: { $0.id == item.id }) else { return }
+        var nextIndex = index + 1
+        while nextIndex < adhkarList.count && (completedItems.contains(adhkarList[nextIndex].id) || !adhkarList[nextIndex].isMandatory) {
+            nextIndex += 1
+        }
+        
+        if nextIndex < adhkarList.count {
+            let nextItem = adhkarList[nextIndex]
+            lastActiveDhikrIndex = nextIndex
+            lastActiveDhikrCount = todayRecord.getAdhkarCount(for: safeKey(for: nextItem))
+            withAnimation {
+                proxy?.scrollTo(nextItem.id, anchor: .center)
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                if let proxy = proxy {
+                    if isVoice && isVoiceMode {
+                        toggleVoicePlayback(item: nextItem, proxy: proxy)
+                    } else if !isVoice && settings?.adhkarAutoCount == true {
+                        toggleAutoCount(item: nextItem, proxy: proxy)
+                    }
+                }
+            }
+        } else {
+            withAnimation {
+                proxy?.scrollTo(adhkarList.last?.id, anchor: .bottom)
+            }
+        }
+    }
 
     private func toggleAutoCount(item: AdhkarItem, proxy: ScrollViewProxy) {
         guard item.isMandatory else { return }
         if activeAutoCountItemId == item.id {
             stopAutoCount()
         } else {
-            stopAutoCount()
-            activeAutoCountItemId = item.id
-            #if os(iOS)
-            UIApplication.shared.isIdleTimerDisabled = true
-            #endif
-            
-            let interval = autoCountInterval(for: item)
-            
-            if interval <= 0.0 {
-                // Sonderfall: Sofort erledigt, keine Verzögerung, Auto-Advance greift hier sofort bei Trigger
-                let current = counts[item.id] ?? 0
-                let diff = item.count - current
-                counts[item.id] = item.count
-                todayRecord.setAdhkarCount(for: safeKey(for: item), count: item.count)
-                completedItems.insert(item.id)
-                if let category = item.linkedTasbihCategory {
-                    switch category {
-                    case .istighfar: todayRecord.istighfarCount += diff
-                    case .salawat: todayRecord.salawatCount += diff
-                    case .subhanAllah: todayRecord.subhanAllahCount += diff
-                    case .alhamdulillah: todayRecord.alhamdulillahCount += diff
-                    case .allahuAkbar: todayRecord.allahuAkbarCount += diff
-                    case .laIlahaIllallah: todayRecord.laIlahaIllallahCount += diff
-                    }
+            startAutoCount(item: item, proxy: proxy)
+        }
+    }
+    
+    private func startAutoCount(item: AdhkarItem, proxy: ScrollViewProxy) {
+        guard item.isMandatory else { return }
+        stopAutoCount()
+        activeAutoCountItemId = item.id
+        #if os(iOS)
+        UIApplication.shared.isIdleTimerDisabled = true
+        #endif
+        
+        let interval = autoCountInterval(for: item)
+        
+        if interval <= 0.0 {
+            // Sonderfall: Sofort erledigt, keine Verzögerung, Auto-Advance greift hier sofort bei Trigger
+            let current = counts[item.id] ?? 0
+            let diff = item.count - current
+            counts[item.id] = item.count
+            todayRecord.setAdhkarCount(for: safeKey(for: item), count: item.count)
+            completedItems.insert(item.id)
+            if let category = item.linkedTasbihCategory {
+                switch category {
+                case .istighfar: todayRecord.istighfarCount += diff
+                case .salawat: todayRecord.salawatCount += diff
+                case .subhanAllah: todayRecord.subhanAllahCount += diff
+                case .alhamdulillah: todayRecord.alhamdulillahCount += diff
+                case .allahuAkbar: todayRecord.allahuAkbarCount += diff
+                case .laIlahaIllallah: todayRecord.laIlahaIllallahCount += diff
                 }
-                try? modelContext.save()
-                
-                stopAutoCount()
-                
-                let settings = settingsList.first
-                if settings?.adhkarAutoCount == true && settings?.adhkarAutoAdvance == true {
-                    if let index = adhkarList.firstIndex(where: { $0.id == item.id }) {
-                        var nextIndex = index + 1
-                        while nextIndex < adhkarList.count && (completedItems.contains(adhkarList[nextIndex].id) || !adhkarList[nextIndex].isMandatory) {
-                            nextIndex += 1
-                        }
-                        
-                        if nextIndex < adhkarList.count {
-                            let nextItem = adhkarList[nextIndex]
-                            lastActiveDhikrIndex = nextIndex
-                            lastActiveDhikrCount = todayRecord.getAdhkarCount(for: safeKey(for: nextItem))
-                            withAnimation {
-                                proxy.scrollTo(nextItem.id, anchor: .center)
-                            }
-                            
-                            // Nächstes Item sofort im Main-Thread starten
-                            Task { @MainActor in
-                                toggleAutoCount(item: nextItem, proxy: proxy)
-                            }
-                        } else {
-                            withAnimation {
-                                proxy.scrollTo(adhkarList.last?.id, anchor: .bottom)
-                            }
-                        }
-                    }
-                }
-                return
             }
+            try? modelContext.save()
             
-            // Verwende einen asynchronen Task-basierten Loop auf dem MainActor
-            // Dies vermeidet Sendable-Kapselungsfehler mit ScrollViewProxy
-            Task { @MainActor in
-                while activeAutoCountItemId == item.id {
-                    try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
-                    guard activeAutoCountItemId == item.id else { break }
-                    incrementCount(item: item, proxy: proxy, isAuto: true)
-                    let current = counts[item.id] ?? 0
-                    if current >= item.count {
-                        stopAutoCount()
-                        break
-                    }
+            stopAutoCount()
+            advanceToNextItem(after: item, proxy: proxy, isVoice: isVoiceMode)
+            return
+        }
+        
+        // Verwende einen asynchronen Task-basierten Loop auf dem MainActor
+        // Dies vermeidet Sendable-Kapselungsfehler mit ScrollViewProxy
+        Task { @MainActor in
+            while activeAutoCountItemId == item.id {
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                guard activeAutoCountItemId == item.id else { break }
+                incrementCount(item: item, proxy: proxy, isAuto: true)
+                let current = counts[item.id] ?? 0
+                if current >= item.count {
+                    stopAutoCount()
+                    break
                 }
             }
         }
@@ -700,13 +693,18 @@ struct AdhkarSessionView: View {
         
         if completedItems.contains(item.id) { return }
         
-        stopAutoCount()
-        
-        if audioPlayer.activeItemId == item.id && audioPlayer.isPlaying {
-            audioPlayer.stop()
-            activeAutoCountItemId = nil
+        if activeAutoCountItemId == item.id {
+            if audioPlayer.activeItemId == item.id && audioPlayer.isPlaying {
+                audioPlayer.stop()
+            }
+            stopAutoCount()
             return
         }
+        
+        if audioPlayer.isPlaying {
+            audioPlayer.stop()
+        }
+        stopAutoCount()
         
         guard item.audioFileName != nil else {
             if item.german.contains("Al-Mulk") || item.arabic.contains("الْمُلْكِ") {
@@ -719,13 +717,41 @@ struct AdhkarSessionView: View {
         }
         
         let current = counts[item.id] ?? 0
-        activeAutoCountItemId = item.id
         
         #if os(iOS) && !SKIP
         let impact = UIImpactFeedbackGenerator(style: .light)
         impact.impactOccurred()
         #endif
         
+        // Subhan Allah & Istighfar (100x): Recitation audio plays only once, then auto tracker takes over
+        if item.count == 100 {
+            if current >= 1 {
+                // Audio has already played at least once, continue tracking
+                startAutoCount(item: item, proxy: proxy)
+                return
+            }
+            
+            activeAutoCountItemId = item.id
+            audioPlayer.play(
+                item: item,
+                startRepetition: 0,
+                targetRepetitions: 1,
+                onRepetitionCompleted: { repetition in
+                    incrementCount(item: item, proxy: proxy, isAuto: true)
+                },
+                onFinished: {
+                    if (counts[item.id] ?? 0) < item.count {
+                        startAutoCount(item: item, proxy: proxy)
+                    } else {
+                        activeAutoCountItemId = nil
+                        advanceToNextItem(after: item, proxy: proxy, isVoice: true)
+                    }
+                }
+            )
+            return
+        }
+        
+        activeAutoCountItemId = item.id
         audioPlayer.play(
             item: item,
             startRepetition: current,
@@ -735,35 +761,7 @@ struct AdhkarSessionView: View {
             },
             onFinished: {
                 activeAutoCountItemId = nil
-                
-                let settings = settingsList.first
-                if settings?.adhkarAutoAdvance == true {
-                    if let index = adhkarList.firstIndex(where: { $0.id == item.id }) {
-                        var nextIndex = index + 1
-                        while nextIndex < adhkarList.count && (completedItems.contains(adhkarList[nextIndex].id) || !adhkarList[nextIndex].isMandatory) {
-                            nextIndex += 1
-                        }
-                        
-                        if nextIndex < adhkarList.count {
-                            let nextItem = adhkarList[nextIndex]
-                            lastActiveDhikrIndex = nextIndex
-                            lastActiveDhikrCount = todayRecord.getAdhkarCount(for: safeKey(for: nextItem))
-                            withAnimation {
-                                proxy.scrollTo(nextItem.id, anchor: .center)
-                            }
-                            
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                                if isVoiceMode {
-                                    toggleVoicePlayback(item: nextItem, proxy: proxy)
-                                }
-                            }
-                        } else {
-                            withAnimation {
-                                proxy.scrollTo(adhkarList.last?.id, anchor: .bottom)
-                            }
-                        }
-                    }
-                }
+                advanceToNextItem(after: item, proxy: proxy, isVoice: true)
             }
         )
     }

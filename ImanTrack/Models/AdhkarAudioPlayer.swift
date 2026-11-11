@@ -90,6 +90,11 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         "quran_mulk": "sleep_12"
     ]
     
+    private static func audioUrl(for name: String) -> URL? {
+        Bundle.main.url(forResource: name, withExtension: "m4a")
+            ?? Bundle.main.url(forResource: name, withExtension: "mp3")
+    }
+    
     private func playCurrentFile() {
         guard let fileName = currentFileName else { return }
         
@@ -100,18 +105,18 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         
         let url: URL?
         if !prefix.isEmpty {
-            url = Bundle.main.url(forResource: "\(prefix)\(effectiveFile)", withExtension: "m4a")
-                ?? (equivalent != nil ? Bundle.main.url(forResource: "\(prefix)\(equivalent!)", withExtension: "m4a") : nil)
-                ?? Bundle.main.url(forResource: "\(prefix)\(fileName)", withExtension: "m4a")
-                ?? Bundle.main.url(forResource: effectiveFile, withExtension: "m4a")
-                ?? (equivalent != nil ? Bundle.main.url(forResource: equivalent!, withExtension: "m4a") : nil)
-                ?? Bundle.main.url(forResource: fileName, withExtension: "m4a")
+            url = Self.audioUrl(for: "\(prefix)\(effectiveFile)")
+                ?? (equivalent != nil ? Self.audioUrl(for: "\(prefix)\(equivalent!)") : nil)
+                ?? Self.audioUrl(for: "\(prefix)\(fileName)")
+                ?? Self.audioUrl(for: effectiveFile)
+                ?? (equivalent != nil ? Self.audioUrl(for: equivalent!) : nil)
+                ?? Self.audioUrl(for: fileName)
         } else {
-            url = Bundle.main.url(forResource: effectiveFile, withExtension: "m4a")
-                ?? (equivalent != nil ? Bundle.main.url(forResource: equivalent!, withExtension: "m4a") : nil)
-                ?? Bundle.main.url(forResource: fileName, withExtension: "m4a")
-                ?? Bundle.main.url(forResource: "duraihim_\(effectiveFile)", withExtension: "m4a")
-                ?? (equivalent != nil ? Bundle.main.url(forResource: "duraihim_\(equivalent!)", withExtension: "m4a") : nil)
+            url = Self.audioUrl(for: effectiveFile)
+                ?? (equivalent != nil ? Self.audioUrl(for: equivalent!) : nil)
+                ?? Self.audioUrl(for: fileName)
+                ?? Self.audioUrl(for: "duraihim_\(effectiveFile)")
+                ?? (equivalent != nil ? Self.audioUrl(for: "duraihim_\(equivalent!)") : nil)
         }
         
         guard let finalUrl = url else {
@@ -198,7 +203,7 @@ final class AdhkarAudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate
         } else {
             sampleBase = "morning_14"
         }
-        guard let url = Bundle.main.url(forResource: sampleBase, withExtension: "m4a") else {
+        guard let url = Self.audioUrl(for: sampleBase) else {
             print("Preview audio not found for reciter: \(reciter)")
             return
         }
