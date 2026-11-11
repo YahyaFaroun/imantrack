@@ -96,7 +96,7 @@ final class UserSettings {
     // Prayer Notifications & Adhan
     var prayerAdhanEnabled: Bool = false
     var prayerReminder10MinEnabled: Bool = false
-    var prayerAdhanSound: String = "azan.caf"
+    var prayerAdhanSound: String = "azan-1.caf"
     var prayerFajrEnabled: Bool = true
     var prayerDhuhrEnabled: Bool = true
     var prayerAsrEnabled: Bool = true

@@ -6,8 +6,24 @@ import Combine
 import UIKit
 
 @MainActor
-final class PrayerNotificationManager: NSObject, ObservableObject {
+final class PrayerNotificationManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     static let shared = PrayerNotificationManager()
+    
+    static let beforeAdhanReminderSound = "before Adhan.caf"
+    
+    static func normalizedAdhanSound(_ raw: String) -> String {
+        let valid = ["azan-1.caf", "azan-2.caf", "azan-3.caf", "azan-4.caf", "azan-5.caf", "azan-6.caf", "azan-7.caf"]
+        if valid.contains(raw) { return raw }
+        switch raw {
+        case "azan_holy_makkah.caf": return "azan-2.caf"
+        case "beautifull_azan.caf": return "azan-3.caf"
+        case "azan.caf": return "azan-1.caf"
+        case "fajar (1).caf": return "azan-5.caf"
+        case "fajar.caf": return "azan-6.caf"
+        case "fajr_alarm_mecca.caf": return "azan-7.caf"
+        default: return "azan-1.caf"
+        }
+    }
     
     enum PrayerType: String, CaseIterable, Identifiable {
         case fajr
@@ -77,10 +93,11 @@ final class PrayerNotificationManager: NSObject, ObservableObject {
         stopPreview()
         
         // Strip extension if passed
-        let baseName = soundName.replacingOccurrences(of: ".caf", with: "")
+        let normalized = Self.normalizedAdhanSound(soundName)
+        let baseName = normalized.replacingOccurrences(of: ".caf", with: "")
         guard let url = Bundle.main.url(forResource: baseName, withExtension: "caf")
-                ?? Bundle.main.url(forResource: soundName, withExtension: nil) else {
-            print("[PrayerNotificationManager] Preview sound not found: \(soundName)")
+                ?? Bundle.main.url(forResource: normalized, withExtension: nil) else {
+            print("[PrayerNotificationManager] Preview sound not found: \(normalized)")
             return
         }
         
@@ -88,6 +105,7 @@ final class PrayerNotificationManager: NSObject, ObservableObject {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
             try AVAudioSession.sharedInstance().setActive(true)
             audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.delegate = self
             audioPlayer?.prepareToPlay()
             audioPlayer?.play()
             isPlayingPreview = true
@@ -103,6 +121,12 @@ final class PrayerNotificationManager: NSObject, ObservableObject {
         audioPlayer = nil
         isPlayingPreview = false
         previewingSound = nil
+    }
+    
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor in
+            self.stopPreview()
+        }
     }
     
     // MARK: - Scheduling
@@ -128,7 +152,7 @@ final class PrayerNotificationManager: NSObject, ObservableObject {
             return
         }
         
-        let soundName = UserDefaults.standard.string(forKey: "prayerAdhanSound") ?? "azan.caf"
+        let soundName = Self.normalizedAdhanSound(UserDefaults.standard.string(forKey: "prayerAdhanSound") ?? "azan-1.caf")
         let methodRaw = UserDefaults.standard.string(forKey: "calculationMethodRaw") ?? "mwl"
         let asrSchoolRaw = UserDefaults.standard.string(forKey: "asrSchoolRaw") ?? "standard"
         let calcMethod = CalculationMethod(rawValue: methodRaw) ?? .mwl
@@ -172,12 +196,7 @@ final class PrayerNotificationManager: NSObject, ObservableObject {
                 
                 // 1. Adhan Notification (exact prayer time)
                 if isAdhanEnabled && validPrayerDate > now {
-                    let adhanSoundFile: String
-                    if prayer == .fajr && (soundName == "azan.caf" || soundName == "fajar.caf") {
-                        adhanSoundFile = "fajar.caf"
-                    } else {
-                        adhanSoundFile = soundName
-                    }
+                    let adhanSoundFile = soundName
                     
                     let title = L10n.tr("prayer_adhan_title_\(prayer.rawValue)", lang)
                     let body = L10n.tr("prayer_adhan_body", lang)
@@ -192,19 +211,20 @@ final class PrayerNotificationManager: NSObject, ObservableObject {
                     )
                 }
                 
-                // 2. 10-Minute Reminder
+                // 2. 10-Minute Reminder (uses exclusively "before Adhan.caf")
                 if is10MinEnabled {
                     let reminderDate = validPrayerDate.addingTimeInterval(-10 * 60)
                     if reminderDate > now {
                         let title = String(format: L10n.tr("prayer_reminder_10min_title_fmt", lang), prayerName)
                         let body = String(format: L10n.tr("prayer_reminder_10min_body_fmt", lang), prayerName)
+                        let reminderSound = UNNotificationSound(named: UNNotificationSoundName(Self.beforeAdhanReminderSound))
                         
                         scheduleNotification(
                             identifier: "PrayerReminder10Min_\(prayer.rawValue)_\(dayOffset)",
                             title: title,
                             body: body,
                             date: reminderDate,
-                            sound: .default
+                            sound: reminderSound
                         )
                     }
                 }

@@ -13,7 +13,7 @@ struct PrayerSettingsView: View {
     // Notifications & Adhan
     @State private var prayerAdhanEnabled: Bool = false
     @State private var prayerReminder10MinEnabled: Bool = false
-    @State private var prayerAdhanSound: String = "azan.caf"
+    @State private var prayerAdhanSound: String = "azan-1.caf"
     @State private var prayerFajrEnabled: Bool = true
     @State private var prayerDhuhrEnabled: Bool = true
     @State private var prayerAsrEnabled: Bool = true
@@ -30,10 +30,14 @@ struct PrayerSettingsView: View {
     @State private var offsetIsha: Int = 0
     @State private var offsetUpdateToken: Int = 0
     
-    private let soundOptions: [(id: String, titleKey: String)] = [
-        ("azan.caf", "prayer_adhan_sound_standard"),
-        ("azan_holy_makkah.caf", "prayer_adhan_sound_makkah"),
-        ("beautifull_azan.caf", "prayer_adhan_sound_melodic")
+    private let soundOptions: [(id: String, label: String)] = [
+        ("azan-1.caf", "Adhan 1"),
+        ("azan-2.caf", "Adhan 2"),
+        ("azan-3.caf", "Adhan 3"),
+        ("azan-4.caf", "Adhan 4"),
+        ("azan-5.caf", "Adhan 5"),
+        ("azan-6.caf", "Adhan 6"),
+        ("azan-7.caf", "Adhan 7")
     ]
     
     private var language: String {
@@ -108,10 +112,11 @@ struct PrayerSettingsView: View {
                 if prayerAdhanEnabled {
                     Picker(L10n.tr("prayer_adhan_sound", language), selection: $prayerAdhanSound) {
                         ForEach(soundOptions, id: \.id) { opt in
-                            Text(L10n.tr(opt.titleKey, language)).tag(opt.id)
+                            Text(opt.label).tag(opt.id)
                         }
                     }
                     .onChange(of: prayerAdhanSound) { _, _ in
+                        prayerNotifManager.stopPreview()
                         saveSettings()
                     }
                     
@@ -348,7 +353,7 @@ struct PrayerSettingsView: View {
             asrSchoolRaw = s.asrSchoolRaw
             prayerAdhanEnabled = s.prayerAdhanEnabled
             prayerReminder10MinEnabled = s.prayerReminder10MinEnabled
-            prayerAdhanSound = s.prayerAdhanSound
+            prayerAdhanSound = PrayerNotificationManager.normalizedAdhanSound(s.prayerAdhanSound)
             prayerFajrEnabled = s.prayerFajrEnabled
             prayerDhuhrEnabled = s.prayerDhuhrEnabled
             prayerAsrEnabled = s.prayerAsrEnabled
@@ -359,7 +364,7 @@ struct PrayerSettingsView: View {
             asrSchoolRaw = UserDefaults.standard.string(forKey: "asrSchoolRaw") ?? "standard"
             prayerAdhanEnabled = UserDefaults.standard.bool(forKey: "prayerAdhanEnabled")
             prayerReminder10MinEnabled = UserDefaults.standard.bool(forKey: "prayerReminder10MinEnabled")
-            prayerAdhanSound = UserDefaults.standard.string(forKey: "prayerAdhanSound") ?? "azan.caf"
+            prayerAdhanSound = PrayerNotificationManager.normalizedAdhanSound(UserDefaults.standard.string(forKey: "prayerAdhanSound") ?? "azan-1.caf")
             prayerFajrEnabled = UserDefaults.standard.object(forKey: "prayer_fajr_enabled") != nil ? UserDefaults.standard.bool(forKey: "prayer_fajr_enabled") : true
             prayerDhuhrEnabled = UserDefaults.standard.object(forKey: "prayer_dhuhr_enabled") != nil ? UserDefaults.standard.bool(forKey: "prayer_dhuhr_enabled") : true
             prayerAsrEnabled = UserDefaults.standard.object(forKey: "prayer_asr_enabled") != nil ? UserDefaults.standard.bool(forKey: "prayer_asr_enabled") : true
