@@ -215,8 +215,8 @@ struct DhikrDetailView: View {
         case .salawat:
             guard selectedIndex < activeSalawatCases.count else { return nil }
             switch activeSalawatCases[selectedIndex] {
-            case .waSallim: return TasbihIntervals(langsam: 2.20, normal: 1.78, schnell: 1.44)
-            case .kurz: return TasbihIntervals(langsam: 2.63, normal: 2.14, schnell: 1.74)
+            case .waSallim: return TasbihIntervals(langsam: 2.20, normal: 1.78, schnell: 1.60)
+            case .kurz: return TasbihIntervals(langsam: 2.63, normal: 2.14, schnell: 1.95)
             case .lang: return TasbihIntervals(langsam: 10.45, normal: 9.64, schnell: 8.89)
             }
         case .subhanAllah:

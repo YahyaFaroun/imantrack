@@ -1209,8 +1209,8 @@ Jedes Preset hat fein abgestimmte Sprechzeiten in Sekunden für **Stufe 0 (Schil
 | Istighfar – `gewaltig` | `tasbih_speed_istighfar_gewaltig` | `4.95 s` | `4.47 s` | `4.04 s` |
 | Istighfar – `yunus` | `tasbih_speed_istighfar_yunus` | `4.00 s` | `3.44 s` | `2.96 s` |
 | Istighfar – `lang` (Sayyidul) | `tasbih_speed_istighfar_lang` | `13.45 s` | `11.88 s` | `10.49 s` |
-| Salawat – `waSallim` | `tasbih_speed_salawat_waSallim` | `2.20 s` | `1.78 s` | `1.44 s` |
-| Salawat – `kurz` | `tasbih_speed_salawat_kurz` | `2.63 s` | `2.14 s` | `1.74 s` |
+| Salawat – `waSallim` | `tasbih_speed_salawat_waSallim` | `2.20 s` | `1.78 s` | `1.60 s` |
+| Salawat – `kurz` | `tasbih_speed_salawat_kurz` | `2.63 s` | `2.14 s` | `1.95 s` |
 | Salawat – `lang` (Ibrahimiyyah) | `tasbih_speed_salawat_lang` | `10.45 s` | `9.64 s` | `8.89 s` |
 | SubhanAllah wa bihamdihi... | `tasbih_speed_subhanAllah` | `3.28 s` | `2.94 s` | `2.64 s` |
 | Alhamdulillah (Baqiyat as-Salihat) | `tasbih_speed_alhamdulillah` | `4.57 s` | `3.82 s` | `3.19 s` |
