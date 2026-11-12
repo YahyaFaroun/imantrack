@@ -234,7 +234,7 @@ enum AdhkarState: Equatable {
 }
 
 // Temporär freigeschaltet zum Testen aller Adhkar-Sessions (Morgen, Abend, Schlafen)
-public let isAdhkarTestModeUnlocked = true
+public let isAdhkarTestModeUnlocked = false
 
 func getAdhkarState(type: AdhkarSessionType) -> AdhkarState {
     if isAdhkarTestModeUnlocked { return .active }
